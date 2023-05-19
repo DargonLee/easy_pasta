@@ -46,7 +46,7 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         List<Map> pItem = event;
         for(var item in pItem) {
-          
+          print(item);
         }
         Map map = event[4];
         print(map);
