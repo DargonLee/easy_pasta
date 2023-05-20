@@ -32,7 +32,10 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final EventChannel _eventChannel = const EventChannel('com.easy.pasteboard');
+  final EventChannel _eventChannel =
+      const EventChannel('com.easy.pasteboard.event');
+  final MethodChannel _methodChannel =
+      const MethodChannel('com.easy.pasteboard.method');
 
   String _counter = "";
 
@@ -43,15 +46,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
     _eventChannel.receiveBroadcastStream().listen((event) {
       print('received event');
+      List<Map> pItem = event;
+      for (var item in pItem) {
+        print(item);
+      }
+      Map map = event[4];
+      print(map);
+      Uint8List bytes = map['public.utf8-plain-text'];
+      String string = String.fromCharCodes(bytes);
       setState(() {
-        List<Map> pItem = event;
-        for(var item in pItem) {
-          print(item);
-        }
-        Map map = event[4];
-        print(map);
-        Uint8List bytes = map['public.utf8-plain-text'];
-        String string = String.fromCharCodes(bytes);
         _counter = string;
       });
     }, onError: (dynamic error) {
@@ -76,6 +79,26 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.add),
+        onPressed: () async {
+          try {
+            List<int> strList1 = 'hello1'.codeUnits;
+            Uint8List bytes1 = Uint8List.fromList(strList1);
+            List<int> strList2 = 'hello2'.codeUnits;
+            Uint8List bytes2 = Uint8List.fromList(strList2);
+            List list = [
+              {"1": bytes1},
+              {"1": bytes2},
+            ];
+            final result =
+                await _methodChannel.invokeMethod('setPasteboardItem', list);
+            print('receive swift data ${result}');
+          } on PlatformException catch (e) {
+            print('${e.message}');
+          }
+        },
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }

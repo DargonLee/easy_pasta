@@ -3,10 +3,11 @@ import FlutterMacOS
 
 class MainFlutterWindow: NSWindow, FlutterStreamHandler {
     var pasteboard = MainFlutterPasteboard()
+    
+    var methodChannel: FlutterMethodChannel?
+    
     var eventChannel: FlutterEventChannel?
     var eventSink : FlutterEventSink?
-    
-    var count = 0
     
     
     override func awakeFromNib() {
@@ -31,8 +32,23 @@ class MainFlutterWindow: NSWindow, FlutterStreamHandler {
     }
     
     func setupEventChannel(vc: FlutterViewController) {
-        eventChannel = FlutterEventChannel(name: "com.easy.pasteboard", binaryMessenger: vc.engine.binaryMessenger)
+        eventChannel = FlutterEventChannel(name: "com.easy.pasteboard.event", binaryMessenger: vc.engine.binaryMessenger)
         eventChannel?.setStreamHandler(self)
+        
+        methodChannel = FlutterMethodChannel(name: "com.easy.pasteboard.method", binaryMessenger: vc.engine.binaryMessenger)
+        methodChannel?.setMethodCallHandler({
+            [weak self] (call: FlutterMethodCall, result: FlutterResult) -> Void in
+
+            guard call.method == "setPasteboardItem" else {
+                result(FlutterMethodNotImplemented)
+                return
+            }
+            print("receive setPasteboardItem call from dart")
+            print(call.arguments ?? "")
+            
+            self?.pasteboard.setPasteboardItem(item: (call.arguments as! [Dictionary<String, AnyObject>]) )
+            result(0)
+        })
     }
     
     /// FlutterStreamHandler

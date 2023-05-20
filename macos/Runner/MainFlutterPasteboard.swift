@@ -23,7 +23,7 @@ class MainFlutterPasteboard: NSObject {
         }
     }
     
-    func getPasteboardItem() -> [Dictionary<String, AnyObject?>]? {
+    func getPasteboardItem() -> [Dictionary<String, AnyObject>]? {
         if isNeedUpdate == false  {
             return nil
         }
@@ -37,6 +37,24 @@ class MainFlutterPasteboard: NSObject {
             }
         }
         return array
+    }
+    
+    func setPasteboardItem(item :[Dictionary<String, AnyObject>]?) {
+        guard let item = item else {
+            return
+        }
+        for dict in item {
+            let _ = dict.first { (key , value) -> Bool in
+                print(key)
+                print(value)
+                let uintInt8List =  value as! FlutterStandardTypedData
+                
+                let string = NSString(data: uintInt8List.data, encoding: String.Encoding.utf8.rawValue)
+                print(string ?? "")
+                // genral.setData(uintInt8List.data, forType: NSPasteboard.PasteboardType(key))
+                return true
+            }
+        }
     }
     
 }
