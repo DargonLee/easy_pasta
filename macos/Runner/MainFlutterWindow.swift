@@ -24,10 +24,10 @@ class MainFlutterWindow: NSWindow, FlutterStreamHandler {
         /// 初始化Channel
         setupEventChannel(vc: flutterViewController)
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true, block: { timer in
-            guard let dict = self.pasteboard.getPasteboardItem() else {
+            guard let array = self.pasteboard.getPasteboardItem() else {
                 return
             }
-            self.eventSink?(dict)
+            self.eventSink?(array)
         })
     }
     

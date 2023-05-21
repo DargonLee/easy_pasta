@@ -1,3 +1,4 @@
+import 'package:easy_pasta/channel_mgr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -36,6 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
       const EventChannel('com.easy.pasteboard.event');
   final MethodChannel _methodChannel =
       const MethodChannel('com.easy.pasteboard.method');
+  final chanelMgr = ChannelManager();
 
   String _counter = "";
 
@@ -46,7 +48,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
     _eventChannel.receiveBroadcastStream().listen((event) {
       print('received event');
+      print(event);
+      print('------');
       List<Map> pItem = event;
+
       for (var item in pItem) {
         print(item);
       }
