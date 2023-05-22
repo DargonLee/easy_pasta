@@ -1,6 +1,9 @@
+import 'dart:collection';
+
 import 'package:easy_pasta/channel_mgr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'model/pasteboard_model.dart';
 
 void main() {
   runApp(const MyApp());
@@ -50,17 +53,11 @@ class _MyHomePageState extends State<MyHomePage> {
       print('received event');
       print(event);
       print('------');
-      List<Map> pItem = event;
-
-      for (var item in pItem) {
-        print(item);
-      }
-      Map map = event[4];
-      print(map);
-      Uint8List bytes = map['public.utf8-plain-text'];
-      String string = String.fromCharCodes(bytes);
+      final List<Map> pItem = List.from(event);
+      final NSPboardTypeModel model = NSPboardTypeModel.fromItemArray(pItem);
+      print('******');
       setState(() {
-        _counter = string;
+        _counter = model.rawValue;
       });
     }, onError: (dynamic error) {
       print('received error: ${error.message}');

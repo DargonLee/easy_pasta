@@ -30,6 +30,9 @@ class MainFlutterPasteboard: NSObject {
         var array = [Dictionary<String, AnyObject>]()
         if let firstItem = genral.pasteboardItems?.first {
             for type in firstItem.types {
+                if type.rawValue.starts(with: "dyn") {
+                    continue
+                }
                 if let data = firstItem.data(forType: type) {
                     let dict = [type.rawValue: FlutterStandardTypedData(bytes: data)]
                     array.append(dict)

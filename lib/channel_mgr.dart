@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'model/pasteboard_model.dart';
 
 class ChannelManager {
   factory ChannelManager() => _instance;
@@ -14,14 +15,7 @@ class ChannelManager {
   void initChannel() {
     _eventChannel.receiveBroadcastStream().listen((event) {
       print('received event');
-      List<Map> pItem = event;
-      for (var item in pItem) {
-        print(item);
-      }
-      Map map = event[4];
-      print(map);
-      Uint8List bytes = map['public.utf8-plain-text'];
-      String string = String.fromCharCodes(bytes);
+      NSPboardTypeModel.fromItemArray(event);
     }, onError: (dynamic error) {
       print('received error: ${error.message}');
     }, cancelOnError: true);
