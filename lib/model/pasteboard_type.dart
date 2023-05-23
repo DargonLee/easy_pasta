@@ -20,6 +20,7 @@ enum NSPboardType {
   rtfType(name: 'public.rtf'),
   fileUrlType(name: 'public.file-url'),
   htmlType(name: 'public.html'),
+  pngType(name: 'public.png'),
   textRtfType(name: 'com.trolltech.anymime.text--rtf'),
   appleNotesTypeType(name: 'com.apple.notes.richtext');
 

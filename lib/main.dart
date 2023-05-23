@@ -1,9 +1,6 @@
-import 'dart:collection';
-
 import 'package:easy_pasta/channel_mgr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'model/pasteboard_model.dart';
 
 void main() {
   runApp(const MyApp());
@@ -36,10 +33,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final EventChannel _eventChannel =
-      const EventChannel('com.easy.pasteboard.event');
-  final MethodChannel _methodChannel =
-      const MethodChannel('com.easy.pasteboard.method');
   final chanelMgr = ChannelManager();
 
   String _counter = "";
@@ -49,19 +42,12 @@ class _MyHomePageState extends State<MyHomePage> {
     // TODO: implement initState
     super.initState();
 
-    _eventChannel.receiveBroadcastStream().listen((event) {
-      print('received event');
-      print(event);
-      print('------');
-      final List<Map> pItem = List.from(event);
-      final NSPboardTypeModel model = NSPboardTypeModel.fromItemArray(pItem);
-      print('******');
+    chanelMgr.initChannel();
+    chanelMgr.eventValueChangedCallback = (value) {
       setState(() {
-        _counter = model.rawValue;
+        _counter = value;
       });
-    }, onError: (dynamic error) {
-      print('received error: ${error.message}');
-    }, cancelOnError: true);
+    };
   }
 
   @override
@@ -86,16 +72,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: const Icon(Icons.add),
         onPressed: () async {
           try {
-            List<int> strList1 = 'hello1'.codeUnits;
-            Uint8List bytes1 = Uint8List.fromList(strList1);
-            List<int> strList2 = 'hello2'.codeUnits;
-            Uint8List bytes2 = Uint8List.fromList(strList2);
-            List list = [
-              {"1": bytes1},
-              {"1": bytes2},
-            ];
-            final result =
-                await _methodChannel.invokeMethod('setPasteboardItem', list);
+            final result = chanelMgr.setPasteboardItem([]);
             print('receive swift data ${result}');
           } on PlatformException catch (e) {
             print('${e.message}');

@@ -6,6 +6,8 @@ class ChannelManager {
   ChannelManager._internal();
   static final ChannelManager _instance = ChannelManager._internal();
 
+  late final ValueChanged eventValueChangedCallback;
+
   static const EVENT_CHANNEL_NAME = 'com.easy.pasteboard.event';
   static const METHOD_CHANNEL_NAME = 'com.easy.pasteboard.method';
 
@@ -14,14 +16,16 @@ class ChannelManager {
 
   void initChannel() {
     _eventChannel.receiveBroadcastStream().listen((event) {
-      print('received event');
-      NSPboardTypeModel.fromItemArray(event);
+      final List<Map> pItem = List.from(event);
+      final NSPboardTypeModel model = NSPboardTypeModel.fromItemArray(pItem);
+      print('received event ${model.rawValue}');
+      eventValueChangedCallback(model.rawValue);
     }, onError: (dynamic error) {
       print('received error: ${error.message}');
     }, cancelOnError: true);
   }
 
-  void setPasteboardItem(List<Map<String, Uint8List>> elements) async {
+  dynamic setPasteboardItem(List<Map>? elements) async {
     try {
       List<int> strList1 = 'hello1'.codeUnits;
       Uint8List bytes1 = Uint8List.fromList(strList1);
@@ -34,6 +38,7 @@ class ChannelManager {
       final result =
           await _methodChannel.invokeMethod('setPasteboardItem', list);
       print('receive swift data ${result}');
+      return result;
     } on PlatformException catch (e) {
       print('call setPasteboardItem error : ${e.message}');
     }
