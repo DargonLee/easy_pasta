@@ -1,13 +1,12 @@
 import 'package:flutter/services.dart';
-import 'db/database_helper.dart';
-import 'model/pasteboard_model.dart';
+import 'package:easy_pasta/model/pasteboard_model.dart';
 
 class ChannelManager {
   factory ChannelManager() => _instance;
   ChannelManager._internal();
   static final ChannelManager _instance = ChannelManager._internal();
 
-  late final ValueChanged eventValueChangedCallback;
+  late final ValueChanged<NSPboardTypeModel> eventValueChangedCallback;
 
   static const EVENT_CHANNEL_NAME = 'com.easy.pasteboard.event';
   static const METHOD_CHANNEL_NAME = 'com.easy.pasteboard.method';
@@ -15,15 +14,12 @@ class ChannelManager {
   final EventChannel _eventChannel = const EventChannel(EVENT_CHANNEL_NAME);
   final MethodChannel _methodChannel = const MethodChannel(METHOD_CHANNEL_NAME);
 
-  final DatabaseHelper _databaseHelper = DatabaseHelper();
-
   void initChannel() {
     _eventChannel.receiveBroadcastStream().listen((event) {
       print('received event from macos pasteboard');
       final List<Map> pItem = List.from(event);
       final NSPboardTypeModel model = NSPboardTypeModel.fromItemArray(pItem);
-      eventValueChangedCallback(model.pvalue);
-      _databaseHelper.insertPboardItem(model);
+      eventValueChangedCallback(model);
     }, onError: (dynamic error) {
       print('received error: ${error.message}');
     }, cancelOnError: true);

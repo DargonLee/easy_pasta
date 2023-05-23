@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-import '../model/pasteboard_model.dart';
+import 'package:easy_pasta/model/pasteboard_model.dart';
 
 class DatabaseHelper {
   DatabaseHelper._internal();
