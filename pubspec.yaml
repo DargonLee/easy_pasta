@@ -36,6 +36,9 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
 
+  # 国际化
+  intl: ^0.18.1
+
   # macos_ui
   # macos_ui: ^1.12.2
 

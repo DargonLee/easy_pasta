@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'db/database_helper.dart';
 import 'model/pasteboard_model.dart';
 
 class ChannelManager {
@@ -14,12 +15,15 @@ class ChannelManager {
   final EventChannel _eventChannel = const EventChannel(EVENT_CHANNEL_NAME);
   final MethodChannel _methodChannel = const MethodChannel(METHOD_CHANNEL_NAME);
 
+  final DatabaseHelper _databaseHelper = DatabaseHelper();
+
   void initChannel() {
     _eventChannel.receiveBroadcastStream().listen((event) {
+      print('received event from macos pasteboard');
       final List<Map> pItem = List.from(event);
       final NSPboardTypeModel model = NSPboardTypeModel.fromItemArray(pItem);
-      print('received event ${model.rawValue}');
-      eventValueChangedCallback(model.rawValue);
+      eventValueChangedCallback(model.pvalue);
+      _databaseHelper.insertPboardItem(model);
     }, onError: (dynamic error) {
       print('received error: ${error.message}');
     }, cancelOnError: true);

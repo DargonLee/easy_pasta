@@ -51,10 +51,9 @@ class MainFlutterPasteboard: NSObject {
                 print(key)
                 print(value)
                 let uintInt8List =  value as! FlutterStandardTypedData
-                
-                let string = NSString(data: uintInt8List.data, encoding: String.Encoding.utf8.rawValue)
-                print(string ?? "")
-                // genral.setData(uintInt8List.data, forType: NSPasteboard.PasteboardType(key))
+//                let string = NSString(data: uintInt8List.data, encoding: String.Encoding.utf8.rawValue)
+//                print(string ?? "")
+                genral.setData(uintInt8List.data, forType: NSPasteboard.PasteboardType(key))
                 return true
             }
         }

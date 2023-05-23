@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:intl/intl.dart';
 
 /*
 * ▿ 4 elements
@@ -22,40 +23,47 @@ import 'dart:typed_data';
 * */
 class NSPboardTypeModel {
   int? id;
-  late String rawType;
-  late String rawValue;
-  late String rawJsonStr;
+  late String time;
+  late String ptype;
+  late String pvalue;
+  late String pjsonstr;
 
   NSPboardTypeModel.fromItemArray(List<Map> itemArray) {
+    DateTime now = DateTime.now();
+    time = DateFormat("yyyy-MM-dd HH:mm:ss").format(now);
+
     itemArray.first.forEach((key, value) {
-      rawType = key;
+      ptype = key;
       Uint8List uint8list = Uint8List.fromList(value);
-      rawValue = utf8.decode(uint8list);
+      pvalue = utf8.decode(uint8list);
     });
-    rawJsonStr = _convertListToString(itemArray);
+
+    pjsonstr = _convertListToString(itemArray);
 
     print('-----fromItemArray------');
-    print(rawType);
-    print(rawValue);
-    print(rawJsonStr);
+    print(ptype);
+    print(pvalue);
+    print(pjsonstr);
   }
 
-  List<Map<String, Uint8List>> get itesArray => _convertJsonStringToList(rawJsonStr);
+  List<Map<String, Uint8List>> get itemArray => _convertJsonStringToList(pjsonstr);
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'rawType': rawType,
-      'rawValue': rawValue,
-      'rawJsonStr': rawJsonStr,
+      'time': time,
+      'type': ptype,
+      'value': pvalue,
+      'jsonstr': pjsonstr,
     };
   }
 
   NSPboardTypeModel.fromMapObject(Map<String, dynamic> map) {
     id = map['id'];
-    rawType = map['rawType'];
-    rawValue = map['rawValue'];
-    rawJsonStr = map['rawJsonStr'];
+    ptype = map['type'];
+    time = map['time'];
+    pvalue = map['value'];
+    pjsonstr = map['jsonstr'];
   }
 
   String _convertListToString(List<Map> itemArray) {

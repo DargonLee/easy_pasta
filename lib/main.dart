@@ -2,6 +2,8 @@ import 'package:easy_pasta/channel_mgr.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'db/database_helper.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -71,12 +73,12 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
         onPressed: () async {
-          try {
-            final result = chanelMgr.setPasteboardItem([]);
-            print('receive swift data ${result}');
-          } on PlatformException catch (e) {
-            print('${e.message}');
-          }
+          // try {
+          //   final result = chanelMgr.setPasteboardItem([]);
+          //   print('receive swift data ${result}');
+          // } on PlatformException catch (e) {
+          //   print('${e.message}');
+          // }
         },
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
