@@ -10,7 +10,10 @@ class ItemHTMLCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+      ),
       child: SingleChildScrollView(
         child: Html(
           data: model.pvalue,

@@ -22,7 +22,7 @@ class DatabaseHelper {
   }
 
   void _createDb(Database db, int newVersion) async {
-    await db.execute('CREATE TABLE IF NOT EXISTS $_pboardTable($colId INTEGER PRIMARY KEY AUTOINCREMENT, $colTime TEXT, $colType TEXT, $colValue TEXT, $colJson TEXT)');
+    await db.execute('CREATE TABLE IF NOT EXISTS $_pboardTable($colId INTEGER PRIMARY KEY AUTOINCREMENT, $colTime TEXT, $colType TEXT, $colValue TEXT, $colJson TEXT, $colTiff BLOB)');
   }
 
   String _dbName = "pboards.db";
@@ -33,6 +33,7 @@ class DatabaseHelper {
   String colType = 'type';
   String colValue = 'value';
   String colJson = 'jsonstr';
+  String colTiff = 'tiffbytes';
 
   // Public Methods
   Future<List<Map>> getPboardItemList() async {

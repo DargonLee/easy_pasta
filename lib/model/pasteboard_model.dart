@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:easy_pasta/model/pasteboard_type.dart';
 import 'package:intl/intl.dart';
 
 /*
@@ -27,20 +28,26 @@ class NSPboardTypeModel {
   late String ptype;
   late String pvalue;
   late String pjsonstr;
+  Uint8List? tiffbytes;
 
   NSPboardTypeModel.fromItemArray(List<Map> itemArray) {
     DateTime now = DateTime.now();
     time = DateFormat("yyyy-MM-dd HH:mm:ss").format(now);
 
     itemArray.first.forEach((key, value) {
-      print('itemArray.first.forEach');
-      print(key);
       ptype = key;
       Uint8List uint8list = Uint8List.fromList(value);
-      pvalue = utf8.decode(uint8list);
+
+      if (key == NSPboardType.tiffType.name) {
+        pvalue = "";
+        tiffbytes = uint8list;
+      }else {
+        pvalue = utf8.decode(uint8list);
+      }
+
     });
 
-    pjsonstr = _convertListToString(itemArray);
+    pjsonstr = ptype == NSPboardType.tiffType.name ? "" : _convertListToString(itemArray);
 
     print('-----fromItemArray------');
     print(ptype);
@@ -57,6 +64,7 @@ class NSPboardTypeModel {
       'type': ptype,
       'value': pvalue,
       'jsonstr': pjsonstr,
+      'tiffbytes': tiffbytes,
     };
   }
 
@@ -66,6 +74,7 @@ class NSPboardTypeModel {
     time = map['time'];
     pvalue = map['value'];
     pjsonstr = map['jsonstr'];
+    tiffbytes = map['tiffbytes'];
   }
 
   String _convertListToString(List<Map> itemArray) {

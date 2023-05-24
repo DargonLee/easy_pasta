@@ -55,8 +55,9 @@ class _MyHomePageState extends State<MyHomePage> {
     chanelMgr.initChannel();
     chanelMgr.eventValueChangedCallback = (model) {
       Provider.of<PboardProvider>(context, listen: false).addPboardModel(model);
-      _scrollController.animateTo(_scrollController.offset, duration: const Duration(milliseconds: 200), curve: Curves.ease);
-      //_scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.ease);
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        _scrollController.animateTo(_scrollController.position.maxScrollExtent, duration: const Duration(milliseconds: 200), curve: Curves.ease);
+      });
     };
     // _scrollController.addListener(()=>print(_scrollController.offset));
     Provider.of<PboardProvider>(context, listen: false).getPboardList();
@@ -103,8 +104,10 @@ class _MyHomePageState extends State<MyHomePage> {
         child: _buildBody(),
       ),
       floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () async {},
+        child: const Icon(Icons.arrow_upward),
+        onPressed: () async {
+          _scrollController.animateTo(_scrollController.position.maxScrollExtent, duration: const Duration(milliseconds: 200), curve: Curves.ease);
+        },
       ),
     );
   }
