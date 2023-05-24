@@ -3,25 +3,7 @@ import 'dart:typed_data';
 import 'package:easy_pasta/model/pasteboard_type.dart';
 import 'package:intl/intl.dart';
 
-/*
-* ▿ 4 elements
-  ▿ 0 : 1 element
-    ▿ 0 : 2 elements
-      - key : "public.rtf"
-      - value : <FlutterStandardTypedData: 0x600002234400>
-  ▿ 1 : 1 element
-    ▿ 0 : 2 elements
-      - key : "public.utf16-external-plain-text"
-      - value : <FlutterStandardTypedData: 0x600002270920>
-  ▿ 2 : 1 element
-    ▿ 0 : 2 elements
-      - key : "public.utf8-plain-text"
-      - value : <FlutterStandardTypedData: 0x6000022e4640>
-  ▿ 3 : 1 element
-    ▿ 0 : 2 elements
-      - key : "dyn.ah62d4rv4gu8zg55zsmv0nvperf4g86varvw0c3dmr3xwa75krf4gn65uqfv0nkduqf31k3pcr7u1e3basv61a3k"
-      - value : <FlutterStandardTypedData: 0x6000022706e0>
-* */
+
 class NSPboardTypeModel {
   int? id;
   late String time;
@@ -49,10 +31,6 @@ class NSPboardTypeModel {
 
     pjsonstr = ptype == NSPboardType.tiffType.name ? "" : _convertListToString(itemArray);
 
-    print('-----fromItemArray------');
-    print(ptype);
-    print(pvalue);
-    print(pjsonstr);
   }
 
   List<Map<String, Uint8List>> get itemArray => _convertJsonStringToList(pjsonstr);
