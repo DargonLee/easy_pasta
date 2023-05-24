@@ -39,6 +39,9 @@ dependencies:
   # 国际化
   intl: ^0.18.1
 
+  # 显示 html 字符串
+  flutter_html: ^3.0.0-beta.1
+
   # macos_ui
   # macos_ui: ^1.12.2
 

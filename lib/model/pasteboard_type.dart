@@ -18,6 +18,7 @@
 enum NSPboardType {
   stringType(name: 'public.utf8-plain-text'),
   rtfType(name: 'public.rtf'),
+  tiffType(name: 'public.tiff'),
   fileUrlType(name: 'public.file-url'),
   htmlType(name: 'public.html'),
   pngType(name: 'public.png'),

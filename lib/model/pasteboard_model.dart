@@ -33,6 +33,8 @@ class NSPboardTypeModel {
     time = DateFormat("yyyy-MM-dd HH:mm:ss").format(now);
 
     itemArray.first.forEach((key, value) {
+      print('itemArray.first.forEach');
+      print(key);
       ptype = key;
       Uint8List uint8list = Uint8List.fromList(value);
       pvalue = utf8.decode(uint8list);

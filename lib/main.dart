@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/tool/channel_mgr.dart';
+import 'package:easy_pasta/widget/item_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
@@ -54,9 +55,10 @@ class _MyHomePageState extends State<MyHomePage> {
     chanelMgr.initChannel();
     chanelMgr.eventValueChangedCallback = (model) {
       Provider.of<PboardProvider>(context, listen: false).addPboardModel(model);
-      _scrollController.animateTo(.0, duration: const Duration(milliseconds: 200), curve: Curves.ease);
+      _scrollController.animateTo(_scrollController.offset, duration: const Duration(milliseconds: 200), curve: Curves.ease);
+      //_scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.ease);
     };
-
+    // _scrollController.addListener(()=>print(_scrollController.offset));
     Provider.of<PboardProvider>(context, listen: false).getPboardList();
   }
 
@@ -72,16 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
     UnmodifiableListView<NSPboardTypeModel> pboards = Provider.of<PboardProvider>(context).pboards;
 
     Widget _buildItemCard(NSPboardTypeModel model) {
-      return Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          model.pvalue,
-        ),
-      );
+      return ItemCard(model: model);
     }
 
     Widget _buildBody() {
@@ -91,6 +84,7 @@ class _MyHomePageState extends State<MyHomePage> {
           reverse: true,
           crossAxisCount: 3,
           mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
           childAspectRatio: 1.5 / 1,
           children: pboards.map((model) => _buildItemCard(model)).toList(),
         );
@@ -105,13 +99,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Scaffold(
       body: Container(
-        color: Colors.white,
+        color: Colors.grey[300],
         child: _buildBody(),
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.add),
         onPressed: () async {},
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
     );
   }
 }
