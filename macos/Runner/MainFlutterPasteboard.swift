@@ -12,9 +12,13 @@ class MainFlutterPasteboard: NSObject {
 
     var genral = NSPasteboard.general
     var chanageCount = 0
+    var isFromApp = true
     
     var isNeedUpdate: Bool {
         get {
+            if isFromApp {
+                return false
+            }
             if genral.changeCount > chanageCount {
                 chanageCount = genral.changeCount
                 return true
@@ -24,6 +28,7 @@ class MainFlutterPasteboard: NSObject {
     }
     
     func getPasteboardItem() -> [Dictionary<String, AnyObject>]? {
+        
         if isNeedUpdate == false  {
             return nil
         }
@@ -46,17 +51,24 @@ class MainFlutterPasteboard: NSObject {
         guard let item = item else {
             return
         }
+        isFromApp = true
         for dict in item {
             let _ = dict.first { (key , value) -> Bool in
-                print(key)
-                print(value)
+                print("set type : \(key)")
                 let uintInt8List =  value as! FlutterStandardTypedData
-//                let string = NSString(data: uintInt8List.data, encoding: String.Encoding.utf8.rawValue)
-//                print(string ?? "")
-                genral.setData(uintInt8List.data, forType: NSPasteboard.PasteboardType(key))
+                // self.debugPrint(data: uintInt8List)
+                genral.clearContents()
+                var result = genral.setData(uintInt8List.data, forType: NSPasteboard.PasteboardType(key))
+                print("result is \(result)")
+
                 return true
             }
         }
+        // print(NSPasteboard.general.pasteboardItems?.first?.types ?? "")
     }
     
+    func debugPrint(data :FlutterStandardTypedData) {
+        let string = NSString(data: data.data, encoding: String.Encoding.utf8.rawValue)
+        print(string ?? "")
+    }
 }

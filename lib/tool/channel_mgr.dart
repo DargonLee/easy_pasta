@@ -25,20 +25,12 @@ class ChannelManager {
     }, cancelOnError: true);
   }
 
-  dynamic setPasteboardItem(List<Map>? elements) async {
+  void setPasteboardItem(NSPboardTypeModel model) async {
     try {
-      List<int> strList1 = 'hello1'.codeUnits;
-      Uint8List bytes1 = Uint8List.fromList(strList1);
-      List<int> strList2 = 'hello2'.codeUnits;
-      Uint8List bytes2 = Uint8List.fromList(strList2);
-      List list = [
-        {"1": bytes1},
-        {"1": bytes2},
-      ];
+      List list = model.fromModeltoList();
       final result =
           await _methodChannel.invokeMethod('setPasteboardItem', list);
       print('receive swift data ${result}');
-      return result;
     } on PlatformException catch (e) {
       print('call setPasteboardItem error : ${e.message}');
     }

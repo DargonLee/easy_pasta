@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:easy_pasta/model/pasteboard_type.dart';
 import 'package:intl/intl.dart';
 
-
 class NSPboardTypeModel {
   int? id;
   late String time;
@@ -23,14 +22,12 @@ class NSPboardTypeModel {
       if (key == NSPboardType.tiffType.name) {
         pvalue = "";
         tiffbytes = uint8list;
-      }else {
+      } else {
         pvalue = utf8.decode(uint8list);
       }
-
     });
 
     pjsonstr = ptype == NSPboardType.tiffType.name ? "" : _convertListToString(itemArray);
-
   }
 
   List<Map<String, Uint8List>> get itemArray => _convertJsonStringToList(pjsonstr);
@@ -71,13 +68,22 @@ class NSPboardTypeModel {
 
   List<Map<String, Uint8List>> _convertJsonStringToList(String jsonStr) {
     List<Map<String, Uint8List>> tmp = [];
-    List<Map<String, String>> itemArray = json.decode(jsonStr);
-    for (var item in itemArray) {
+    List<Map<String, dynamic>> itemArray = List.from(json.decode(jsonStr));
+    for (Map<String, dynamic> item  in itemArray) {
       item.forEach((key, value) {
         Uint8List bytes = Uint8List.fromList(value.codeUnits);
-        tmp.add({key, bytes} as Map<String, Uint8List>);
+        tmp.add({key: bytes});
       });
     }
     return tmp;
+  }
+
+  List<Map<String, Uint8List>> fromModeltoList() {
+    if (ptype == NSPboardType.tiffType.name) {
+      return [
+        {ptype: tiffbytes ?? Uint8List(1)}
+      ];
+    }
+    return _convertJsonStringToList(pjsonstr);
   }
 }
