@@ -47,6 +47,14 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   final chanelMgr = ChannelManager();
   final ScrollController _scrollController = ScrollController();
+  final SliverGridDelegateWithFixedCrossAxisCount gridDelegate = const SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 3,
+    mainAxisSpacing: 10,
+    crossAxisSpacing: 10,
+    childAspectRatio: 1.5 / 1,
+  );
+  int _selectedId = 0;
+  bool _isSelected = false;
 
   @override
   void initState() {
@@ -74,21 +82,43 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     UnmodifiableListView<NSPboardTypeModel> pboards = Provider.of<PboardProvider>(context).pboards;
 
-    Widget _buildItemCard(NSPboardTypeModel model) {
-      return ItemCard(model: model);
+    Widget _buildItemCard(NSPboardTypeModel model, int index) {
+      return GestureDetector(
+        onTap: () {
+          // _isSelected = _selectedId == model.id?.toInt();
+          // print("_buildItemCard object ${index} ${_isSelected} ${_selectedId}");
+          _selectedId = model.id!.toInt();
+          setState(() {
+          });
+        },
+        child: ItemCard(
+          model: model,
+          selectedId: _selectedId,
+        ),
+      );
     }
 
     Widget _buildBody() {
       if (Provider.of<PboardProvider>(context).count > 0) {
-        return GridView.count(
-          controller: _scrollController,
+        return GridView.builder(
           reverse: true,
-          crossAxisCount: 3,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 1.5 / 1,
-          children: pboards.map((model) => _buildItemCard(model)).toList(),
+          itemCount: pboards.length,
+          controller: _scrollController,
+          shrinkWrap: true,
+          gridDelegate: gridDelegate,
+          itemBuilder: (context, index) {
+            return _buildItemCard(pboards[index], index);
+          },
         );
+        // return GridView.count(
+        //   controller: _scrollController,
+        //   reverse: true,
+        //   crossAxisCount: 3,
+        //   mainAxisSpacing: 10,
+        //   crossAxisSpacing: 10,
+        //   childAspectRatio: 1.5 / 1,
+        //   children: pboards.map((model) => _buildItemCard(model)).toList(),
+        // );
       }
       return const Center(
         child: Text(
