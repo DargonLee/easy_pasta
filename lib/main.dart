@@ -54,7 +54,6 @@ class _MyHomePageState extends State<MyHomePage> {
     childAspectRatio: 1.5 / 1,
   );
   int _selectedId = 0;
-  bool _isSelected = false;
 
   @override
   void initState() {

@@ -45,8 +45,8 @@ class MainFlutterWindow: NSWindow, FlutterStreamHandler {
             }
             print("receive setPasteboardItem call from dart")
             print(call.arguments ?? "")
-            
-            self?.pasteboard.setPasteboardItem(item: (call.arguments as! [Dictionary<String, AnyObject>]) )
+            self?.pasteboard.setPasteboardItem(item: (call.arguments as! [Dictionary<String, AnyObject>]))
+            NSApplication.shared.keyWindow?.orderOut(nil)
             result(0)
         })
     }
