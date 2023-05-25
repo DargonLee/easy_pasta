@@ -85,7 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget _buildItemCard(NSPboardTypeModel model, int index) {
       return GestureDetector(
         onDoubleTap: () {
-          print('onDoubleTap ${model.id}');
+          // print('onDoubleTap ${model.id}');
           _selectedId = model.id!.toInt();
           setState(() {
           });

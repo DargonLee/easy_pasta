@@ -12,7 +12,7 @@ class MainFlutterPasteboard: NSObject {
 
     var genral = NSPasteboard.general
     var chanageCount = 0
-    var isFromApp = true
+    var isFromApp = false
     
     var isNeedUpdate: Bool {
         get {
@@ -58,12 +58,15 @@ class MainFlutterPasteboard: NSObject {
                 let uintInt8List =  value as! FlutterStandardTypedData
                 // self.debugPrint(data: uintInt8List)
                 genral.clearContents()
-                var result = genral.setData(uintInt8List.data, forType: NSPasteboard.PasteboardType(key))
+                let result = genral.setData(uintInt8List.data, forType: NSPasteboard.PasteboardType(key))
                 print("result is \(result)")
 
                 return true
             }
         }
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 1, execute: {
+            self.isFromApp = false
+        });
         // print(NSPasteboard.general.pasteboardItems?.first?.types ?? "")
     }
     

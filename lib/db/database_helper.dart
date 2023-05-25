@@ -62,7 +62,6 @@ class DatabaseHelper {
   Future<int> deleteLastRaw() async {
     Database db = await database;
     List<Map<String, dynamic>> list = await db.rawQuery('SELECT * FROM $_pboardTable ORDER BY $colId ASC LIMIT 1');
-    print(list);
     String id = list.first['id'].toString();
     int result = await db.rawDelete('DELETE FROM $_pboardTable WHERE $colId = $id');
     return result;
