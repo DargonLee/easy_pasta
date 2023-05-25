@@ -18,11 +18,10 @@ class NSPboardTypeModel {
     itemArray.first.forEach((key, value) {
       ptype = key;
       Uint8List uint8list = Uint8List.fromList(value);
-
       if (key == NSPboardType.tiffType.name) {
         pvalue = "";
         tiffbytes = uint8list;
-      } else {
+      }else {
         pvalue = utf8.decode(uint8list);
       }
     });

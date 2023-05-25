@@ -4,6 +4,7 @@ import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/pasteboard_type.dart';
 import 'package:easy_pasta/widget/item_html_card.dart';
 import 'package:easy_pasta/widget/item_tiff_card.dart';
+import 'package:easy_pasta/widget/item_rtf_card.dart';
 
 class ItemCard extends StatelessWidget {
   final NSPboardTypeModel model;
@@ -20,7 +21,7 @@ class ItemCard extends StatelessWidget {
     } else if (model.ptype == NSPboardType.htmlType.name) {
       itemCard = ItemHTMLCard(model: model, isSelected: isSelected,);
     }else if (model.ptype == NSPboardType.rtfType.name) {
-      itemCard = ItemUtf8Card(model: model);
+      itemCard = ItemRtfCard(model: model, isSelected: isSelected,);
     }else if (model.ptype == NSPboardType.textRtfType.name) {
       itemCard = ItemUtf8Card(model: model);
     }else if (model.ptype == NSPboardType.tiffType.name) {

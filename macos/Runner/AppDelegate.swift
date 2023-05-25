@@ -6,7 +6,7 @@ class AppDelegate: FlutterAppDelegate {
     var statusBarItem: NSStatusItem!
     
     override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        return true
+        return false
     }
     
     override func applicationDidFinishLaunching(_ notification: Notification) {
