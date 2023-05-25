@@ -25,7 +25,7 @@ class ItemFileCard extends StatelessWidget {
             model.pvalue,
             maxLines: 3,
           ),
-          Expanded(
+          const Expanded(
             flex: 1,
             child: Icon(
               Icons.folder,

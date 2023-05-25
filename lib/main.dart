@@ -85,10 +85,12 @@ class _MyHomePageState extends State<MyHomePage> {
       return GestureDetector(
         onDoubleTap: () {
           // print('onDoubleTap ${model.id}');
-          _selectedId = model.id!.toInt();
           setState(() {
+            _selectedId = model.id!.toInt();
           });
-          chanelMgr.setPasteboardItem(model);
+          Future.delayed(const Duration(milliseconds: 800), () {
+            chanelMgr.setPasteboardItem(model);
+          });
         },
         child: ItemCard(
           model: model,
