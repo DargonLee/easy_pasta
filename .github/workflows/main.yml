@@ -13,7 +13,7 @@ jobs:
      - run: flutter pub get
      - run: flutter build macos
      - name: List files in the repository
-        run: | 
+     - run: | 
         ls ${{ github.workspace }}
      - run: echo "🍏 This job's status is ${{ job.status }}."
      - name: Publish iOS Artefacts
