@@ -1,6 +1,5 @@
 name: build-mac-actions
 run-name: ${{ github.actor }} is package mac app actions
-on: [push]
 jobs:
  build:
    runs-on: macos-latest
@@ -12,3 +11,13 @@ jobs:
          architecture: x64
      - run: flutter pub get
      - run: flutter build macos
+     - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+    - run: echo "🍏 This job's status is ${{ job.status }}."
+    - name: Publish iOS Artefacts
+      uses: actions/upload-artifact@v1
+      with:
+        name: release-mac-app
+        path: build/macos/Build/Products/Release
+
