@@ -11,14 +11,9 @@ import FlutterMacOS
 class MainFlutterPasteboard: NSObject {
 
     var genral = NSPasteboard.general
-    var chanageCount = 0
-    var isFromApp = false
-    
+    var chanageCount:Int = UserDefaults.standard.getPasteboardChangeCount()
     var isNeedUpdate: Bool {
         get {
-            if isFromApp {
-                return false
-            }
             if genral.changeCount > chanageCount {
                 chanageCount = genral.changeCount
                 return true
@@ -54,7 +49,9 @@ class MainFlutterPasteboard: NSObject {
         guard let item = item else {
             return
         }
-        isFromApp = true
+        
+        chanageCount += item.count;
+        
         for dict in item {
             let _ = dict.first { (key , value) -> Bool in
                 print("set type : \(key)")
@@ -67,10 +64,6 @@ class MainFlutterPasteboard: NSObject {
                 return true
             }
         }
-        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 1, execute: {
-            self.isFromApp = false
-        });
-        // print(NSPasteboard.general.pasteboardItems?.first?.types ?? "")
     }
     
     func rtfDataToHtmlData(data: Data) -> Data? {

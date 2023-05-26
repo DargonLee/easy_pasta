@@ -3,6 +3,8 @@ import FlutterMacOS
 
 @NSApplicationMain
 class AppDelegate: FlutterAppDelegate {
+    
+    
     var statusBarItem: NSStatusItem!
     
     override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
@@ -10,6 +12,9 @@ class AppDelegate: FlutterAppDelegate {
     }
     
     override func applicationDidFinishLaunching(_ notification: Notification) {
+        let changeCount = NSPasteboard.general.changeCount
+        UserDefaults.standard.setPasteboardChangeCount(changeCount: changeCount)
+        
         self.statusBarItem = NSStatusBar.system.statusItem(withLength: CGFloat(NSStatusItem.variableLength))
         if let button = self.statusBarItem.button {
              statusBarItem.button?.title = "⏳"
