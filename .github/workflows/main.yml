@@ -1,3 +1,6 @@
+name: build-mac-actions
+run-name: ${{ github.actor }} is package mac app actions
+on: [push]
 jobs:
  build:
    runs-on: macos-latest
