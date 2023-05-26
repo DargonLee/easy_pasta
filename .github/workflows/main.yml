@@ -16,8 +16,3 @@ jobs:
         run: |
           ls ${{ github.workspace }}
     - run: echo "🍏 This job's status is ${{ job.status }}."
-    - name: Publish Mac Artefacts
-      uses: actions/upload-artifact@v1
-      with:
-        name: release-mac-app
-        path: build/macos/Build/Products/Release
