@@ -10,13 +10,14 @@ jobs:
        with:
          channel: 'stable'
          architecture: x64
+     - name: Restore packages
      - run: flutter pub get
+     - name: Build App
      - run: flutter build macos
      - name: List files in the repository
-     - run: | 
-        ls ${{ github.workspace }}
+     - run: ls ${{ github.workspace }}
      - run: echo "🍏 This job's status is ${{ job.status }}."
-     - name: Publish iOS Artefacts
+     - name: Publish Mac Artefacts
        uses: actions/upload-artifact@v1
        with:
         name: release-mac-app
