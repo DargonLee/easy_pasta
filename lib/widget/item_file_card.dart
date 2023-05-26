@@ -7,6 +7,12 @@ class ItemFileCard extends StatelessWidget {
 
   ItemFileCard({required this.model, this.isSelected = false});
 
+  bool get isfile {
+    // bool result = FileSystemEntity.isFileSync(model.pvalue);
+    bool result = model.pvalue.contains('.');
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -25,10 +31,10 @@ class ItemFileCard extends StatelessWidget {
             model.pvalue,
             maxLines: 3,
           ),
-          const Expanded(
+          Expanded(
             flex: 1,
             child: Icon(
-              Icons.folder,
+              isfile ? Icons.file_open : Icons.folder,
               size: 100,
               color: Colors.blue,
             ),
