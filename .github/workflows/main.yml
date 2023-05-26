@@ -13,6 +13,11 @@ jobs:
      - run: flutter pub get
      - run: flutter build macos
      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
-    - run: echo "🍏 This job's status is ${{ job.status }}."
+        run: | 
+        ls ${{ github.workspace }}
+     - run: echo "🍏 This job's status is ${{ job.status }}."
+     - name: Publish iOS Artefacts
+       uses: actions/upload-artifact@v1
+       with:
+        name: release-mac-app
+        path: build/macos/Build/Products/Release
