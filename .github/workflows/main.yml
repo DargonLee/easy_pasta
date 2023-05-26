@@ -16,9 +16,11 @@ jobs:
      - run: flutter build macos
      - name: List files in the repository
      - run: ls ${{ github.workspace }}
+     - name: Job status
      - run: echo "🍏 This job's status is ${{ job.status }}."
+     
      - name: Publish Mac Artefacts
        uses: actions/upload-artifact@v1
        with:
-        name: release-mac-app
-        path: build/macos/Build/Products/Release
+          name: release-mac-app
+          path: build/macos/Build/Products/Release
