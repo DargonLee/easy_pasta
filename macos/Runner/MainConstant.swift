@@ -15,6 +15,6 @@ extension UserDefaults {
     }
     
     func getPasteboardChangeCount() -> Int {
-        return self.value(forKey: ChangeCountKey) as! Int
+        return self.value(forKey: ChangeCountKey) as? Int ?? 0
     }
 }
