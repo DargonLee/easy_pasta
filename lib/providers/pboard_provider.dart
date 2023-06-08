@@ -38,4 +38,27 @@ class PboardProvider with ChangeNotifier {
 
     notifyListeners();
   }
+
+  void getPboardListWithString(String string) async {
+    _pboards.clear();
+
+    List<Map> result = await _databaseHelper.getPboardItemListWithString(string);
+    if (result.isNotEmpty) {
+      _count = result.length;
+      for (Map map in result) {
+        final NSPboardTypeModel model = NSPboardTypeModel.fromMapObject(map as Map<String, dynamic>);
+        _pboards.add(model);
+      }
+    }
+
+    notifyListeners();
+  }
+
+  void removePboardList() async {
+    _pboards.clear();
+    _count = 0;
+    int result = await _databaseHelper.deleteAll();
+
+    notifyListeners();
+  }
 }

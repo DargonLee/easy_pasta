@@ -16,10 +16,8 @@ class ItemUtf8Card extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.blueAccent,width: isSelected ? 5.0 : 0.1,),
       ),
-      child: SingleChildScrollView(
-        child: Text(
-          model.pvalue,
-        ),
+      child: Text(
+        model.pvalue,
       ),
     );
   }

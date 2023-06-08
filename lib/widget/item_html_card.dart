@@ -16,16 +16,14 @@ class ItemHTMLCard extends StatelessWidget {
         color: Colors.white,
         border: Border.all(color: Colors.blueAccent,width: isSelected ? 5.0 : 0.1,)
       ),
-      child: SingleChildScrollView(
-        child: Html(
-          data: model.pvalue,
-          extensions: [
-            TagExtension(
-              tagsToExtend: {"flutter"},
-              child: const FlutterLogo(),
-            ),
-          ],
-        ),
+      child: Html(
+        data: model.pvalue,
+        extensions: [
+          TagExtension(
+            tagsToExtend: {"flutter"},
+            child: const FlutterLogo(),
+          ),
+        ],
       ),
     );
   }

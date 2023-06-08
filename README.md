@@ -28,3 +28,8 @@
 - 需要复制的时候，点击即可显示主页面
 
 - 然话双击你想要复制的内容，在你想要粘贴的地方直接粘贴即可
+
+#### TODO:
+
+- 跨平台最好提供第三方同步方案，避免隐私问题，mac/ios 可以用 iCloud/windows 可以利用坚果云等(from:**[SuperXRay](https://www.v2ex.com/member/SuperXRay)**)
+- 可以搜索记录，还可以快捷键选择

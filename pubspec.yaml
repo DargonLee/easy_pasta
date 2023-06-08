@@ -60,6 +60,12 @@ dependencies:
   # 数据库
   sqflite: ^2.2.8+4
 
+  # Userdefault
+  shared_preferences: ^2.1.1
+
+  # 快捷键
+  hotkey_manager: ^0.1.8
+
 
 
 dev_dependencies:

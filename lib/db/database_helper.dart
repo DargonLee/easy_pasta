@@ -36,6 +36,13 @@ class DatabaseHelper {
   String colTiff = 'tiffbytes';
 
   // Public Methods
+  Future<List<Map>> getPboardItemListWithString(String string) async {
+    Database db = await database;
+    String sql = 'SELECT * FROM $_pboardTable WHERE value LIKE ?';
+    var result = await db.rawQuery(sql, ['%$string%']);
+    return result;
+  }
+
   Future<List<Map>> getPboardItemList() async {
     Database db = await database;
     var result = await db.query(_pboardTable);
@@ -64,6 +71,12 @@ class DatabaseHelper {
     List<Map<String, dynamic>> list = await db.rawQuery('SELECT * FROM $_pboardTable ORDER BY $colId ASC LIMIT 1');
     String id = list.first['id'].toString();
     int result = await db.rawDelete('DELETE FROM $_pboardTable WHERE $colId = $id');
+    return result;
+  }
+
+  Future<int> deleteAll() async {
+    Database db = await database;
+    int result = await db.delete(_pboardTable);
     return result;
   }
 }
