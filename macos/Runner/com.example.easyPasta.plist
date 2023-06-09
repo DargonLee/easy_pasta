@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+   com.easypboard.plist
+   Runner
+
+   Created by Harlans on 2023/6/9.
+   Copyright (c) 2023 . All rights reserved.
+-->
+<plist version="1.0">
+    <dict>
+        <key>Label</key>
+        <string>com.example.easyPasta</string>
+        <key>ProgramArguments</key>
+        <array>
+            <string>/Applications/EasyPasta.app/Contents/MacOS/EasyPasta</string>
+        </array>
+        <key>RunAtLoad</key>
+        <true/>
+    </dict>
+</plist>

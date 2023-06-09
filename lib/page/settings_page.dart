@@ -80,6 +80,7 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     _getLoginInLaunch();
     super.initState();
+
   }
 
   @override
@@ -127,6 +128,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     _switchSelected = value;
                   });
                   SharedPreferenceHelper.setLoginInLaunchKey(_switchSelected);
+                  chanelMgr.setLaunchCtl(value);
                 },
               ),
             ),

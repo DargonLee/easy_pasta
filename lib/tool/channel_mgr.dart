@@ -40,9 +40,19 @@ class ChannelManager {
     try {
       final result =
       await _methodChannel.invokeMethod('showMainPasteboardWindow');
-      print('receive swift data ${result}');
     } on PlatformException catch (e) {
-      print('call setPasteboardItem error : ${e.message}');
+      print('call showMainPasteboardWindow error : ${e.message}');
     }
   }
+
+  void setLaunchCtl(bool status) async{
+    try {
+      final result =
+      await _methodChannel.invokeMethod('setLaunchCtl', status);
+    } on PlatformException catch (e) {
+      print('call setLaunchCtl error : ${e.message}');
+    }
+  }
+
+
 }

@@ -19,6 +19,7 @@ class MainFlutterWindow: NSWindow, FlutterStreamHandler {
         self.styleMask = .titled
         
         RegisterGeneratedPlugins(registry: flutterViewController)
+        registerLaunchctl()
         super.awakeFromNib()
         
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { (event) -> NSEvent? in
@@ -60,6 +61,11 @@ class MainFlutterWindow: NSWindow, FlutterStreamHandler {
             if call.method == "showMainPasteboardWindow" {
                 DispatchQueue.main.async {
                     self?.orderFront(nil)
+                }
+            }
+            if call.method == "setLaunchCtl" {
+                if let arg = call.arguments {
+                    launchctl(status: arg as! Bool)
                 }
             }
             
