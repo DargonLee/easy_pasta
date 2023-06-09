@@ -15,6 +15,7 @@ class NSPboardTypeModel {
     DateTime now = DateTime.now();
     time = DateFormat("yyyy-MM-dd HH:mm:ss").format(now);
 
+    // TODO: 待优化
     itemArray.first.forEach((key, value) {
       ptype = key;
       Uint8List uint8list = Uint8List.fromList(value);

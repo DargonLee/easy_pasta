@@ -16,10 +16,20 @@ class MainFlutterWindow: NSWindow, FlutterStreamHandler {
         self.contentViewController = flutterViewController
         self.setFrame(windowFrame, display: true)
         self.center()
-        //self.styleMask = .closable
+        self.styleMask = .titled
         
         RegisterGeneratedPlugins(registry: flutterViewController)
         super.awakeFromNib()
+        
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { (event) -> NSEvent? in
+            // 判断是否按下 Command+W
+            if event.modifierFlags.contains(.command) && event.charactersIgnoringModifiers == "w" {
+                // 关闭窗口
+                self.close()
+                return nil // 阻止事件传递给其他处理程序
+            }
+            return event
+        }
         
         /// 初始化Channel
         setupEventChannel(vc: flutterViewController)
@@ -39,16 +49,20 @@ class MainFlutterWindow: NSWindow, FlutterStreamHandler {
         methodChannel?.setMethodCallHandler({
             [weak self] (call: FlutterMethodCall, result: FlutterResult) -> Void in
 
-            guard call.method == "setPasteboardItem" else {
-                result(FlutterMethodNotImplemented)
-                return
+            if call.method == "setPasteboardItem" {
+                print("receive setPasteboardItem call from dart")
+                print(call.arguments ?? "")
+                self?.pasteboard.setPasteboardItem(item: (call.arguments as! [Dictionary<String, AnyObject>]))
+                DispatchQueue.main.async {
+                    self?.close()
+                }
             }
-            print("receive setPasteboardItem call from dart")
-            print(call.arguments ?? "")
-            self?.pasteboard.setPasteboardItem(item: (call.arguments as! [Dictionary<String, AnyObject>]))
-            DispatchQueue.main.async {
-                self?.close()
+            if call.method == "showMainPasteboardWindow" {
+                DispatchQueue.main.async {
+                    self?.orderFront(nil)
+                }
             }
+            
             result(0)
         })
     }

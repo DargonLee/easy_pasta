@@ -13,7 +13,7 @@ class SharedPreferenceHelper {
   }
   static Future<String> getShortcutKey() async{
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final String? value = prefs.getString(ShortcutKey);
+    final String value = prefs.getString(ShortcutKey)??"";
     return Future.value(value);
   }
 
@@ -23,7 +23,7 @@ class SharedPreferenceHelper {
   }
   static Future<int> getMaxItemStoreKey() async{
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final int? value = prefs.getInt(MaxItemStoreKey);
+    final int value = prefs.getInt(MaxItemStoreKey)??50;
     return Future.value(value);
   }
 

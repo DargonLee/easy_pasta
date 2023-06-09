@@ -2,13 +2,17 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
+import 'package:easy_pasta/db/constanst_helper.dart';
 
 class DatabaseHelper {
   DatabaseHelper._internal();
   factory DatabaseHelper() => _instance;
   static late final DatabaseHelper _instance = DatabaseHelper._internal();
 
-  static int MAX_COUNT = 50;
+  Future<int> MAX_COUNT() async {
+     int result = await SharedPreferenceHelper.getMaxItemStoreKey();
+     return result;
+  }
 
   static Database? _database;
   Future<Database> get database async {
@@ -53,7 +57,8 @@ class DatabaseHelper {
     Database db = await database;
     var result = await db.insert(_pboardTable, model.toMap());
     int count = await getCount();
-    if (count > MAX_COUNT) {
+    int MAXCOUNT = await MAX_COUNT();
+    if (count > MAXCOUNT) {
       deleteLastRaw();
     }
     return result;

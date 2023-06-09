@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/widget/counter.dart';
 import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/db/constanst_helper.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_pasta/tool/channel_mgr.dart';
 
 class SettingsPage extends StatefulWidget {
   SettingsPage({Key? key}) : super(key: key);
@@ -14,9 +16,8 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _switchSelected = false;
-  final TextEditingController _editingController = TextEditingController();
+  final chanelMgr = ChannelManager();
   HotKey? _hotKey;
-
   _alertDialog() async {
     await showDialog(
       context: context,
@@ -52,8 +53,27 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _getLoginInLaunch() async {
+    String hotkey = await SharedPreferenceHelper.getShortcutKey();
+    if (hotkey.isNotEmpty) {
+      Map<String, dynamic> jsonMap = json.decode(hotkey);
+      _hotKey = HotKey.fromJson(jsonMap);
+    }
+
     _switchSelected = await SharedPreferenceHelper.getLoginInLaunchKey();
+
     setState(() {});
+  }
+
+  void _setHotKey(HotKey hotKey) async {
+    _hotKey = hotKey;
+    await hotKeyManager.unregisterAll();
+    await hotKeyManager.register(
+      hotKey,
+      keyDownHandler: (_) {
+        chanelMgr.showMainPasteboardWindow();
+        setState(() {});
+      },
+    );
   }
 
   @override
@@ -87,10 +107,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     HotKeyRecorder(
                       onHotKeyRecorded: (hotKey) {
-                        _hotKey = hotKey;
+                        _setHotKey(hotKey);
+                        print(hotKey.toJson().toString());
+                        SharedPreferenceHelper.setShortcutKey(json.encode(hotKey.toJson()));
                         setState(() {});
                       },
                     ),
+                    _hotKey != null ? HotKeyVirtualView(hotKey: _hotKey!) : const Text('None'),
                   ],
                 ),
               ),

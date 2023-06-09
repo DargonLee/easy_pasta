@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/tool/channel_mgr.dart';
 import 'package:easy_pasta/widget/item_card.dart';
@@ -6,12 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/page/settings_page.dart';
+import 'package:easy_pasta/db/constanst_helper.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 
 void main() async {
-  // 必须加上这一行。
   WidgetsFlutterBinding.ensureInitialized();
-  // 对于热重载，`unregisterAll()` 需要被调用。
   await hotKeyManager.unregisterAll();
   runApp(const MyApp());
 }
@@ -70,9 +70,26 @@ class _MyHomePageState extends State<MyHomePage> {
     Provider.of<PboardProvider>(context, listen: false).getPboardListWithString(string);
   }
 
+  void _setHotKey() async {
+    String hotkey = await SharedPreferenceHelper.getShortcutKey();
+    if (hotkey.isNotEmpty) {
+      Map<String, dynamic> jsonMap = json.decode(hotkey);
+      HotKey hotKey = HotKey.fromJson(jsonMap);
+      await hotKeyManager.unregisterAll();
+      await hotKeyManager.register(
+        hotKey,
+        keyDownHandler: (_) {
+          chanelMgr.showMainPasteboardWindow();
+          setState(() {});
+        },
+      );
+    }
+  }
+
   @override
   void initState() {
     // TODO: implement initState
+    _setHotKey();
     super.initState();
     chanelMgr.initChannel();
     chanelMgr.eventValueChangedCallback = (model) {

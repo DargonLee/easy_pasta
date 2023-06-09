@@ -35,4 +35,14 @@ class ChannelManager {
       print('call setPasteboardItem error : ${e.message}');
     }
   }
+
+  void showMainPasteboardWindow() async{
+    try {
+      final result =
+      await _methodChannel.invokeMethod('showMainPasteboardWindow');
+      print('receive swift data ${result}');
+    } on PlatformException catch (e) {
+      print('call setPasteboardItem error : ${e.message}');
+    }
+  }
 }
