@@ -29,21 +29,23 @@
 
 ![image-20230525201353316](README.assets/image-20230525201353316.png)
 
-- 需要复制的时候，点击即可显示主页面
+- 需要复制的时候，
+  - 1、点击即可显示主页面
+
+  - 2、配置快捷键，直接使用快捷键即可显示主页面
 
 - 然话双击你想要复制的内容，在你想要粘贴的地方直接粘贴即可
-
-
 
 #### 更新记录：
 
 - v0.9.0
   - 增加搜索功能
   - 增加设置界面
-  - 可以设置快捷键随时呼出面板
+  - 设置快捷键随时呼出面板
+  - 设置登录启动
 - v0.8.0
   - 第一个可用版本
 
 #### TODO:
 
-- 跨平台最好提供第三方同步方案，避免隐私问题，mac/ios 可以用 iCloud/windows 可以利用坚果云等(from:**[SuperXRay](https://www.v2ex.com/member/SuperXRay)**)
+- 提供第三方同步方案，避免隐私问题，mac/ios 可以用 iCloud/windows 可以利用坚果云等(from:**[SuperXRay](https://www.v2ex.com/member/SuperXRay)**)
