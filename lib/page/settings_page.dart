@@ -41,7 +41,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 style: TextStyle(color: Colors.blue),
               ),
               onPressed: () {
-                Provider.of<PboardProvider>(context, listen: false).removePboardList();
+                Provider.of<PboardProvider>(context, listen: false)
+                    .removePboardList();
                 Navigator.pop(context, "确定");
                 Navigator.pop(context);
               },
@@ -80,7 +81,6 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     _getLoginInLaunch();
     super.initState();
-
   }
 
   @override
@@ -109,12 +109,14 @@ class _SettingsPageState extends State<SettingsPage> {
                     HotKeyRecorder(
                       onHotKeyRecorded: (hotKey) {
                         _setHotKey(hotKey);
-                        print(hotKey.toJson().toString());
-                        SharedPreferenceHelper.setShortcutKey(json.encode(hotKey.toJson()));
+                        SharedPreferenceHelper.setShortcutKey(
+                            json.encode(hotKey.toJson()));
                         setState(() {});
                       },
                     ),
-                    _hotKey != null ? HotKeyVirtualView(hotKey: _hotKey!) : const Text('None'),
+                    _hotKey != null
+                        ? HotKeyVirtualView(hotKey: _hotKey!)
+                        : const Text('None'),
                   ],
                 ),
               ),
@@ -146,6 +148,21 @@ class _SettingsPageState extends State<SettingsPage> {
                   Icons.clear,
                   color: Colors.red,
                 ),
+              ),
+            ),
+            const Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'v0.9.0',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  SelectableText(
+                    'https://github.com/DargonLee/easy_pasta',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
               ),
             ),
           ],
