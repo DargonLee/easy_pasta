@@ -226,55 +226,14 @@ extension String {
     }
 }
 
+let ChangeCountKey = "UserDefaultsChangeCount"
 
-func runShellCommand(_ command: String) {
-    let task = Process()
-    task.launchPath = "/bin/sh"
-    task.arguments = ["-c", command]
-
-    let pipe = Pipe()
-    task.standardOutput = pipe
-    task.standardError = pipe
-
-    let file = pipe.fileHandleForReading
-    task.launch()
-
-    let data = file.readDataToEndOfFile()
-    if let output = String(data: data, encoding: .utf8) {
-        print(output)
-    }
-}
-
-func registerLaunchctl() {
-    let plistName = "com.example.easyPasta.plist"
-    let libaryPath = NSHomeDirectory() + "/Library/LaunchAgents/"
-    let targetFilePath = "\(libaryPath)\(plistName)"
-    if FileManager.default.fileExists(atPath: targetFilePath) {
-        return
+extension UserDefaults {
+    func setPasteboardChangeCount(changeCount: Int) {
+        self.set(changeCount, forKey: ChangeCountKey)
     }
     
-    let path = Bundle.main.path(forResource: plistName, ofType: nil)
-    if let path = path {
-        let command = "cp -rf \(path) \(libaryPath)"
-        runShellCommand(command)
-    }
-}
-
-func launchctlUnload() {
-    let command = "launchctl unload ~/Library/LaunchAgents/com.example.easyPasta.plist"
-    runShellCommand(command)
-}
-
-
-func launchctlLoad() {
-    let command = "launchctl load ~/Library/LaunchAgents/com.example.easyPasta.plist"
-    runShellCommand(command)
-}
-
-func launchctl(status: Bool) {
-    if status {
-        launchctlLoad()
-    }else {
-        launchctlUnload()
+    func getPasteboardChangeCount() -> Int {
+        return self.value(forKey: ChangeCountKey) as? Int ?? 0
     }
 }

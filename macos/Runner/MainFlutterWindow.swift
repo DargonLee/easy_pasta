@@ -19,7 +19,6 @@ class MainFlutterWindow: NSWindow, FlutterStreamHandler {
         self.styleMask = .titled
         
         RegisterGeneratedPlugins(registry: flutterViewController)
-        registerLaunchctl()
         super.awakeFromNib()
         
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { (event) -> NSEvent? in

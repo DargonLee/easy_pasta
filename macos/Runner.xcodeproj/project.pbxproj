@@ -24,7 +24,7 @@
 		187794882A1F43FF006C963E /* app_icon_1024.png in Resources */ = {isa = PBXBuildFile; fileRef = 187794872A1F43FF006C963E /* app_icon_1024.png */; };
 		1877948A2A1F50E9006C963E /* MainManger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 187794892A1F50E9006C963E /* MainManger.swift */; };
 		1877948C2A1F5CCC006C963E /* MainUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1877948B2A1F5CCC006C963E /* MainUtils.swift */; };
-		187794C92A2042C2006C963E /* MainConstant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 187794C82A2042C2006C963E /* MainConstant.swift */; };
+		188F68742A37263600B93046 /* LaunchctlHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188F68732A37263600B93046 /* LaunchctlHelper.swift */; };
 		18B64BF52A32CADF006BF0AC /* com.example.easyPasta.plist in Resources */ = {isa = PBXBuildFile; fileRef = 18B64BF42A32CADF006BF0AC /* com.example.easyPasta.plist */; };
 		18F771302A176A1300F62247 /* MainFlutterPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F7712F2A176A1300F62247 /* MainFlutterPasteboard.swift */; };
 		331C80D8294CF71000263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C80D7294CF71000263BE5 /* RunnerTests.swift */; };
@@ -72,7 +72,7 @@
 		187794872A1F43FF006C963E /* app_icon_1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = app_icon_1024.png; path = Runner/app_icon_1024.png; sourceTree = "<group>"; };
 		187794892A1F50E9006C963E /* MainManger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainManger.swift; sourceTree = "<group>"; };
 		1877948B2A1F5CCC006C963E /* MainUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainUtils.swift; sourceTree = "<group>"; };
-		187794C82A2042C2006C963E /* MainConstant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainConstant.swift; sourceTree = "<group>"; };
+		188F68732A37263600B93046 /* LaunchctlHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchctlHelper.swift; sourceTree = "<group>"; };
 		18B64BF42A32CADF006BF0AC /* com.example.easyPasta.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.example.easyPasta.plist; sourceTree = "<group>"; };
 		18F7712F2A176A1300F62247 /* MainFlutterPasteboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlutterPasteboard.swift; sourceTree = "<group>"; };
 		1C4BBEAFB963CEA1EE2AF444 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -191,7 +191,7 @@
 				33CC10F02044A3C60003C045 /* AppDelegate.swift */,
 				187794892A1F50E9006C963E /* MainManger.swift */,
 				1877948B2A1F5CCC006C963E /* MainUtils.swift */,
-				187794C82A2042C2006C963E /* MainConstant.swift */,
+				188F68732A37263600B93046 /* LaunchctlHelper.swift */,
 				33CC11122044BFA00003C045 /* MainFlutterWindow.swift */,
 				18F7712F2A176A1300F62247 /* MainFlutterPasteboard.swift */,
 				18B64BF42A32CADF006BF0AC /* com.example.easyPasta.plist */,
@@ -456,11 +456,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */,
-				187794C92A2042C2006C963E /* MainConstant.swift in Sources */,
 				33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */,
 				18F771302A176A1300F62247 /* MainFlutterPasteboard.swift in Sources */,
 				1877948A2A1F50E9006C963E /* MainManger.swift in Sources */,
 				1877948C2A1F5CCC006C963E /* MainUtils.swift in Sources */,
+				188F68742A37263600B93046 /* LaunchctlHelper.swift in Sources */,
 				335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
