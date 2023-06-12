@@ -64,7 +64,7 @@ class MainFlutterWindow: NSWindow, FlutterStreamHandler {
             }
             if call.method == "setLaunchCtl" {
                 if let arg = call.arguments {
-                    launchctl(status: arg as! Bool)
+                    LaunchctlHelper.launchctl(status: arg as! Bool)
                 }
             }
             
