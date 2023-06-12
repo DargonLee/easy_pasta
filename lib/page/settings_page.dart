@@ -155,7 +155,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'v0.9.0',
+                    'v0.9.1',
                     style: TextStyle(fontSize: 18),
                   ),
                   SelectableText(
