@@ -23,7 +23,10 @@ enum NSPboardType {
   htmlType(name: 'public.html'),
   pngType(name: 'public.png'),
   textRtfType(name: 'com.trolltech.anymime.text--rtf'),
-  appleNotesTypeType(name: 'com.apple.notes.richtext');
+  appleNotesTypeType(name: 'com.apple.notes.richtext'),
+  appNameType(name: 'appName'),
+  appIdType(name: 'appId'),
+  appIconType(name: 'appIcon');
 
   const NSPboardType({required this.name});
   final String name;

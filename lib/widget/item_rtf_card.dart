@@ -15,14 +15,27 @@ class ItemRtfCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blueAccent,width: isSelected ? 5.0 : 0.1,),
+        border: Border.all(
+          color: Colors.blueAccent,
+          width: isSelected ? 5.0 : 0.1,
+        ),
       ),
-      child: Html(
-        data: model.pvalue,
-        extensions: [
-          TagExtension(
-            tagsToExtend: {"flutter"},
-            child: const FlutterLogo(),
+      child: Column(
+        children: [
+          Expanded(
+            child: Html(
+              data: model.pvalue,
+              extensions: [
+                TagExtension(
+                  tagsToExtend: {"flutter"},
+                  child: const FlutterLogo(),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            model.appname,
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
           ),
         ],
       ),

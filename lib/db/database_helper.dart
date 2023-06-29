@@ -10,8 +10,8 @@ class DatabaseHelper {
   static late final DatabaseHelper _instance = DatabaseHelper._internal();
 
   Future<int> MAX_COUNT() async {
-     int result = await SharedPreferenceHelper.getMaxItemStoreKey();
-     return result;
+    int result = await SharedPreferenceHelper.getMaxItemStoreKey();
+    return result;
   }
 
   static Database? _database;
@@ -26,7 +26,10 @@ class DatabaseHelper {
   }
 
   void _createDb(Database db, int newVersion) async {
-    await db.execute('CREATE TABLE IF NOT EXISTS $_pboardTable($colId INTEGER PRIMARY KEY AUTOINCREMENT, $colTime TEXT, $colType TEXT, $colValue TEXT, $colJson TEXT, $colTiff BLOB)');
+    await db.execute(
+        'CREATE TABLE IF NOT EXISTS $_pboardTable($colId INTEGER PRIMARY KEY AUTOINCREMENT, '
+            '$colTime TEXT, $colType TEXT, $colValue TEXT, $colJson TEXT, '
+            '$colTiff BLOB, $colAppName TEXT, $colAppId TEXT, $colAppIcon BLOB)');
   }
 
   String _dbName = "pboards.db";
@@ -38,6 +41,9 @@ class DatabaseHelper {
   String colValue = 'value';
   String colJson = 'jsonstr';
   String colTiff = 'tiffbytes';
+  String colAppName = 'appname';
+  String colAppId = 'appid';
+  String colAppIcon = 'appicon';
 
   // Public Methods
   Future<List<Map>> getPboardItemListWithString(String string) async {

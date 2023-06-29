@@ -11,6 +11,10 @@ class NSPboardTypeModel {
   late String pjsonstr;
   Uint8List? tiffbytes;
 
+  late String appid;
+  late String appname;
+  Uint8List? appicon;
+
   NSPboardTypeModel.fromItemArray(List<Map> itemArray) {
     DateTime now = DateTime.now();
     time = DateFormat("yyyy-MM-dd HH:mm:ss").format(now);
@@ -27,6 +31,18 @@ class NSPboardTypeModel {
       }
     });
 
+    for (var item in itemArray) {
+      item.forEach((key, value) {
+        if (key == NSPboardType.appIdType.name) {
+          appid = utf8.decode(Uint8List.fromList(value));
+        }else if (key == NSPboardType.appNameType.name) {
+          appname = utf8.decode(Uint8List.fromList(value));
+        }else if (key == NSPboardType.appIconType.name) {
+          appicon = Uint8List.fromList(value);
+        }
+      });
+    }
+
     pjsonstr = ptype == NSPboardType.tiffType.name ? "" : _convertListToString(itemArray);
   }
 
@@ -40,6 +56,10 @@ class NSPboardTypeModel {
       'value': pvalue,
       'jsonstr': pjsonstr,
       'tiffbytes': tiffbytes,
+
+      'appname': appname,
+      'appid': appid,
+      'appicon': appicon,
     };
   }
 
@@ -50,6 +70,10 @@ class NSPboardTypeModel {
     pvalue = map['value'];
     pjsonstr = map['jsonstr'];
     tiffbytes = map['tiffbytes'];
+
+    appname = map['appname'];
+    appid = map['appid'];
+    appicon = map['appicon'];
   }
 
   String _convertListToString(List<Map> itemArray) {

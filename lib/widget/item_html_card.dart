@@ -12,16 +12,28 @@ class ItemHTMLCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.white,
-        border: Border.all(color: Colors.blueAccent,width: isSelected ? 5.0 : 0.1,)
-      ),
-      child: Html(
-        data: model.pvalue,
-        extensions: [
-          TagExtension(
-            tagsToExtend: {"flutter"},
-            child: const FlutterLogo(),
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.white,
+          border: Border.all(
+            color: Colors.blueAccent,
+            width: isSelected ? 5.0 : 0.1,
+          )),
+      child: Column(
+        children: [
+          Expanded(
+            child: Html(
+              data: model.pvalue,
+              extensions: [
+                TagExtension(
+                  tagsToExtend: {"flutter"},
+                  child: const FlutterLogo(),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            model.appname,
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
           ),
         ],
       ),

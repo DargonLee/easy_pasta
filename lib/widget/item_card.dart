@@ -36,7 +36,7 @@ class ItemCard extends StatelessWidget {
     }else {
       itemCard = Container(
         alignment: Alignment.center,
-        child: Text('Not support this type card'),
+        child: const Text('Not support this type card'),
       );
     }
 

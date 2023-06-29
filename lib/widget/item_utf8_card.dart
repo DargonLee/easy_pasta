@@ -10,14 +10,22 @@ class ItemUtf8Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(10, 16, 10, 0),
+      padding: const EdgeInsets.fromLTRB(10, 16, 10, 0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.blueAccent,width: isSelected ? 5.0 : 0.1,),
       ),
-      child: Text(
-        model.pvalue,
+      child: Column(
+        children: [
+          Expanded(child: Text(
+            model.pvalue,
+          ),),
+          Text(
+            model.appname,
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+        ],
       ),
     );
   }

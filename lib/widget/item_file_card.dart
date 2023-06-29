@@ -38,7 +38,11 @@ class ItemFileCard extends StatelessWidget {
               size: 100,
               color: Colors.blue,
             ),
-          )
+          ),
+          Text(
+            model.appname,
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
+          ),
         ],
       ),
     );
