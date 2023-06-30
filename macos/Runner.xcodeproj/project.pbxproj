@@ -25,6 +25,8 @@
 		1877948A2A1F50E9006C963E /* MainManger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 187794892A1F50E9006C963E /* MainManger.swift */; };
 		1877948C2A1F5CCC006C963E /* MainUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1877948B2A1F5CCC006C963E /* MainUtils.swift */; };
 		188F68742A37263600B93046 /* LaunchctlHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188F68732A37263600B93046 /* LaunchctlHelper.swift */; };
+		1894273E2A4EE09700BD0408 /* status_network_traffic_dark.png in Resources */ = {isa = PBXBuildFile; fileRef = 1894273C2A4EE09700BD0408 /* status_network_traffic_dark.png */; };
+		1894273F2A4EE09700BD0408 /* status_network_traffic.png in Resources */ = {isa = PBXBuildFile; fileRef = 1894273D2A4EE09700BD0408 /* status_network_traffic.png */; };
 		18B64BF52A32CADF006BF0AC /* com.example.easyPasta.plist in Resources */ = {isa = PBXBuildFile; fileRef = 18B64BF42A32CADF006BF0AC /* com.example.easyPasta.plist */; };
 		18F771302A176A1300F62247 /* MainFlutterPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F7712F2A176A1300F62247 /* MainFlutterPasteboard.swift */; };
 		331C80D8294CF71000263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C80D7294CF71000263BE5 /* RunnerTests.swift */; };
@@ -73,6 +75,8 @@
 		187794892A1F50E9006C963E /* MainManger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainManger.swift; sourceTree = "<group>"; };
 		1877948B2A1F5CCC006C963E /* MainUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainUtils.swift; sourceTree = "<group>"; };
 		188F68732A37263600B93046 /* LaunchctlHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchctlHelper.swift; sourceTree = "<group>"; };
+		1894273C2A4EE09700BD0408 /* status_network_traffic_dark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = status_network_traffic_dark.png; sourceTree = "<group>"; };
+		1894273D2A4EE09700BD0408 /* status_network_traffic.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = status_network_traffic.png; sourceTree = "<group>"; };
 		18B64BF42A32CADF006BF0AC /* com.example.easyPasta.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.example.easyPasta.plist; sourceTree = "<group>"; };
 		18F7712F2A176A1300F62247 /* MainFlutterPasteboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlutterPasteboard.swift; sourceTree = "<group>"; };
 		1C4BBEAFB963CEA1EE2AF444 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -165,6 +169,8 @@
 		33CC11242044D66E0003C045 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				1894273D2A4EE09700BD0408 /* status_network_traffic.png */,
+				1894273C2A4EE09700BD0408 /* status_network_traffic_dark.png */,
 				187794872A1F43FF006C963E /* app_icon_1024.png */,
 				33CC10F22044A3C60003C045 /* Assets.xcassets */,
 				33CC10F42044A3C60003C045 /* MainMenu.xib */,
@@ -332,9 +338,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */,
+				1894273F2A4EE09700BD0408 /* status_network_traffic.png in Resources */,
 				18B64BF52A32CADF006BF0AC /* com.example.easyPasta.plist in Resources */,
 				33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */,
 				187794882A1F43FF006C963E /* app_icon_1024.png in Resources */,
+				1894273E2A4EE09700BD0408 /* status_network_traffic_dark.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
