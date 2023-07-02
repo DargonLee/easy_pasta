@@ -11,6 +11,8 @@ class AppDelegate: FlutterAppDelegate {
     }
     
     override func applicationDidFinishLaunching(_ notification: Notification) {
+        DistributedNotificationCenter.default.addObserver(self, selector: #selector(darkModeChanged), name: NSNotification.Name("AppleInterfaceThemeChangedNotification"), object: nil)
+
         let changeCount = NSPasteboard.general.changeCount
         UserDefaults.standard.setPasteboardChangeCount(changeCount: changeCount)
         
@@ -38,10 +40,16 @@ class AppDelegate: FlutterAppDelegate {
     }
     
     func isDarkMode() -> Bool {
-        let name = NSApplication.shared.effectiveAppearance.name
+        let name = NSApp.effectiveAppearance.name
         if name == .darkAqua {
             return true
         }
         return false
+    }
+    
+    @objc func darkModeChanged() {
+        DispatchQueue.main.async {
+            self.configureMenuBarForDarkModeChange()
+        }
     }
 }
