@@ -18,22 +18,33 @@ class ItemCard extends StatelessWidget {
     Widget itemCard;
     bool isSelected = selectedId == model.id?.toInt();
     if (model.ptype == NSPboardType.stringType.name) {
-      itemCard = ItemUtf8Card(model: model, isSelected: isSelected,);
+      itemCard = ItemUtf8Card(
+        model: model,
+        isSelected: isSelected,
+      );
     } else if (model.ptype == NSPboardType.htmlType.name) {
-      itemCard = ItemHTMLCard(model: model, isSelected: isSelected,);
-    }else if (model.ptype == NSPboardType.rtfType.name) {
-      itemCard = ItemRtfCard(model: model, isSelected: isSelected,);
-    }else if (model.ptype == NSPboardType.textRtfType.name) {
-      itemCard = ItemRtfCard(model: model, isSelected: isSelected,);
-    }else if (model.ptype == NSPboardType.tiffType.name) {
-      itemCard = ItemTiffCard(model: model, isSelected: isSelected,);
-    }else if (model.ptype == NSPboardType.fileUrlType.name) {
-      itemCard = ItemFileCard(model: model, isSelected: isSelected,);
-    }else if (model.ptype == NSPboardType.pngType.name) {
+      itemCard = ItemHTMLCard(
+        model: model,
+        isSelected: isSelected,
+      );
+    } else if (model.ptype == NSPboardType.rtfType.name) {
+      itemCard = ItemRtfCard(
+        model: model,
+        isSelected: isSelected,
+      );
+    } else if (model.ptype == NSPboardType.tiffType.name) {
+      itemCard = ItemTiffCard(
+        model: model,
+        isSelected: isSelected,
+      );
+    } else if (model.ptype == NSPboardType.fileUrlType.name) {
+      itemCard = ItemFileCard(
+        model: model,
+        isSelected: isSelected,
+      );
+    } else if (model.ptype == NSPboardType.pngType.name) {
       itemCard = ItemUtf8Card(model: model);
-    }else if (model.ptype == NSPboardType.appleNotesTypeType.name) {
-      itemCard = ItemUtf8Card(model: model);
-    }else {
+    } else {
       itemCard = Container(
         alignment: Alignment.center,
         child: const Text('Not support this type card'),

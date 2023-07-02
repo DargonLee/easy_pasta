@@ -12,14 +12,12 @@
 #### 平台
 
 - 支持 Mac
-- Window `coming soon`
-- Linux `coming soon`
 
 #### 效果图
 
-![image-20230609103212009](README.assets/image-20230609103212009.png)
+![image-20230702143026579](assets/image-20230702143026579.png)
 
-![image-20230609103248226](README.assets/image-20230609103248226.png)
+![image-20230702143042834](assets/image-20230702143042834.png)
 
 
 
@@ -31,17 +29,26 @@
 #### 使用
 
 - 点击运行后状态栏会出现如下图的图标（代表运行成功）
-
-![image-20230525201353316](README.assets/image-20230525201353316.png)
+- ![CleanShot 2023-07-02 at 14.28.24@2x](/Users/apple/Library/Application Support/CleanShot/media/media_QmgQNcGfaA/CleanShot 2023-07-02 at 14.28.24@2x.png)
 
 - 需要复制的时候，
   - 1、点击即可显示主页面
 
   - 2、配置快捷键，直接使用快捷键即可显示主页面
 
-- 然话双击你想要复制的内容，在你想要粘贴的地方直接粘贴即可
+- 然后单击选中，双击复制内容到系统剪贴板，在你想要粘贴的地方直接粘贴即可
 
 #### 更新记录：
+
+- v1.0.0
+
+  - 新 AppIcon
+
+  - 增加数据来源显示
+
+  - 增加选中动画
+
+  - 优化一些数据处理
 
 - v0.9.0
   - 增加搜索功能
@@ -50,7 +57,3 @@
   - 设置登录启动
 - v0.8.0
   - 第一个可用版本
-
-#### TODO:
-
-- 提供第三方同步方案，避免隐私问题，mac/ios 可以用 iCloud/windows 可以利用坚果云等(from:**[SuperXRay](https://www.v2ex.com/member/SuperXRay)**)

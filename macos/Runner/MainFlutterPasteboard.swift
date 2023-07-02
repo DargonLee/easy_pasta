@@ -53,7 +53,7 @@ class MainFlutterPasteboard: NSObject {
             array += appInfo
         }
         
-        print("appName => \(array)")
+        // print("Clipboard Info => \(array)")
         
         return array
     }

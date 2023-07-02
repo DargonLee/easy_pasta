@@ -5,48 +5,50 @@ import 'package:intl/intl.dart';
 
 class NSPboardTypeModel {
   int? id;
-  late String time;
-  late String ptype;
-  late String pvalue;
-  late String pjsonstr;
+  String time = "";
+  String ptype = "";
+  String pvalue = "";
+  String pjsonstr = "";
   Uint8List? tiffbytes;
 
-  late String appid;
-  late String appname;
+  String appid = "";
+  String appname = "";
   Uint8List? appicon;
 
   NSPboardTypeModel.fromItemArray(List<Map> itemArray) {
-    DateTime now = DateTime.now();
-    time = DateFormat("yyyy-MM-dd HH:mm:ss").format(now);
-
-    // TODO: 待优化
-    itemArray.first.forEach((key, value) {
-      ptype = key;
-      Uint8List uint8list = Uint8List.fromList(value);
-      if (key == NSPboardType.tiffType.name) {
-        pvalue = "";
-        tiffbytes = uint8list;
-      }else {
-        pvalue = utf8.decode(uint8list);
-      }
-    });
+    time = DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now());
 
     for (var item in itemArray) {
       item.forEach((key, value) {
-        if (key == NSPboardType.appIdType.name) {
+        if (ptype.isEmpty &&
+            NSPboardType.values.any((element) => element.name == key)) {
+          ptype = key;
+          Uint8List uint8list = Uint8List.fromList(value);
+          if (key == NSPboardType.tiffType.name) {
+            pvalue = "";
+            tiffbytes = uint8list;
+          } else {
+            pvalue = utf8.decode(uint8list);
+          }
+        }
+
+        if (key == NSPboardTypeAppInfo.AppId) {
           appid = utf8.decode(Uint8List.fromList(value));
-        }else if (key == NSPboardType.appNameType.name) {
+        } else if (key == NSPboardTypeAppInfo.AppName) {
           appname = utf8.decode(Uint8List.fromList(value));
-        }else if (key == NSPboardType.appIconType.name) {
+        } else if (key == NSPboardTypeAppInfo.AppIcon) {
           appicon = Uint8List.fromList(value);
         }
       });
     }
 
-    pjsonstr = ptype == NSPboardType.tiffType.name ? "" : _convertListToString(itemArray);
+    pjsonstr = ptype == NSPboardType.tiffType.name
+        ? ""
+        : _convertListToString(itemArray);
   }
 
-  List<Map<String, Uint8List>> get itemArray => _convertJsonStringToList(pjsonstr);
+  List<Map<String, Uint8List>> get itemArray =>
+      _convertJsonStringToList(pjsonstr);
 
   Map<String, dynamic> toMap() {
     return {
@@ -56,7 +58,6 @@ class NSPboardTypeModel {
       'value': pvalue,
       'jsonstr': pjsonstr,
       'tiffbytes': tiffbytes,
-
       'appname': appname,
       'appid': appid,
       'appicon': appicon,
@@ -93,7 +94,7 @@ class NSPboardTypeModel {
   List<Map<String, Uint8List>> _convertJsonStringToList(String jsonStr) {
     List<Map<String, Uint8List>> tmp = [];
     List<Map<String, dynamic>> itemArray = List.from(json.decode(jsonStr));
-    for (Map<String, dynamic> item  in itemArray) {
+    for (Map<String, dynamic> item in itemArray) {
       item.forEach((key, value) {
         Uint8List bytes = Uint8List.fromList(value.codeUnits);
         tmp.add({key: bytes});

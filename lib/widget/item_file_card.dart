@@ -19,7 +19,7 @@ class ItemFileCard extends StatelessWidget {
     return ItemAnimationWidget(
       isSelected: isSelected,
       child: Container(
-        padding: EdgeInsets.fromLTRB(10, 16, 10, 0),
+        padding: const EdgeInsets.fromLTRB(10, 16, 10, 0),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
@@ -30,17 +30,14 @@ class ItemFileCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(
-              model.pvalue,
-              maxLines: 3,
-            ),
             Expanded(
-              flex: 1,
-              child: Icon(
-                isfile ? Icons.file_open : Icons.folder,
-                size: 100,
-                color: Colors.blue,
+              child: Text(
+                model.pvalue,
+                maxLines: 3,
               ),
+            ),
+            Icon(
+              isfile ? Icons.file_open : Icons.folder,
             ),
             Text(
               model.appname,
