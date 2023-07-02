@@ -29,7 +29,8 @@
 #### 使用
 
 - 点击运行后状态栏会出现如下图的图标（代表运行成功）
-- ![CleanShot 2023-07-02 at 14.28.24@2x](/Users/apple/Library/Application Support/CleanShot/media/media_QmgQNcGfaA/CleanShot 2023-07-02 at 14.28.24@2x.png)
+
+  ![CleanShot 2023-07-02 at 17.21.50@2x](assets/CleanShot 2023-07-02 at 17.21.50@2x.png)
 
 - 需要复制的时候，
   - 1、点击即可显示主页面
