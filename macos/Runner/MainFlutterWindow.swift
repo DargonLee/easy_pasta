@@ -16,7 +16,7 @@ class MainFlutterWindow: NSWindow, FlutterStreamHandler {
         self.contentViewController = flutterViewController
         self.setFrame(windowFrame, display: true)
         self.center()
-        self.styleMask = .resizable
+//        self.styleMask = .resizable
         
         RegisterGeneratedPlugins(registry: flutterViewController)
         super.awakeFromNib()
