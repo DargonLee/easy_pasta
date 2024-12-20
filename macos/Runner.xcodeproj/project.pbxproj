@@ -22,12 +22,13 @@
 
 /* Begin PBXBuildFile section */
 		187794882A1F43FF006C963E /* app_icon_1024.png in Resources */ = {isa = PBXBuildFile; fileRef = 187794872A1F43FF006C963E /* app_icon_1024.png */; };
-		1877948A2A1F50E9006C963E /* MainManger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 187794892A1F50E9006C963E /* MainManger.swift */; };
-		1877948C2A1F5CCC006C963E /* MainUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1877948B2A1F5CCC006C963E /* MainUtils.swift */; };
-		188F68742A37263600B93046 /* LaunchctlHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188F68732A37263600B93046 /* LaunchctlHelper.swift */; };
+		1877948C2A1F5CCC006C963E /* WindowUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1877948B2A1F5CCC006C963E /* WindowUtils.swift */; };
+		188F68742A37263600B93046 /* LaunchctUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188F68732A37263600B93046 /* LaunchctUtils.swift */; };
 		1894273E2A4EE09700BD0408 /* status_network_traffic_dark.png in Resources */ = {isa = PBXBuildFile; fileRef = 1894273C2A4EE09700BD0408 /* status_network_traffic_dark.png */; };
 		1894273F2A4EE09700BD0408 /* status_network_traffic.png in Resources */ = {isa = PBXBuildFile; fileRef = 1894273D2A4EE09700BD0408 /* status_network_traffic.png */; };
 		18B64BF52A32CADF006BF0AC /* com.example.easyPasta.plist in Resources */ = {isa = PBXBuildFile; fileRef = 18B64BF42A32CADF006BF0AC /* com.example.easyPasta.plist */; };
+		18C1B3E52D155DE20086D701 /* StatusBarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C1B3E42D155DE20086D701 /* StatusBarManager.swift */; };
+		18C1B3E72D155E020086D701 /* UserDefaults+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C1B3E62D155DF90086D701 /* UserDefaults+Extension.swift */; };
 		18F771302A176A1300F62247 /* MainFlutterPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F7712F2A176A1300F62247 /* MainFlutterPasteboard.swift */; };
 		331C80D8294CF71000263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C80D7294CF71000263BE5 /* RunnerTests.swift */; };
 		335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
@@ -72,12 +73,13 @@
 /* Begin PBXFileReference section */
 		1375B65F86296C41D3F972C6 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		187794872A1F43FF006C963E /* app_icon_1024.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = app_icon_1024.png; path = Runner/app_icon_1024.png; sourceTree = "<group>"; };
-		187794892A1F50E9006C963E /* MainManger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainManger.swift; sourceTree = "<group>"; };
-		1877948B2A1F5CCC006C963E /* MainUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainUtils.swift; sourceTree = "<group>"; };
-		188F68732A37263600B93046 /* LaunchctlHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchctlHelper.swift; sourceTree = "<group>"; };
+		1877948B2A1F5CCC006C963E /* WindowUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowUtils.swift; sourceTree = "<group>"; };
+		188F68732A37263600B93046 /* LaunchctUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchctUtils.swift; sourceTree = "<group>"; };
 		1894273C2A4EE09700BD0408 /* status_network_traffic_dark.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = status_network_traffic_dark.png; sourceTree = "<group>"; };
 		1894273D2A4EE09700BD0408 /* status_network_traffic.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = status_network_traffic.png; sourceTree = "<group>"; };
 		18B64BF42A32CADF006BF0AC /* com.example.easyPasta.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.example.easyPasta.plist; sourceTree = "<group>"; };
+		18C1B3E42D155DE20086D701 /* StatusBarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarManager.swift; sourceTree = "<group>"; };
+		18C1B3E62D155DF90086D701 /* UserDefaults+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserDefaults+Extension.swift"; sourceTree = "<group>"; };
 		18F7712F2A176A1300F62247 /* MainFlutterPasteboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlutterPasteboard.swift; sourceTree = "<group>"; };
 		1C4BBEAFB963CEA1EE2AF444 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		2AF4C643E7F97D5997D4A3B4 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
@@ -195,9 +197,10 @@
 			isa = PBXGroup;
 			children = (
 				33CC10F02044A3C60003C045 /* AppDelegate.swift */,
-				187794892A1F50E9006C963E /* MainManger.swift */,
-				1877948B2A1F5CCC006C963E /* MainUtils.swift */,
-				188F68732A37263600B93046 /* LaunchctlHelper.swift */,
+				1877948B2A1F5CCC006C963E /* WindowUtils.swift */,
+				188F68732A37263600B93046 /* LaunchctUtils.swift */,
+				18C1B3E42D155DE20086D701 /* StatusBarManager.swift */,
+				18C1B3E62D155DF90086D701 /* UserDefaults+Extension.swift */,
 				33CC11122044BFA00003C045 /* MainFlutterWindow.swift */,
 				18F7712F2A176A1300F62247 /* MainFlutterPasteboard.swift */,
 				18B64BF42A32CADF006BF0AC /* com.example.easyPasta.plist */,
@@ -282,7 +285,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0920;
-				LastUpgradeCheck = 1300;
+				LastUpgradeCheck = 1510;
 				ORGANIZATIONNAME = "";
 				TargetAttributes = {
 					331C80D4294CF70F00263BE5 = {
@@ -463,13 +466,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18C1B3E52D155DE20086D701 /* StatusBarManager.swift in Sources */,
 				33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */,
 				33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */,
 				18F771302A176A1300F62247 /* MainFlutterPasteboard.swift in Sources */,
-				1877948A2A1F50E9006C963E /* MainManger.swift in Sources */,
-				1877948C2A1F5CCC006C963E /* MainUtils.swift in Sources */,
-				188F68742A37263600B93046 /* LaunchctlHelper.swift in Sources */,
+				1877948C2A1F5CCC006C963E /* WindowUtils.swift in Sources */,
+				188F68742A37263600B93046 /* LaunchctUtils.swift in Sources */,
 				335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */,
+				18C1B3E72D155E020086D701 /* UserDefaults+Extension.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

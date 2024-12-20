@@ -1,0 +1,116 @@
+### 项目规范
+
+- 项目名称：`easy_paste`
+- 项目描述：`一个基于flutter的粘贴板跨平台应用，支持 mac、windows、linux`
+- 项目目录结构：
+  - `lib/`：包含应用程序的源代码。
+  - `test/`：包含测试代码。
+  - `windows/`：包含 Windows 特定的配置和资源。
+  - `macos/`：包含 macOS 特定的配置和资源。
+  - `linux/`：包含 Linux 特定的配置和资源。
+  - `packages/`：包含第三方依赖包。
+
+### 项目需求：
+- 监听用户的复制粘贴动作，把用户复制的文本、图片、链接、文件、文件夹等保存到数据库中
+- 然后当用户使用快捷键`cmd+shift+c`时，弹出窗口显示数据库中的内容
+- 用户点击内容后，把内容复制到系统粘贴板，随后隐藏窗口面板，方便复制到其他的地方
+- 支持mac、windows、linux
+- 在`windows/`目录下实现监听剪贴板，并把剪贴板的内容保存到数据库中
+- 在`macos/`目录下实现监听剪贴板，并把剪贴板的内容保存到数据库中
+- 在`linux/`目录下实现监听剪贴板，并把剪贴板的内容保存到数据库中
+
+### 用户精通技术栈：
+
+- Flutter
+- Dart
+- Swift
+- C# 
+- .NET
+- C++
+- C
+
+### 关键原则：
+
+- 编写简洁的、技术性的 Dart 代码并提供准确示例。
+- 在适当场合使用函数式编程和声明式编程模式。
+- 优先使用组合而非继承。
+- 使用描述性变量名和辅助动词（如：isLoading，hasError）。
+- 文件结构应包括：导出的 widget、子 widget、助手函数、静态内容、类型。
+
+### Dart/Flutter 编码规范：
+
+- 对于不可变的 widget，使用 `const` 构造函数。
+- 使用 Freezed 创建不可变的状态类和联合类型。
+- 对于简单的函数和方法，使用箭头语法。
+- 对于单行 getter 和 setter 使用表达式体。
+- 使用尾随逗号优化格式和 diff。
+
+### 错误处理与验证：
+
+- 在视图中使用 `SelectableText.rich` 进行错误处理，避免使用 SnackBars。
+- 使用红色文本在 `SelectableText.rich` 中显示错误。
+- 处理空状态并在界面中显示。
+- 使用 `AsyncValue` 处理错误和加载状态。
+
+### Riverpod 特定的规范：
+
+- 使用 `@riverpod` 注解生成 provider。
+- 优先使用 `AsyncNotifierProvider` 和 `NotifierProvider`，避免使用 `StateProvider`。
+- 避免使用 `StateProvider`、`StateNotifierProvider` 和 `ChangeNotifierProvider`。
+- 使用 `ref.invalidate()` 手动触发 provider 更新。
+- 在 widget 销毁时正确取消异步操作。
+
+### 性能优化：
+
+- 尽可能使用 `const` widget 来优化重建。
+- 使用 `ListView.builder` 优化列表视图。
+- 对于静态图片使用 `AssetImage`，对于远程图片使用 `cached_network_image`。
+- 为 Supabase 操作添加适当的错误处理，包括网络错误。
+
+### 关键约定：
+
+1. 使用 `GoRouter` 或 `auto_route` 进行导航和深度链接。
+2. 优化 Flutter 性能指标（如首屏绘制时间，互动时间）。
+3. 优先使用无状态 widget：
+   - 使用 Riverpod 的 `ConsumerWidget` 处理依赖状态的 widget。
+   - 结合 Riverpod 和 Flutter Hooks 时，使用 `HookConsumerWidget`。
+
+### UI 和样式：
+
+- 使用 Flutter 的内置 widget 并创建自定义 widget。
+- 使用 `LayoutBuilder` 或 `MediaQuery` 实现响应式设计。
+- 使用主题来保持一致的应用样式。
+- 使用 `Theme.of(context).textTheme.titleLarge` 替代 `headline6`，使用 `headlineSmall` 替代 `headline5` 等。
+
+### 模型和数据库约定：
+
+- 数据库表中包含 `createdAt`、`updatedAt` 和 `isDeleted` 字段。
+- 使用 `@JsonSerializable(fieldRename: FieldRename.snake)` 为模型进行 JSON 序列化。
+- 对只读字段使用 `@JsonKey(includeFromJson: true, includeToJson: false)`。
+
+### widget 和 UI 组件：
+
+- 创建小型的私有 widget 类，而不是像 `Widget _build...` 这样的函数。
+- 使用 `RefreshIndicator` 实现下拉刷新功能。
+- 在 `TextField` 中设置适当的 `textCapitalization`、`keyboardType` 和 `textInputAction`。
+- 使用 `Image.network` 时，始终包含 `errorBuilder`。
+
+### 其他事项：
+
+- 使用 `log` 而非 `print` 进行调试。
+- 在适当的地方使用 Flutter Hooks / Riverpod Hooks。
+- 保持每行代码不超过 80 个字符，多个参数函数调用时，在闭括号前加逗号。
+- 对数据库中的枚举使用 `@JsonValue(int)`。
+
+### 代码生成：
+
+- 发挥自己的设计能力，设计出符合项目需求的UI
+
+### 文档：
+
+- TREE.md 文件中记录项目目录结构
+- README.md 文件中记录项目介绍
+
+### 参考：
+
+- 遵循 flutter 官方文档: https://docs.flutter.cn/

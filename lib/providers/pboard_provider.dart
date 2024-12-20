@@ -13,13 +13,7 @@ class PboardProvider with ChangeNotifier {
   UnmodifiableListView<NSPboardTypeModel> get pboards => UnmodifiableListView(_pboards as List<NSPboardTypeModel>);
 
   void addPboardModel(NSPboardTypeModel model) async {
-    var result = await _databaseHelper.insertPboardItem(model);
-    if (result != 0) {
-      print('addPboardModel Success');
-    } else {
-      print('addPboardModel Failed');
-    }
-
+    await _databaseHelper.insertPboardItem(model);
     getPboardList();
   }
 
@@ -27,7 +21,7 @@ class PboardProvider with ChangeNotifier {
     _pboards.clear();
 
     List<Map> result = await _databaseHelper.getPboardItemList();
-    if (result.length != 0) {
+    if (result.isNotEmpty) {
       _count = await _databaseHelper.getCount();
 
       for (Map map in result) {
@@ -57,8 +51,7 @@ class PboardProvider with ChangeNotifier {
   void removePboardList() async {
     _pboards.clear();
     _count = 0;
-    int result = await _databaseHelper.deleteAll();
-
+    await _databaseHelper.deleteAll();
     notifyListeners();
   }
 }

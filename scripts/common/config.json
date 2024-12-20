@@ -1,0 +1,35 @@
+{
+  "app": {
+    "name": "easy_paste",
+    "displayName": "Easy Paste",
+    "version": "1.0.0",
+    "publisher": "Your Company",
+    "description": "跨平台剪贴板工具"
+  },
+  "build": {
+    "outputDir": "build",
+    "clean": true,
+    "debug": false
+  },
+  "platforms": {
+    "macos": {
+      "bundleId": "com.example.easypaste",
+      "category": "public.app-category.utilities",
+      "minVersion": "10.14",
+      "outputFormat": "dmg"
+    },
+    "windows": {
+      "arch": "x64",
+      "outputFormat": "exe",
+      "installerType": "nsis"
+    },
+    "linux": {
+      "arch": "x64",
+      "outputFormat": "deb",
+      "dependencies": [
+        "libgtk-3-0",
+        "libblkid1"
+      ]
+    }
+  }
+}

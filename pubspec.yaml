@@ -37,13 +37,13 @@ dependencies:
   cupertino_icons: ^1.0.2
 
   # 国际化
-  intl: ^0.18.1
+  intl: ^0.20.1
 
   # 显示 html 字符串
   flutter_html: ^3.0.0-beta.1
 
   # 处理 tiff 图片
-  image: ^4.0.17
+  image: ^4.5.2
 
   # macos_ui
   # macos_ui: ^1.12.2
@@ -52,19 +52,19 @@ dependencies:
   # get: ^4.6.5
 
   # 状态管理
-  provider: ^6.0.5
+  provider: ^6.1.2
 
   # document path
-  path_provider: ^2.0.15
+  path_provider: ^2.1.5
 
   # 数据库
-  sqflite: ^2.2.8+4
+  sqflite: ^2.4.1
 
   # Userdefault
-  shared_preferences: ^2.1.1
+  shared_preferences: ^2.3.4
 
   # 快捷键
-  hotkey_manager: ^0.1.8
+  hotkey_manager: ^0.2.3
 
 
 

@@ -8,121 +8,183 @@
 import Cocoa
 import FlutterMacOS
 
-class MainFlutterPasteboard: NSObject {
+// MARK: - PasteboardDataType
+enum PasteboardDataType {
+    case text
+    case rtf
+    case image
+    case file
+    case other(NSPasteboard.PasteboardType)
 
-    let AppId = "appId"
-    let AppIcon = "appIcon"
-    let AppName = "appName"
-    
-    var genral = NSPasteboard.general
-    var chanageCount:Int = UserDefaults.standard.getPasteboardChangeCount()
-    var isNeedUpdate: Bool {
-        get {
-            if genral.changeCount > chanageCount {
-                chanageCount = genral.changeCount
-                return true
-            }
-            return false
+    var pasteboardType: NSPasteboard.PasteboardType {
+        switch self {
+        case .text: return .string
+        case .rtf: return .rtf
+        case .image: return .tiff
+        case .file: return .fileURL
+        case .other(let type): return type
         }
     }
-    
-    func getPasteboardItem() -> [Dictionary<String, AnyObject>]? {
-        
-        if isNeedUpdate == false  {
+}
+
+// MARK: - PasteboardMetadata
+private struct PasteboardMetadata {
+    static let appId = "appId"
+    static let appIcon = "appIcon"
+    static let appName = "appName"
+
+    let bundleId: String?
+    let appIcon: NSImage?
+    let appName: String?
+
+    init(from app: UserApp) {
+        self.bundleId = app.bundleIdentifier
+        let appURL = app.url
+        self.appIcon = NSWorkspace.shared.icon(forFile: appURL.path)
+        self.appName = NSWorkspace.shared.appName(for: appURL)
+    }
+}
+
+class MainFlutterPasteboard: NSObject {
+    // MARK: - Properties
+    private let pasteboard = NSPasteboard.general
+    private var changeCount: Int
+
+    // MARK: - Initialization
+    override init() {
+        self.changeCount = UserDefaults.standard.getPasteboardChangeCount()
+        super.init()
+    }
+
+    // MARK: - Public Interface
+    func getPasteboardItem() -> [[String: AnyObject]]? {
+        guard hasNewContent else { return nil }
+
+        var items = [[String: AnyObject]]()
+
+        // 获取剪贴板内容
+        if let clipboardItems = getClipboardContent() {
+            items.append(contentsOf: clipboardItems)
+        }
+
+        // 获取源应用信息
+        if let metadataItems = getSourceAppMetadata() {
+            items.append(contentsOf: metadataItems)
+        }
+
+        return items.isEmpty ? nil : items
+    }
+
+    func setPasteboardItem(item: [[String: AnyObject]]?) {
+        guard let items = item else { return }
+
+        changeCount += items.count
+        pasteboard.clearContents()
+
+        for item in items {
+            guard let (type, data) = item.first else { continue }
+            if isMetadataKey(type) { continue }
+
+            writeToPasteboard(data: data, forType: type)
+        }
+    }
+
+    // MARK: - Private Helpers
+    private var hasNewContent: Bool {
+        let currentCount = pasteboard.changeCount
+        guard currentCount > changeCount else { return false }
+        changeCount = currentCount
+        return true
+    }
+
+    private func isMetadataKey(_ key: String) -> Bool {
+        [
+            PasteboardMetadata.appId,
+            PasteboardMetadata.appIcon,
+            PasteboardMetadata.appName,
+        ].contains(key)
+    }
+
+    private func getClipboardContent() -> [[String: AnyObject]]? {
+        guard let firstItem = pasteboard.pasteboardItems?.first else { return nil }
+
+        return firstItem.types
+            .filter { !$0.rawValue.starts(with: "dyn") }
+            .compactMap { type -> [String: AnyObject]? in
+                guard let data = firstItem.data(forType: type) else { return nil }
+                let processedData = processData(data: data, type: type)
+                return [type.rawValue: FlutterStandardTypedData(bytes: processedData)]
+            }
+    }
+
+    private func processData(data: Data, type: NSPasteboard.PasteboardType) -> Data {
+        switch type {
+        case .rtf:
+            return convertRtfToHtml(data: data) ?? data
+        default:
+            return data
+        }
+    }
+
+    private func convertRtfToHtml(data: Data) -> Data? {
+        guard let attributedString = NSAttributedString(rtf: data, documentAttributes: nil) else {
             return nil
         }
-        /// Clipboard data
-        var array = [Dictionary<String, AnyObject>]()
-        if let firstItem = genral.pasteboardItems?.first {
-            for type in firstItem.types {
-                if type.rawValue.starts(with: "dyn") {
-                    continue
-                }
-                if var data = firstItem.data(forType: type) {
-                    if type == NSPasteboard.PasteboardType.rtf {
-                        data = rtfDataToHtmlData(data: data)!
-                    }
-                    let dict = [type.rawValue: FlutterStandardTypedData(bytes: data)]
-                    array.append(dict)
-                }
-            }
+
+        do {
+            return try attributedString.data(
+                from: NSRange(location: 0, length: attributedString.length),
+                documentAttributes: [.documentType: NSAttributedString.DocumentType.html]
+            )
+        } catch {
+            print("RTF to HTML conversion failed:", error)
+            return nil
         }
-        /// Source App Info
-        let appInfo = getSourceAppInfo()
-        if !appInfo.isEmpty {
-            array += appInfo
-        }
-        
-        // print("Clipboard Info => \(array)")
-        
-        return array
     }
-    
-    func setPasteboardItem(item :[Dictionary<String, AnyObject>]?) {
-        guard let item = item else {
+
+    private func getSourceAppMetadata() -> [[String: AnyObject]]? {
+        guard let app = WindowInfo.appOwningFrontmostWindow() else { return nil }
+        let metadata = PasteboardMetadata(from: app)
+
+        var items = [[String: AnyObject]]()
+
+        // Bundle ID
+        if let bundleId = metadata.bundleId,
+            let data = bundleId.data(using: .utf8)
+        {
+            items.append([PasteboardMetadata.appId: FlutterStandardTypedData(bytes: data)])
+        }
+
+        // App Icon
+        if let icon = metadata.appIcon,
+            let tiffData = icon.tiffRepresentation,
+            let bitmapImage = NSBitmapImageRep(data: tiffData),
+            let pngData = bitmapImage.representation(using: .png, properties: [:])
+        {
+            items.append([PasteboardMetadata.appIcon: FlutterStandardTypedData(bytes: pngData)])
+        }
+
+        // App Name
+        if let name = metadata.appName,
+            let data = name.data(using: .utf8)
+        {
+            items.append([PasteboardMetadata.appName: FlutterStandardTypedData(bytes: data)])
+        }
+
+        return items.isEmpty ? nil : items
+    }
+
+    private func writeToPasteboard(data: AnyObject, forType type: String) {
+        guard let flutterData = data as? FlutterStandardTypedData else {
+            print("Invalid data format for type:", type)
             return
         }
-        
-        chanageCount += item.count;
-        
-        for dict in item {
-            let _ = dict.first { (key , value) -> Bool in
-                if key == AppName || key == AppId || key == AppIcon { return false }
-                print("set type : \(key)")
-                let uintInt8List =  value as! FlutterStandardTypedData
-                self.debugPrint(data: uintInt8List, type:key)
-                genral.clearContents()
-                let result = genral.setData(uintInt8List.data, forType: NSPasteboard.PasteboardType(key))
-                print("setPasteboardItem result is \(result)")
-                return true
-            }
-        }
-    }
-    
-    func rtfDataToHtmlData(data: Data) -> Data? {
-        let attributedString = NSAttributedString(rtf: data, documentAttributes: nil)!
-        do {
-            let htmlData = try attributedString.data(from: NSRange(location: 0, length: attributedString.length), documentAttributes: [NSAttributedString.DocumentAttributeKey.documentType:NSAttributedString.DocumentType.html])
-            return htmlData
-        } catch {
-            
-        }
-        return nil
-    }
-    
-    func getSourceAppInfo() -> [Dictionary<String, AnyObject>] {
-        var array = [Dictionary<String, AnyObject>]()
-                
-        let app = WindowInfo.appOwningFrontmostWindow()
-        
-        if let bundleId = app?.bundleIdentifier {
-            if let data = bundleId.data(using: .utf8) {
-                let dict = [AppId:FlutterStandardTypedData(bytes: data)]
-                array.append(dict)
-            }
-        }
-        
-        if let appURL = app?.url {
-            let image = NSWorkspace.shared.icon(forFile: appURL.path)
-            if let tiffData = image.tiffRepresentation {
-                let bitmapImage = NSBitmapImageRep(data: tiffData)
-                let pngData = bitmapImage?.representation(using: .png, properties: [:])
-                let dict = [AppIcon:FlutterStandardTypedData(bytes: pngData!)]
-                array.append(dict)
-            }
-            
-            let appName = NSWorkspace.shared.appName(for: appURL)
-            if let data = appName.data(using: .utf8) {
-                let dict = [AppName:FlutterStandardTypedData(bytes: data)]
-                array.append(dict)
-            }
-        }
-        
-        return array
-    }
-    
-    func debugPrint(data :FlutterStandardTypedData, type: String) {
-        let string = NSString(data: data.data, encoding: String.Encoding.utf8.rawValue)
-        print(string ?? "")
+
+        let success = pasteboard.setData(
+            flutterData.data,
+            forType: NSPasteboard.PasteboardType(type)
+        )
+
+        print("Set pasteboard data for type \(type):", success)
     }
 }
