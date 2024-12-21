@@ -6,6 +6,7 @@ import 'package:easy_pasta/widget/item_utf8_card.dart';
 import 'package:easy_pasta/widget/item_footer_card.dart';
 import 'package:easy_pasta/widget/item_header.card.dart';
 import 'package:easy_pasta/widget/item_html_card.dart';
+import 'package:easy_pasta/widget/item_source_card.dart';
 
 class NewPboardItemCard extends StatelessWidget {
   final NSPboardTypeModel model;
@@ -86,6 +87,10 @@ class NewPboardItemCard extends StatelessWidget {
       case 'html':
         return HtmlContent(
           htmlData: model.pvalue,
+        );
+      case 'source_code':
+        return ItemSourceCard(
+          code: model.pvalue,
         );
       default:
         return TextContent(

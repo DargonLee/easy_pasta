@@ -43,6 +43,7 @@ class MainFlutterPasteboard: NSObject {
     // MARK: - Properties
     private let pasteboard = NSPasteboard.general
     private var lastChangeCount: Int
+    private var bundleId = ""
 
     // MARK: - Initialization
     override init() {
@@ -56,14 +57,14 @@ class MainFlutterPasteboard: NSObject {
 
         var items = [[String: AnyObject]]()
 
-        // 获取剪贴板内容
-        if let clipboardItems = getClipboardContent() {
-            items.append(contentsOf: clipboardItems)
-        }
-
         // 获取源应用信息
         if let metadataItems = getSourceAppMetadata() {
             items.append(contentsOf: metadataItems)
+        }
+        
+        // 获取剪贴板内容
+        if let clipboardItems = getClipboardContent() {
+            items.append(contentsOf: clipboardItems)
         }
 
         return items.isEmpty ? nil : items
@@ -125,9 +126,16 @@ class MainFlutterPasteboard: NSObject {
             return processRTF(rtfData)
         }
         
-        if types.contains(ContentType.html.pasteboardType),
-           let htmlData = item.data(forType: ContentType.html.pasteboardType) {
-            return processHTML(htmlData)
+        if let sourceCodeData = item.data(forType: ContentType.plainText.pasteboardType) {
+            if MainFlutterPasteboard.sampialIDEBundles.contains(bundleId) {
+                return processSourceCode(sourceCodeData)
+            }
+        }
+        
+        if types.contains(ContentType.html.pasteboardType) {
+            if let htmlData = item.data(forType: ContentType.html.pasteboardType) {
+                return processHTML(htmlData)
+            }
         }
         
         return nil
@@ -233,7 +241,6 @@ extension MainFlutterPasteboard {
         return [
             "type": "source_code" as AnyObject,
             "content": (String(data: data, encoding: .utf8) ?? "") as AnyObject,
-            "language": language as AnyObject
         ]
     }
     
@@ -267,6 +274,7 @@ extension MainFlutterPasteboard {
         if let bundleId = metadata.bundleId,
             let data = bundleId.data(using: .utf8)
         {
+            self.bundleId = bundleId
             items.append([PasteboardMetadata.appId: FlutterStandardTypedData(bytes: data)])
         }
 
@@ -288,4 +296,71 @@ extension MainFlutterPasteboard {
 
         return items.isEmpty ? nil : items
     }
+}
+
+extension MainFlutterPasteboard {
+    static let sampialIDEBundles = [
+        // Xcode
+        "com.apple.dt.Xcode",
+        
+        // Visual Studio Code
+        "com.microsoft.VSCode",
+        "com.visualstudio.code.oss",
+        "com.todesktop.230313mzl4w4u92",
+        
+        // JetBrains IDEs
+        "com.jetbrains.intellij",           // IntelliJ IDEA
+        "com.jetbrains.intellij.ce",        // IntelliJ IDEA CE
+        "com.jetbrains.WebStorm",           // WebStorm
+        "com.jetbrains.pycharm",            // PyCharm
+        "com.jetbrains.pycharm.ce",         // PyCharm CE
+        "com.jetbrains.CLion",              // CLion
+        "com.jetbrains.AppCode",            // AppCode
+        "com.jetbrains.rubymine",           // RubyMine
+        "com.jetbrains.PhpStorm",           // PhpStorm
+        "com.jetbrains.goland",             // GoLand
+        
+        // Sublime Text
+        "com.sublimetext.4",
+        "com.sublimetext.3",
+        
+        // Atom
+        "com.github.atom",
+        
+        // Nova
+        "com.panic.Nova",
+        
+        // BBEdit
+        "com.barebones.bbedit",
+        
+        // TextMate
+        "com.macromates.TextMate",
+        
+        // Android Studio
+        "com.google.android.studio",
+        
+        // Eclipse
+        "org.eclipse.platform.ide",
+        
+        // NetBeans
+        "org.netbeans.ide",
+        
+        // Vim/MacVim
+        "org.vim.MacVim",
+        
+        // Emacs
+        "org.gnu.Emacs",
+        
+        // CodeRunner
+        "com.krill.CodeRunner",
+        
+        // CotEditor
+        "com.coteditor.CotEditor",
+        
+        // Nova
+        "com.panic.Nova",
+        
+        // Brackets
+        "io.brackets.appshell"
+    ]
 }

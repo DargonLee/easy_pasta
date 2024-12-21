@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 class HtmlContent extends StatelessWidget {
   final String htmlData;
@@ -24,20 +24,8 @@ class HtmlContent extends StatelessWidget {
         maxWidth: width ?? double.infinity,
         maxHeight: height ?? double.infinity,
       ),
-      child: HtmlWidget(
-        htmlData,
-        textStyle: TextStyle(
-          fontSize: fontSize,
-        ),
-        customStylesBuilder: (element) {
-          return {
-            'display': '-webkit-box',
-            '-webkit-line-clamp': '$maxLines',
-            '-webkit-box-orient': 'vertical',
-            'overflow': 'hidden',
-            'text-overflow': 'ellipsis'
-          };
-        },
+      child: Html(
+        data: htmlData
       ),
     );
   }
