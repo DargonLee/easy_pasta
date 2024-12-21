@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/github.dart';
+import 'package:easy_pasta/tool/code_detector.dart';
 
-class ItemSourceCard extends StatelessWidget {
+class SourceCodeContent extends StatelessWidget {
   final String code;
   final bool isSelected;
   final VoidCallback? onTap;
 
-  const ItemSourceCard({
+  const SourceCodeContent({
     Key? key,
     required this.code,
     this.isSelected = false,
@@ -16,6 +17,8 @@ class ItemSourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final language = LanguageDetector.detectLanguage(code);
+
     return ConstrainedBox(
       constraints: const BoxConstraints(
         maxWidth: double.infinity,
@@ -23,7 +26,7 @@ class ItemSourceCard extends StatelessWidget {
       ),
       child: HighlightView(
         code,
-        language: 'dart',
+        language: language,
         theme: githubTheme,
         padding: const EdgeInsets.all(12),
         textStyle: const TextStyle(

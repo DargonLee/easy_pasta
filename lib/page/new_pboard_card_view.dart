@@ -89,7 +89,7 @@ class NewPboardItemCard extends StatelessWidget {
           htmlData: model.pvalue,
         );
       case 'source_code':
-        return ItemSourceCard(
+        return SourceCodeContent(
           code: model.pvalue,
         );
       default:
