@@ -15,7 +15,6 @@ private enum ContentType: String {
     case html = "public.html"
     case tiff = "public.tiff"
     case fileURL = "public.file-url"
-    case webURL = "public.url"
 
     var pasteboardType: NSPasteboard.PasteboardType {
         return NSPasteboard.PasteboardType(rawValue: self.rawValue)
@@ -101,24 +100,51 @@ class MainFlutterPasteboard: NSObject {
     }
 
     private func getClipboardContent() -> [[String: AnyObject]]? {
-        guard let item = pasteboard.pasteboardItems?.first,
-            let firstType = item.types.first
-        else { return nil }
-
+        guard let pasteboardItems = pasteboard.pasteboardItems,
+              let firstItem = pasteboardItems.first else { return nil }
+        
         var results: [[String: AnyObject]] = []
-
+        let types = firstItem.types
+        
+        if let sourceContent = getSourceContent(from: firstItem, types: types) {
+            results.append(sourceContent)
+            return results
+        }
+        
+        if let generalContent = getGeneralContent(from: firstItem, types: types) {
+            results.append(contentsOf: generalContent)
+        }
+        
+        return results.isEmpty ? nil : results
+    }
+    
+    private func getSourceContent(from item: NSPasteboardItem, types: [NSPasteboard.PasteboardType]) -> [String: AnyObject]? {
+        
+        if types.contains(ContentType.rtf.pasteboardType),
+           let rtfData = item.data(forType: ContentType.rtf.pasteboardType) {
+            return processRTF(rtfData)
+        }
+        
+        if types.contains(ContentType.html.pasteboardType),
+           let htmlData = item.data(forType: ContentType.html.pasteboardType) {
+            return processHTML(htmlData)
+        }
+        
+        return nil
+    }
+    
+    private func getGeneralContent(from item: NSPasteboardItem, types: [NSPasteboard.PasteboardType]) -> [[String: AnyObject]]? {
+        guard let item = pasteboard.pasteboardItems?.first,
+              let firstType = item.types.first else { return nil }
+        
+        var results: [[String: AnyObject]] = []
+        
         if let data = item.data(forType: firstType) {
             switch firstType {
             case ContentType.tiff.pasteboardType:
                 results.append(processImage(data))
-            case ContentType.webURL.pasteboardType:
-                results.append(processURL(data))
             case ContentType.fileURL.pasteboardType:
                 results.append(processFileURL(data))
-            case ContentType.rtf.pasteboardType:
-                results.append(processRTF(data))
-            case ContentType.html.pasteboardType:
-                results.append(processHTML(data))
             default:
                 if let textData = item.data(forType: ContentType.plainText.pasteboardType) {
                     results.append(processPlainText(textData))
@@ -179,22 +205,6 @@ extension MainFlutterPasteboard {
         ]
     }
 
-    private func processURL(_ data: Data) -> [String: AnyObject] {
-        guard let urlString = String(data: data, encoding: .utf8),
-            let url = URL(string: urlString)
-        else {
-            return [
-                "type": "text" as AnyObject,
-                "content": (String(data: data, encoding: .utf8) ?? "") as AnyObject,
-            ]
-        }
-
-        return [
-            "type": "url" as AnyObject,
-            "content": url.absoluteString as AnyObject,
-        ]
-    }
-
     private func processFileURL(_ data: Data) -> [String: AnyObject] {
         guard let path = String(data: data, encoding: .utf8),
             let url = URL(string: path)
@@ -216,6 +226,33 @@ extension MainFlutterPasteboard {
             "type": "text" as AnyObject,
             "content": (String(data: data, encoding: .utf8) ?? "") as AnyObject,
         ]
+    }
+    
+    private func processSourceCode(_ data: Data) -> [String: AnyObject] {
+        let language = getSourceMetadata()
+        return [
+            "type": "source_code" as AnyObject,
+            "content": (String(data: data, encoding: .utf8) ?? "") as AnyObject,
+            "language": language as AnyObject
+        ]
+    }
+    
+    private func getSourceMetadata() -> String {
+        guard let app = NSWorkspace.shared.frontmostApplication else {
+            return "unknown"
+        }
+        
+        let language: String
+        switch app.bundleIdentifier {
+        case "com.apple.dt.Xcode":
+            language = "swift"
+        case "com.microsoft.VSCode":
+            language = "javascript" // 可以进一步完善
+        default:
+            language = "unknown"
+        }
+        
+        return language
     }
 }
 

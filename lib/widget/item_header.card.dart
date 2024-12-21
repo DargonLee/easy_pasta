@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/widget/item_app_info_card.dart';
 
@@ -74,14 +73,20 @@ class HeaderContent extends StatelessWidget {
 
 /// 类型图标助手类
 class TypeIconHelper {
+  static final urlPattern = RegExp(
+    r'(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})',
+    caseSensitive: false,
+  );
+
   static IconData getTypeIcon(String type, {String? pvalue}) {
     switch (type) {
       case 'text':
+        if (urlPattern.hasMatch(pvalue ?? '')) {
+          return Icons.link;
+        }
         return Icons.text_fields;
       case 'image':
         return Icons.image;
-      case 'url':
-        return Icons.link;
       case 'file':
         final isDirectory = pvalue?.endsWith('/') ?? false;
         return isDirectory == true ? Icons.folder : Icons.insert_drive_file;

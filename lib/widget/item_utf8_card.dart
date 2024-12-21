@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TextContent extends StatelessWidget {
   final String text;
@@ -27,6 +28,28 @@ class TextContent extends StatelessWidget {
           color: Theme.of(context).textTheme.bodyMedium?.color,
         );
 
+    // 检查是否为URL
+    final urlPattern = RegExp(
+      r'(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})',
+      caseSensitive: false,
+    );
+
+    if (urlPattern.hasMatch(text)) {
+      return InkWell(
+        onTap: () => _launchURL(text),
+        child: Text(
+          text,
+          maxLines: maxLines,
+          overflow: TextOverflow.ellipsis,
+          textAlign: textAlign,
+          style: textStyle.copyWith(
+            color: Colors.blue,
+            decoration: TextDecoration.underline,
+          ),
+        ),
+      );
+    }
+
     return selectable
         ? SelectableText(
             text,
@@ -41,6 +64,14 @@ class TextContent extends StatelessWidget {
             textAlign: textAlign,
             style: textStyle,
           );
+  }
+
+  /// 打开URL
+  Future<void> _launchURL(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
   }
 
   /// 获取文本的预览内容

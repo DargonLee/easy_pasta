@@ -16,7 +16,7 @@ class AppInfoContent extends StatelessWidget {
     required this.appName,
     this.iconSize = 14,
     this.fontSize = 11,
-    this.maxWidth = 100,
+    this.maxWidth = 150,
     this.textColor,
     this.textStyle,
   }) : super(key: key);
@@ -54,6 +54,7 @@ class AppInfoContent extends StatelessWidget {
   }
 
   Widget _buildAppName(BuildContext context) {
+    // 获取默认样式
     final defaultStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
           color: textColor ?? Colors.grey[600],
           fontSize: fontSize,
@@ -61,11 +62,15 @@ class AppInfoContent extends StatelessWidget {
 
     return ConstrainedBox(
       constraints: BoxConstraints(maxWidth: maxWidth),
-      child: Text(
-        appName,
-        style: textStyle ?? defaultStyle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+      child: Tooltip(
+        message: appName,
+        child: Text(
+          appName,
+          style: textStyle ?? defaultStyle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          softWrap: false,
+        ),
       ),
     );
   }
@@ -83,7 +88,7 @@ class AppInfoContent extends StatelessWidget {
       maxLines: 1,
       textDirection: TextDirection.ltr,
     )..layout(maxWidth: maxWidth);
-    
+
     return textPainter.didExceedMaxLines;
   }
 }

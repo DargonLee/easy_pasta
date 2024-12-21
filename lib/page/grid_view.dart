@@ -77,7 +77,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
             crossAxisCount: PasteboardGridView._kCrossAxisCount,
             mainAxisSpacing: PasteboardGridView._kGridSpacing,
             crossAxisSpacing: PasteboardGridView._kGridSpacing,
-            childAspectRatio: 1.6,
+            childAspectRatio: 1.2,
           ),
           cacheExtent: 1000,
           itemCount: widget.pboards.length,

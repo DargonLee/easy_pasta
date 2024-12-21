@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/widget/item_tiff_card.dart';
-import 'package:easy_pasta/widget/item_url_card.dart';
 import 'package:easy_pasta/widget/item_file_card.dart';
 import 'package:easy_pasta/widget/item_utf8_card.dart';
 import 'package:easy_pasta/widget/item_footer_card.dart';
@@ -25,45 +24,28 @@ class NewPboardItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = selectedId == model.id;
-    final theme = Theme.of(context);
 
     return RepaintBoundary(
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
         child: Card(
-          elevation: isSelected ? 2 : 0,
-          margin: const EdgeInsets.all(4),
-          color: isSelected
-              ? theme.colorScheme.primaryContainer.withOpacity(0.8)
-              : theme.cardColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: isSelected
-                  ? theme.colorScheme.primary.withOpacity(0.5)
-                  : Colors.grey.withOpacity(0.1),
-              width: 1,
-            ),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => onTap(model),
-            onDoubleTap: () => onDoubleTap(model),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(context),
-                  Expanded(child: _buildContent(context)),
-                  _buildFooter(context),
-                ],
-              ),
-            ),
+      elevation: isSelected ? 2 : 0,
+      margin: const EdgeInsets.all(4),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => onTap(model),
+        onDoubleTap: () => onDoubleTap(model),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(context),
+              Expanded(child: _buildContent(context)),
+              _buildFooter(context),
+            ],
           ),
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -92,12 +74,6 @@ class NewPboardItemCard extends StatelessWidget {
           imageBytes: model.tiffbytes!,
           borderRadius: 8.0,
           fit: BoxFit.cover,
-        );
-      case 'url':
-        return URLContent(
-          url: model.pvalue,
-          maxLines: 2,
-          fontSize: 13,
         );
       case 'file':
         return FileContent(
