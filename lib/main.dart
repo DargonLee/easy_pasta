@@ -9,11 +9,23 @@ import 'package:easy_pasta/page/settings_page.dart';
 import 'package:easy_pasta/db/constanst_helper.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:easy_pasta/page/app_bar_widget.dart';
+import 'package:bitsdojo_window/bitsdojo_window.dart';
+import 'package:easy_pasta/page/empty_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await hotKeyManager.unregisterAll();
   runApp(const MyApp());
+  appWindow.show();
+  doWhenWindowReady(() {
+    final win = appWindow;
+    const initialSize = Size(600, 450);
+    win.minSize = initialSize;
+    win.size = initialSize;
+    win.alignment = Alignment.center;
+    win.title = "Custom window with Flutter";
+    win.show();
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -169,56 +181,12 @@ class _MyHomePageState extends State<MyHomePage> {
           MaterialPageRoute(builder: (_) => SettingsPage()),
         ),
       ),
-      body: _buildBody(),
+      body: WindowBorder(
+        color: const Color(0xFF805306),
+        width: 1,
+        child: _buildBody(),
+      ),
       floatingActionButton: _buildScrollButton(),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      elevation: 0,
-      backgroundColor: Colors.white,
-      title: _buildSearchField(),
-      actions: [
-        _buildSettingsButton(),
-        const SizedBox(width: _kSpacing),
-      ],
-    );
-  }
-
-  Widget _buildSearchField() {
-    return TextField(
-      controller: _searchController,
-      onChanged: _handleSearch,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Colors.grey[100],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide.none,
-        ),
-        hintText: '搜索',
-        prefixIcon: const Icon(Icons.search),
-        suffixIcon: _searchController.text.isNotEmpty
-            ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: () {
-                  _searchController.clear();
-                  _getAllPboardList();
-                },
-              )
-            : null,
-      ),
-    );
-  }
-
-  Widget _buildSettingsButton() {
-    return IconButton(
-      icon: const Icon(Icons.settings),
-      onPressed: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => SettingsPage()),
-      ),
     );
   }
 
@@ -272,30 +240,5 @@ class _MyHomePageState extends State<MyHomePage> {
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
-  }
-}
-
-class EmptyStateView extends StatelessWidget {
-  const EmptyStateView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.content_paste, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            '暂无数据',
-            style: TextStyle(
-              fontSize: 20,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
