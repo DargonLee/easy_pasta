@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/tool/channel_mgr.dart';
-import 'package:easy_pasta/widget/item_card.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
@@ -10,7 +9,7 @@ import 'package:easy_pasta/db/constanst_helper.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:easy_pasta/page/app_bar_widget.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
-import 'package:easy_pasta/page/empty_view.dart';
+import 'package:easy_pasta/page/grid_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,12 +58,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // 常量定义
-  static const double _kSpacing = 16.0;
-  static const double _kGridSpacing = 10.0;
-  static const int _kCrossAxisCount = 3;
-  static const Duration _kScrollDuration = Duration(milliseconds: 200);
-
   // Controller 定义
   final _chanelMgr = ChannelManager();
   final _scrollController = ScrollController();
@@ -72,14 +65,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // State
   int _selectedId = 0;
-
-  // Grid Layout 配置
-  final _gridDelegate = const SliverGridDelegateWithFixedCrossAxisCount(
-    crossAxisCount: _kCrossAxisCount,
-    mainAxisSpacing: _kGridSpacing,
-    crossAxisSpacing: _kGridSpacing,
-    childAspectRatio: 1.5,
-  );
 
   @override
   void initState() {
@@ -95,21 +80,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _initializeChannel() {
     _chanelMgr.initChannel();
-    _chanelMgr.eventValueChangedCallback = _handlePboardUpdate;
+    _chanelMgr.onPasteboardChanged = _handlePboardUpdate;
   }
 
   void _handlePboardUpdate(NSPboardTypeModel model) {
     context.read<PboardProvider>().addPboardModel(model);
-    _scrollToBottom();
-  }
-
-  Future<void> _scrollToBottom() async {
-    if (!_scrollController.hasClients) return;
-    await _scrollController.animateTo(
-      _scrollController.position.maxScrollExtent,
-      duration: _kScrollDuration,
-      curve: Curves.easeOut,
-    );
   }
 
   Future<void> _setHotKey() async {
@@ -186,52 +161,24 @@ class _MyHomePageState extends State<MyHomePage> {
         width: 1,
         child: _buildBody(),
       ),
-      floatingActionButton: _buildScrollButton(),
     );
   }
 
   Widget _buildBody() {
     return Container(
       color: Colors.grey[100],
-      padding: const EdgeInsets.all(_kSpacing),
       child: _buildContent(),
     );
   }
 
   Widget _buildContent() {
     final pboards = context.watch<PboardProvider>().pboards;
-
-    if (pboards.isEmpty) {
-      return const EmptyStateView();
-    }
-
-    return GridView.builder(
-      reverse: true,
-      physics: const BouncingScrollPhysics(),
-      controller: _scrollController,
-      gridDelegate: _gridDelegate,
-      itemCount: pboards.length,
-      itemBuilder: (_, index) => _buildPboardItem(pboards[index]),
-    );
-  }
-
-  Widget _buildPboardItem(NSPboardTypeModel model) {
-    return GestureDetector(
-      onTap: () => setState(() => _selectedId = model.id!.toInt()),
-      onDoubleTap: () => _chanelMgr.setPasteboardItem(model),
-      child: ItemCard(
-        model: model,
-        selectedId: _selectedId,
-      ),
-    );
-  }
-
-  Widget _buildScrollButton() {
-    return FloatingActionButton(
-      onPressed: _scrollToBottom,
-      backgroundColor: Colors.blue,
-      elevation: 2,
-      child: const Icon(Icons.arrow_upward, color: Colors.white),
+    return PasteboardGridView(
+      pboards: pboards,
+      scrollController: _scrollController,
+      selectedId: _selectedId,
+      onItemTap: (model) => setState(() => _selectedId = model.id!.toInt()),
+      onItemDoubleTap: (model) => _chanelMgr.setPasteboardItem(model),
     );
   }
 

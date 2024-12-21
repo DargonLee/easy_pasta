@@ -1,41 +1,57 @@
 import 'package:flutter/material.dart';
-import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:easy_pasta/widget/animation_widget.dart';
 
-class ItemUtf8Card extends StatelessWidget {
-  final NSPboardTypeModel model;
-  final bool isSelected;
+class TextContent extends StatelessWidget {
+  final String text;
+  final int maxLines;
+  final double fontSize;
+  final TextStyle? style;
+  final TextAlign textAlign;
+  final bool selectable;
 
-  ItemUtf8Card({required this.model, this.isSelected = false});
+  const TextContent({
+    Key? key,
+    required this.text,
+    this.maxLines = 3,
+    this.fontSize = 13,
+    this.style,
+    this.textAlign = TextAlign.left,
+    this.selectable = false,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return ItemAnimationWidget(
-      isSelected: isSelected,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 16, 10, 0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Colors.blueAccent,
-            width: isSelected ? 5.0 : 0.1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Expanded(
-              child: Text(
-                model.pvalue,
-              ),
-            ),
-            Text(
-              model.appname,
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
-            ),
-          ],
-        ),
-      ),
-    );
+    final textStyle = style ??
+        TextStyle(
+          fontSize: fontSize,
+          height: 1.2,
+          color: Theme.of(context).textTheme.bodyMedium?.color,
+        );
+
+    return selectable
+        ? SelectableText(
+            text,
+            maxLines: maxLines,
+            textAlign: textAlign,
+            style: textStyle,
+          )
+        : Text(
+            text,
+            maxLines: maxLines,
+            overflow: TextOverflow.ellipsis,
+            textAlign: textAlign,
+            style: textStyle,
+          );
   }
+
+  /// 获取文本的预览内容
+  String get previewText {
+    if (text.length <= 100) return text;
+    return '${text.substring(0, 97)}...';
+  }
+
+  /// 检查文本是否为空
+  bool get isEmpty => text.trim().isEmpty;
+
+  /// 获取文本的字数统计
+  int get wordCount => text.trim().length;
 }

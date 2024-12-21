@@ -1,44 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:flutter_html/flutter_html.dart';
-import 'package:easy_pasta/widget/animation_widget.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
-class ItemHTMLCard extends StatelessWidget {
-  final NSPboardTypeModel model;
-  final bool isSelected;
+class HtmlContent extends StatelessWidget {
+  final String htmlData;
+  final double? width;
+  final double? height;
 
-  ItemHTMLCard({required this.model, this.isSelected = false});
+  const HtmlContent({
+    Key? key,
+    required this.htmlData,
+    this.width,
+    this.height,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return ItemAnimationWidget(
-      isSelected: isSelected,
-      child: Container(
-        decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            color: Colors.white,
-            border: Border.all(
-              color: Colors.blueAccent,
-              width: isSelected ? 5.0 : 0.1,
-            )),
-        child: Column(
-          children: [
-            Expanded(
-              child: Html(
-                data: model.pvalue,
-                extensions: [
-                  TagExtension(
-                    tagsToExtend: {"flutter"},
-                    child: const FlutterLogo(),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              model.appname,
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
-            ),
-          ],
+    return Expanded(
+      child: SingleChildScrollView(
+        child: HtmlWidget(
+          htmlData,
         ),
       ),
     );

@@ -1,51 +1,95 @@
 import 'package:flutter/material.dart';
-import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:easy_pasta/widget/animation_widget.dart';
 
-class ItemFileCard extends StatelessWidget {
-  final NSPboardTypeModel model;
-  final bool isSelected;
-
-  ItemFileCard({required this.model, this.isSelected = false});
-
-  bool get isfile {
-    // bool result = FileSystemEntity.isFileSync(model.pvalue);
-    bool result = model.pvalue.contains('.');
-    return result;
-  }
+class FileContent extends StatelessWidget {
+  final String filePath;
+  final bool? isDirectory;
+  final double iconSize;
+  final int maxLines;
+  final double fontSize;
+  
+  const FileContent({
+    Key? key,
+    required this.filePath,
+    this.isDirectory,
+    this.iconSize = 16,
+    this.maxLines = 2,
+    this.fontSize = 13,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return ItemAnimationWidget(
-      isSelected: isSelected,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(10, 16, 10, 0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Colors.blueAccent,
-            width: isSelected ? 5.0 : 0.1,
-          ),
+    return Row(
+      children: [
+        _buildIcon(),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildFileName(),
         ),
-        child: Column(
-          children: [
-            Expanded(
-              child: Text(
-                model.pvalue,
-                maxLines: 3,
-              ),
-            ),
-            Icon(
-              isfile ? Icons.file_open : Icons.folder,
-            ),
-            Text(
-              model.appname,
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
-            ),
-          ],
-        ),
+      ],
+    );
+  }
+
+  Widget _buildIcon() {
+    return Icon(
+      _getFileIcon(),
+      size: iconSize,
+      color: Colors.grey[600],
+    );
+  }
+
+  Widget _buildFileName() {
+    return Text(
+      _getFileName(),
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: fontSize,
+        height: 1.2,
       ),
     );
+  }
+
+  IconData _getFileIcon() {
+    if (isDirectory == true) {
+      return Icons.folder;
+    }
+    
+    // 根据文件扩展名返回对应的图标
+    final extension = _getFileExtension().toLowerCase();
+    switch (extension) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'xls':
+      case 'xlsx':
+        return Icons.table_chart;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+        return Icons.image;
+      case 'mp3':
+      case 'wav':
+      case 'aac':
+        return Icons.audio_file;
+      case 'mp4':
+      case 'mov':
+      case 'avi':
+        return Icons.video_file;
+      default:
+        return Icons.insert_drive_file;
+    }
+  }
+
+  String _getFileName() {
+    return filePath.split('/').last;
+  }
+
+  String _getFileExtension() {
+    final fileName = _getFileName();
+    final parts = fileName.split('.');
+    return parts.length > 1 ? parts.last : '';
   }
 }

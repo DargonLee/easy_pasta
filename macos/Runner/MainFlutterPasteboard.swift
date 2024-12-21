@@ -13,11 +13,9 @@ private enum ContentType: String {
     case plainText = "public.utf8-plain-text"
     case rtf = "public.rtf"
     case html = "public.html"
-    case image = "public.image"
+    case tiff = "public.tiff"
     case fileURL = "public.file-url"
-    case sourceCode = "com.apple.dt.source-code"
     case webURL = "public.url"
-    case pdf = "com.adobe.pdf"
 
     var pasteboardType: NSPasteboard.PasteboardType {
         return NSPasteboard.PasteboardType(rawValue: self.rawValue)
@@ -111,28 +109,16 @@ class MainFlutterPasteboard: NSObject {
 
         if let data = item.data(forType: firstType) {
             switch firstType {
-            case ContentType.image.pasteboardType:
+            case ContentType.tiff.pasteboardType:
                 results.append(processImage(data))
             case ContentType.webURL.pasteboardType:
                 results.append(processURL(data))
-                if let textData = item.data(forType: ContentType.plainText.pasteboardType) {
-                    results.append(processPlainText(textData))
-                }
             case ContentType.fileURL.pasteboardType:
                 results.append(processFileURL(data))
-                if let textData = item.data(forType: ContentType.plainText.pasteboardType) {
-                    results.append(processPlainText(textData))
-                }
             case ContentType.rtf.pasteboardType:
                 results.append(processRTF(data))
-                if let textData = item.data(forType: ContentType.plainText.pasteboardType) {
-                    results.append(processPlainText(textData))
-                }
             case ContentType.html.pasteboardType:
                 results.append(processHTML(data))
-                if let textData = item.data(forType: ContentType.plainText.pasteboardType) {
-                    results.append(processPlainText(textData))
-                }
             default:
                 if let textData = item.data(forType: ContentType.plainText.pasteboardType) {
                     results.append(processPlainText(textData))
@@ -188,7 +174,7 @@ extension MainFlutterPasteboard {
 
     private func processImage(_ data: Data) -> [String: AnyObject] {
         return [
-            "type": "image" as AnyObject,
+            "type": "tiff" as AnyObject,
             "content": FlutterStandardTypedData(bytes: data),
         ]
     }
@@ -219,18 +205,9 @@ extension MainFlutterPasteboard {
             ]
         }
 
-        let fileManager = FileManager.default
-        var isDirectory: ObjCBool = false
-        guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
-            return ["type": "text" as AnyObject, "content": path as AnyObject]
-        }
-
         return [
             "type": "file" as AnyObject,
-            "content": path as AnyObject,
-            "isDirectory": isDirectory.boolValue as AnyObject,
-            "fileName": url.lastPathComponent as AnyObject,
-            "fileExtension": url.pathExtension as AnyObject,
+            "content": path as AnyObject
         ]
     }
 

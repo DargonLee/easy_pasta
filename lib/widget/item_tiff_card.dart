@@ -1,27 +1,34 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:easy_pasta/widget/animation_widget.dart';
 
-class ItemTiffCard extends StatelessWidget {
-  final NSPboardTypeModel model;
-  final bool isSelected;
+class ImageContent extends StatelessWidget {
+  final Uint8List imageBytes;
+  final double borderRadius;
+  final BoxFit fit;
 
-  ItemTiffCard({required this.model, this.isSelected = false});
+  const ImageContent({
+    Key? key,
+    required this.imageBytes,
+    this.borderRadius = 8.0,
+    this.fit = BoxFit.cover,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return ItemAnimationWidget(
-      isSelected: isSelected,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(
-            color: Colors.blueAccent,
-            width: isSelected ? 5.0 : 0.1,
-          ),
-          borderRadius: BorderRadius.circular(8),
-          image: DecorationImage(image: MemoryImage(model.tiffbytes!)),
-        ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: Image.memory(
+        imageBytes,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) {
+          return Center(
+            child: Icon(
+              Icons.broken_image_outlined,
+              color: Colors.grey[400],
+              size: 32,
+            ),
+          );
+        },
       ),
     );
   }

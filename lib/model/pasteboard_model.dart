@@ -1,114 +1,103 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:easy_pasta/model/pasteboard_type.dart';
 import 'package:intl/intl.dart';
 
 class NSPboardTypeModel {
+  // 基础属性
   int? id;
-  String time = "";
-  String ptype = "";
-  String pvalue = "";
-  String pjsonstr = "";
-  Uint8List? tiffbytes;
+  final String time;
+  final String ptype;
+  final String pvalue;
+  final Uint8List? tiffbytes;
 
-  String appid = "";
-  String appname = "";
-  Uint8List? appicon;
+  
 
-  NSPboardTypeModel.fromItemArray(List<Map> itemArray) {
-    time = DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now());
+  // 应用信息
+  final String appid;
+  final String appname;
+  final Uint8List? appicon;
+
+  NSPboardTypeModel({
+    this.id,
+    required this.time,
+    required this.ptype,
+    required this.pvalue,
+    this.tiffbytes,
+    required this.appid,
+    required this.appname,
+    this.appicon,
+  });
+
+  // 从剪贴板数据创建模型
+  factory NSPboardTypeModel.fromItemArray(List<Map> itemArray) {
+    String ptype = '';
+    String pvalue = '';
+    Uint8List? tiffbytes;
+    String appid = '';
+    String appname = '';
+    Uint8List? appicon;
 
     for (var item in itemArray) {
-      item.forEach((key, value) {
-        if (ptype.isEmpty &&
-            NSPboardType.values.any((element) => element.name == key)) {
-          ptype = key;
-          Uint8List uint8list = Uint8List.fromList(value);
-          if (key == NSPboardType.tiffType.name) {
-            pvalue = "";
-            tiffbytes = uint8list;
-          } else {
-            pvalue = utf8.decode(uint8list);
-          }
+      if (item.containsKey('type')) {
+        ptype = item['type'];
+        if (item.containsKey('content')) {
+          pvalue = item['content'];
         }
-
-        if (key == NSPboardTypeAppInfo.AppId) {
-          appid = utf8.decode(Uint8List.fromList(value));
-        } else if (key == NSPboardTypeAppInfo.AppName) {
-          appname = utf8.decode(Uint8List.fromList(value));
-        } else if (key == NSPboardTypeAppInfo.AppIcon) {
-          appicon = Uint8List.fromList(value);
-        }
-      });
+        continue;
+      }
+      if (item.containsKey('appId')) {
+        Uint8List bytes = item['appId'];
+        appid = utf8.decode(bytes.toList());
+        continue;
+      }
+      if (item.containsKey('appName')) {
+        Uint8List bytes = item['appName'];
+        appname = utf8.decode(bytes.toList());
+        continue;
+      }
+      if (item.containsKey('appIcon')) {
+        Uint8List bytes = item['appIcon'];
+        appicon = Uint8List.fromList(bytes.toList());
+        continue;
+      }
     }
 
-    pjsonstr = ptype == NSPboardType.tiffType.name
-        ? ""
-        : _convertListToString(itemArray);
+    return NSPboardTypeModel(
+      time: DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now()),
+      ptype: ptype,
+      pvalue: pvalue,
+      tiffbytes: tiffbytes,
+      appid: appid,
+      appname: appname,
+      appicon: appicon,
+    );
   }
 
-  List<Map<String, Uint8List>> get itemArray =>
-      _convertJsonStringToList(pjsonstr);
+  // 从数据库映射创建模型
+  factory NSPboardTypeModel.fromMapObject(Map<String, dynamic> map) {
+    return NSPboardTypeModel(
+      id: map['id'],
+      time: map['time'],
+      ptype: map['type'],
+      pvalue: map['value'],
+      tiffbytes: map['tiffbytes'],
+      appname: map['appname'],
+      appid: map['appid'],
+      appicon: map['appicon'],
+    );
+  }
 
+  // 转换为数据库映射
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'time': time,
       'type': ptype,
       'value': pvalue,
-      'jsonstr': pjsonstr,
       'tiffbytes': tiffbytes,
       'appname': appname,
       'appid': appid,
       'appicon': appicon,
     };
-  }
-
-  NSPboardTypeModel.fromMapObject(Map<String, dynamic> map) {
-    id = map['id'];
-    ptype = map['type'];
-    time = map['time'];
-    pvalue = map['value'];
-    pjsonstr = map['jsonstr'];
-    tiffbytes = map['tiffbytes'];
-
-    appname = map['appname'];
-    appid = map['appid'];
-    appicon = map['appicon'];
-  }
-
-  String _convertListToString(List<Map> itemArray) {
-    List tmp = [];
-    for (var item in itemArray) {
-      item.forEach((key, value) {
-        String dv = String.fromCharCodes(value);
-        if (dv.isNotEmpty) {
-          tmp.add({key: dv});
-        }
-      });
-    }
-    String result = json.encode(tmp);
-    return result;
-  }
-
-  List<Map<String, Uint8List>> _convertJsonStringToList(String jsonStr) {
-    List<Map<String, Uint8List>> tmp = [];
-    List<Map<String, dynamic>> itemArray = List.from(json.decode(jsonStr));
-    for (Map<String, dynamic> item in itemArray) {
-      item.forEach((key, value) {
-        Uint8List bytes = Uint8List.fromList(value.codeUnits);
-        tmp.add({key: bytes});
-      });
-    }
-    return tmp;
-  }
-
-  List<Map<String, Uint8List>> fromModeltoList() {
-    if (ptype == NSPboardType.tiffType.name) {
-      return [
-        {ptype: tiffbytes ?? Uint8List(1)}
-      ];
-    }
-    return _convertJsonStringToList(pjsonstr);
   }
 }

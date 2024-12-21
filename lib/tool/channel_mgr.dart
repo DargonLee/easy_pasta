@@ -1,58 +1,67 @@
+import 'dart:developer' as developer;
 import 'package:flutter/services.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 
+/// 负责管理与原生平台的通信
 class ChannelManager {
+  // 单例模式
+  static final ChannelManager _instance = ChannelManager._internal();
   factory ChannelManager() => _instance;
   ChannelManager._internal();
-  static final ChannelManager _instance = ChannelManager._internal();
 
-  late final ValueChanged<NSPboardTypeModel> eventValueChangedCallback;
+  // 通道名称常量
+  static const String _eventChannelName = 'com.easy.pasteboard.event';
+  static const String _methodChannelName = 'com.easy.pasteboard.method';
 
-  static const EVENT_CHANNEL_NAME = 'com.easy.pasteboard.event';
-  static const METHOD_CHANNEL_NAME = 'com.easy.pasteboard.method';
+  // 通道实例
+  final EventChannel _eventChannel = const EventChannel(_eventChannelName);
+  final MethodChannel _methodChannel = const MethodChannel(_methodChannelName);
 
-  final EventChannel _eventChannel = const EventChannel(EVENT_CHANNEL_NAME);
-  final MethodChannel _methodChannel = const MethodChannel(METHOD_CHANNEL_NAME);
+  // 回调函数
+  late final ValueChanged<NSPboardTypeModel> onPasteboardChanged;
 
+  /// 初始化通道监听
   void initChannel() {
-    _eventChannel.receiveBroadcastStream().listen((event) {
-      print('received event from macos pasteboard');
-      final List<Map> pItem = List.from(event);
-      final NSPboardTypeModel model = NSPboardTypeModel.fromItemArray(pItem);
-      eventValueChangedCallback(model);
-    }, onError: (dynamic error) {
-      print('received error: ${error.message}');
-    }, cancelOnError: true);
+    _eventChannel.receiveBroadcastStream().listen(
+      (event) {
+        final List<Map> pasteboardItems = List<Map>.from(event);
+        final model = NSPboardTypeModel.fromItemArray(pasteboardItems);
+        onPasteboardChanged(model);
+      },
+      onError: (error) {
+        developer.log('事件通道错误: ${error.message}');
+      },
+      cancelOnError: true,
+    );
   }
 
-  void setPasteboardItem(NSPboardTypeModel model) async {
+  /// 设置剪贴板内容
+  Future<void> setPasteboardItem(NSPboardTypeModel model) async {
     try {
-      List list = model.fromModeltoList();
-      final result =
-          await _methodChannel.invokeMethod('setPasteboardItem', list);
-      print('receive swift data ${result}');
+      await _methodChannel.invokeMethod(
+        'setPasteboardItem',
+        model.toMap(),
+      );
     } on PlatformException catch (e) {
-      print('call setPasteboardItem error : ${e.message}');
+      developer.log('设置剪贴板失败: ${e.message}');
     }
   }
 
-  void showMainPasteboardWindow() async{
+  /// 显示主窗口
+  Future<void> showMainPasteboardWindow() async {
     try {
-      final result =
       await _methodChannel.invokeMethod('showMainPasteboardWindow');
     } on PlatformException catch (e) {
-      print('call showMainPasteboardWindow error : ${e.message}');
+      developer.log('显示主窗口失败: ${e.message}');
     }
   }
 
-  void setLaunchCtl(bool status) async{
+  /// 设置开机启动状态
+  Future<void> setLaunchCtl(bool status) async {
     try {
-      final result =
       await _methodChannel.invokeMethod('setLaunchCtl', status);
     } on PlatformException catch (e) {
-      print('call setLaunchCtl error : ${e.message}');
+      developer.log('设置开机启动失败: ${e.message}');
     }
   }
-
-
 }
