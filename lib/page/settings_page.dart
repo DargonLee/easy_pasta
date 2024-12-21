@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:easy_pasta/widget/counter.dart';
+import 'package:easy_pasta/tool/counter.dart';
 import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/db/constanst_helper.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';

@@ -40,6 +40,16 @@ dependencies:
 
   # 显示 html 字符串
   flutter_html: ^3.0.0-beta.1
+  # flutter_widget_from_html: ^0.15.3
+
+  # 代码高亮
+  syntax_highlight: ^0.4.0
+
+  # 文件选择
+  file_picker: ^8.1.6
+
+  # 打开链接
+  url_launcher: ^6.3.1
 
   # 处理 tiff 图片
   image: ^4.5.2

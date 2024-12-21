@@ -9,21 +9,18 @@ import Cocoa
 import FlutterMacOS
 
 // MARK: - PasteboardDataType
-enum PasteboardDataType {
-    case text
-    case rtf
-    case image
-    case file
-    case other(NSPasteboard.PasteboardType)
+private enum ContentType: String {
+    case plainText = "public.utf8-plain-text"
+    case rtf = "public.rtf"
+    case html = "public.html"
+    case image = "public.image"
+    case fileURL = "public.file-url"
+    case sourceCode = "com.apple.dt.source-code"
+    case webURL = "public.url"
+    case pdf = "com.adobe.pdf"
 
     var pasteboardType: NSPasteboard.PasteboardType {
-        switch self {
-        case .text: return .string
-        case .rtf: return .rtf
-        case .image: return .tiff
-        case .file: return .fileURL
-        case .other(let type): return type
-        }
+        return NSPasteboard.PasteboardType(rawValue: self.rawValue)
     }
 }
 
@@ -48,11 +45,11 @@ private struct PasteboardMetadata {
 class MainFlutterPasteboard: NSObject {
     // MARK: - Properties
     private let pasteboard = NSPasteboard.general
-    private var changeCount: Int
+    private var lastChangeCount: Int
 
     // MARK: - Initialization
     override init() {
-        self.changeCount = UserDefaults.standard.getPasteboardChangeCount()
+        self.lastChangeCount = UserDefaults.standard.getPasteboardChangeCount()
         super.init()
     }
 
@@ -78,7 +75,7 @@ class MainFlutterPasteboard: NSObject {
     func setPasteboardItem(item: [[String: AnyObject]]?) {
         guard let items = item else { return }
 
-        changeCount += items.count
+        lastChangeCount += items.count
         pasteboard.clearContents()
 
         for item in items {
@@ -92,8 +89,8 @@ class MainFlutterPasteboard: NSObject {
     // MARK: - Private Helpers
     private var hasNewContent: Bool {
         let currentCount = pasteboard.changeCount
-        guard currentCount > changeCount else { return false }
-        changeCount = currentCount
+        guard currentCount > lastChangeCount else { return false }
+        lastChangeCount = currentCount
         return true
     }
 
@@ -106,43 +103,147 @@ class MainFlutterPasteboard: NSObject {
     }
 
     private func getClipboardContent() -> [[String: AnyObject]]? {
-        guard let firstItem = pasteboard.pasteboardItems?.first else { return nil }
+        guard let item = pasteboard.pasteboardItems?.first,
+            let firstType = item.types.first
+        else { return nil }
 
-        return firstItem.types
-            .filter { !$0.rawValue.starts(with: "dyn") }
-            .compactMap { type -> [String: AnyObject]? in
-                guard let data = firstItem.data(forType: type) else { return nil }
-                let processedData = processData(data: data, type: type)
-                return [type.rawValue: FlutterStandardTypedData(bytes: processedData)]
+        var results: [[String: AnyObject]] = []
+
+        if let data = item.data(forType: firstType) {
+            switch firstType {
+            case ContentType.image.pasteboardType:
+                results.append(processImage(data))
+            case ContentType.webURL.pasteboardType:
+                results.append(processURL(data))
+                if let textData = item.data(forType: ContentType.plainText.pasteboardType) {
+                    results.append(processPlainText(textData))
+                }
+            case ContentType.fileURL.pasteboardType:
+                results.append(processFileURL(data))
+                if let textData = item.data(forType: ContentType.plainText.pasteboardType) {
+                    results.append(processPlainText(textData))
+                }
+            case ContentType.rtf.pasteboardType:
+                results.append(processRTF(data))
+                if let textData = item.data(forType: ContentType.plainText.pasteboardType) {
+                    results.append(processPlainText(textData))
+                }
+            case ContentType.html.pasteboardType:
+                results.append(processHTML(data))
+                if let textData = item.data(forType: ContentType.plainText.pasteboardType) {
+                    results.append(processPlainText(textData))
+                }
+            default:
+                if let textData = item.data(forType: ContentType.plainText.pasteboardType) {
+                    results.append(processPlainText(textData))
+                }
             }
-    }
-
-    private func processData(data: Data, type: NSPasteboard.PasteboardType) -> Data {
-        switch type {
-        case .rtf:
-            return convertRtfToHtml(data: data) ?? data
-        default:
-            return data
         }
+
+        return results.isEmpty ? nil : results
     }
 
-    private func convertRtfToHtml(data: Data) -> Data? {
+    private func writeToPasteboard(data: AnyObject, forType type: String) {
+        guard let flutterData = data as? FlutterStandardTypedData else {
+            NSLog("❌ 无效的数据格式: \(type)")
+            return
+        }
+        let pasteboardType = NSPasteboard.PasteboardType(type)
+        pasteboard.setData(flutterData.data, forType: pasteboardType)
+    }
+}
+
+extension MainFlutterPasteboard {
+    private func processRTF(_ data: Data) -> [String: AnyObject] {
         guard let attributedString = NSAttributedString(rtf: data, documentAttributes: nil) else {
-            return nil
+            return [
+                "type": "text" as AnyObject,
+                "content": (String(data: data, encoding: .utf8) ?? "") as AnyObject,
+            ]
         }
 
         do {
-            return try attributedString.data(
+            let htmlData = try attributedString.data(
                 from: NSRange(location: 0, length: attributedString.length),
                 documentAttributes: [.documentType: NSAttributedString.DocumentType.html]
             )
+            return [
+                "type": "rtf" as AnyObject,
+                "content": (String(data: htmlData, encoding: .utf8) ?? "") as AnyObject,
+            ]
         } catch {
-            print("RTF to HTML conversion failed:", error)
-            return nil
+            return [
+                "type": "text" as AnyObject,
+                "content": attributedString.string as AnyObject,
+            ]
         }
     }
 
-    private func getSourceAppMetadata() -> [[String: AnyObject]]? {
+    private func processHTML(_ data: Data) -> [String: AnyObject] {
+        return [
+            "type": "html" as AnyObject,
+            "content": (String(data: data, encoding: .utf8) ?? "") as AnyObject,
+        ]
+    }
+
+    private func processImage(_ data: Data) -> [String: AnyObject] {
+        return [
+            "type": "image" as AnyObject,
+            "content": FlutterStandardTypedData(bytes: data),
+        ]
+    }
+
+    private func processURL(_ data: Data) -> [String: AnyObject] {
+        guard let urlString = String(data: data, encoding: .utf8),
+            let url = URL(string: urlString)
+        else {
+            return [
+                "type": "text" as AnyObject,
+                "content": (String(data: data, encoding: .utf8) ?? "") as AnyObject,
+            ]
+        }
+
+        return [
+            "type": "url" as AnyObject,
+            "content": url.absoluteString as AnyObject,
+        ]
+    }
+
+    private func processFileURL(_ data: Data) -> [String: AnyObject] {
+        guard let path = String(data: data, encoding: .utf8),
+            let url = URL(string: path)
+        else {
+            return [
+                "type": "text" as AnyObject,
+                "content": (String(data: data, encoding: .utf8) ?? "") as AnyObject,
+            ]
+        }
+
+        let fileManager = FileManager.default
+        var isDirectory: ObjCBool = false
+        guard fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) else {
+            return ["type": "text" as AnyObject, "content": path as AnyObject]
+        }
+
+        return [
+            "type": "file" as AnyObject,
+            "content": path as AnyObject,
+            "isDirectory": isDirectory.boolValue as AnyObject,
+            "fileName": url.lastPathComponent as AnyObject,
+            "fileExtension": url.pathExtension as AnyObject,
+        ]
+    }
+
+    private func processPlainText(_ data: Data) -> [String: AnyObject] {
+        return [
+            "type": "text" as AnyObject,
+            "content": (String(data: data, encoding: .utf8) ?? "") as AnyObject,
+        ]
+    }
+}
+
+extension MainFlutterPasteboard {
+    fileprivate func getSourceAppMetadata() -> [[String: AnyObject]]? {
         guard let app = WindowInfo.appOwningFrontmostWindow() else { return nil }
         let metadata = PasteboardMetadata(from: app)
 
@@ -172,19 +273,5 @@ class MainFlutterPasteboard: NSObject {
         }
 
         return items.isEmpty ? nil : items
-    }
-
-    private func writeToPasteboard(data: AnyObject, forType type: String) {
-        guard let flutterData = data as? FlutterStandardTypedData else {
-            print("Invalid data format for type:", type)
-            return
-        }
-
-        let success = pasteboard.setData(
-            flutterData.data,
-            forType: NSPasteboard.PasteboardType(type)
-        )
-
-        print("Set pasteboard data for type \(type):", success)
     }
 }

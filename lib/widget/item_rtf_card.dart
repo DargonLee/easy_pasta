@@ -28,12 +28,6 @@ class ItemRtfCard extends StatelessWidget {
             Expanded(
               child: Html(
                 data: model.pvalue,
-                extensions: [
-                  TagExtension(
-                    tagsToExtend: {"flutter"},
-                    child: const FlutterLogo(),
-                  ),
-                ],
               ),
             ),
             Text(
