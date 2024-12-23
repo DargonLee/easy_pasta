@@ -10,11 +10,9 @@ class NSPboardTypeModel {
   final String pvalue;
   final Uint8List? tiffbytes;
 
-  
-
   // 应用信息
-  final String appid;
-  final String appname;
+  final String? appid;
+  final String? appname;
   final Uint8List? appicon;
 
   NSPboardTypeModel({
@@ -23,8 +21,8 @@ class NSPboardTypeModel {
     required this.ptype,
     required this.pvalue,
     this.tiffbytes,
-    required this.appid,
-    required this.appname,
+    this.appid,
+    this.appname,
     this.appicon,
   });
 

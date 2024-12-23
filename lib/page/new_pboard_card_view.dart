@@ -55,8 +55,8 @@ class NewPboardItemCard extends StatelessWidget {
         model.ptype,
         pvalue: model.pvalue,
       ),
-      appIcon: model.appicon,
-      appName: model.appname,
+      appIcon: model.appicon ?? null,
+      appName: model.appname ?? '',
       iconSize: 14,
     );
   }

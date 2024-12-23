@@ -8,7 +8,6 @@ class PasteboardGridView extends StatefulWidget {
   static const int _kCrossAxisCount = 3;
 
   final List<NSPboardTypeModel> pboards;
-  final ScrollController scrollController;
   final int selectedId;
   final Function(NSPboardTypeModel) onItemTap;
   final Function(NSPboardTypeModel) onItemDoubleTap;
@@ -16,7 +15,6 @@ class PasteboardGridView extends StatefulWidget {
   const PasteboardGridView({
     Key? key,
     required this.pboards,
-    required this.scrollController,
     required this.selectedId,
     required this.onItemTap,
     required this.onItemDoubleTap,
@@ -28,32 +26,12 @@ class PasteboardGridView extends StatefulWidget {
 
 class _PasteboardGridViewState extends State<PasteboardGridView>
     with AutomaticKeepAliveClientMixin {
-  List<NSPboardTypeModel> _previousPboards = [];
-
   @override
   bool get wantKeepAlive => true;
 
   @override
   void didUpdateWidget(PasteboardGridView oldWidget) {
     super.didUpdateWidget(oldWidget);
-
-    if (widget.pboards.length > _previousPboards.length) {
-      if (widget.pboards.isNotEmpty &&
-          (_previousPboards.isEmpty ||
-              widget.pboards.first.id != _previousPboards.first.id)) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToTop());
-      }
-    }
-    _previousPboards = List.from(widget.pboards);
-  }
-
-  void _scrollToTop() {
-    if (!widget.scrollController.hasClients) return;
-    widget.scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOutCubic,
-    );
   }
 
   @override
@@ -72,7 +50,6 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
           physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics(),
           ),
-          controller: widget.scrollController,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: PasteboardGridView._kCrossAxisCount,
             mainAxisSpacing: PasteboardGridView._kGridSpacing,

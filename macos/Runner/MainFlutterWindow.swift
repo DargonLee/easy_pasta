@@ -128,10 +128,10 @@ class MainFlutterWindow: NSWindow {
 
     // MARK: - Pasteboard Monitoring
     private func startPasteboardMonitoring() {
-        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            guard let array = self?.pasteboard.getPasteboardItem() else { return }
-            self?.eventSink?(array)
-        }
+//        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+//            guard let array = self?.pasteboard.getPasteboardItem() else { return }
+//            self?.eventSink?(array)
+//        }
     }
 }
 

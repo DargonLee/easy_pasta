@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:super_clipboard/super_clipboard.dart';
+import 'package:easy_pasta/model/pasteboard_model.dart';
 
 class SuperClipboard {
   static final SuperClipboard _instance = SuperClipboard._internal();
@@ -8,7 +9,7 @@ class SuperClipboard {
   final clipboard = SystemClipboard.instance;
 
   // 剪贴板监听器回调
-  ValueChanged<String?>? _onClipboardChangedCallback;
+  ValueChanged<NSPboardTypeModel?>? _onClipboardChangedCallback;
 
   // 上一次剪贴板内容
   String? _lastClipboardContent;
@@ -49,7 +50,15 @@ class SuperClipboard {
       // 只有当内容变化时才触发回调
       if (currentContent != null && currentContent != _lastClipboardContent) {
         _lastClipboardContent = currentContent;
-        _onClipboardChangedCallback?.call(currentContent);
+        _onClipboardChangedCallback?.call(
+          NSPboardTypeModel(
+            time: DateTime.now().toString(),
+            ptype: 'text',
+            pvalue: currentContent,
+            appid: '',
+            appname: '',
+          ),
+        );
       }
     } catch (e) {
       debugPrint('读取剪贴板失败: $e');
@@ -57,7 +66,7 @@ class SuperClipboard {
   }
 
   // 设置剪贴板监听回调
-  void onClipboardChanged(ValueChanged<String?> callback) {
+  void onClipboardChanged(ValueChanged<NSPboardTypeModel?> callback) {
     _onClipboardChangedCallback = callback;
   }
 
