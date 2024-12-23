@@ -37,30 +37,27 @@ class _CustomAppBarState extends State<CustomAppBar> {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isNarrow = constraints.maxWidth <= 400;
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                spreadRadius: 1,
-                blurRadius: 3,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildTopBar(isNarrow),
-            ],
-          ),
-        );
-      }
-    );
+    return LayoutBuilder(builder: (context, constraints) {
+      final isNarrow = constraints.maxWidth <= 400;
+      return Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 3,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildTopBar(isNarrow),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildTopBar(bool isNarrow) {
@@ -222,7 +219,6 @@ class _CustomAppBarState extends State<CustomAppBar> {
           setState(() => _selectedType = type);
           widget.onTypeChanged(type);
         },
-        backgroundColor: Colors.grey[100],
         selectedColor: Colors.blue,
         checkmarkColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 8),

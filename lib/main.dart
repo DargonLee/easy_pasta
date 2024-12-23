@@ -8,7 +8,9 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await hotKeyManager.unregisterAll();
+
   runApp(const MyApp());
+
   appWindow.show();
   doWhenWindowReady(() {
     final win = appWindow;
