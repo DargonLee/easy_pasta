@@ -76,6 +76,9 @@ dependencies:
 
   # 窗口管理
   bitsdojo_window: ^0.1.6
+  
+  # 复制粘贴
+  super_clipboard: ^0.8.24
 
 dev_dependencies:
   flutter_test:
