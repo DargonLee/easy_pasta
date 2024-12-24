@@ -1,6 +1,7 @@
 import Cocoa
 import FlutterMacOS
-import bitsdojo_window_macos /// TODO: Add this import
+import bitsdojo_window_macos
+/// TODO: Add this import
 
 // MARK: - Channel Constants
 private enum ChannelNames {
@@ -15,12 +16,16 @@ private enum MethodNames {
     static let setLaunchCtl = "setLaunchCtl"
 }
 
-class MainFlutterWindow: NSWindow {
+class MainFlutterWindow: BitsdojoWindow {
     // MARK: - Properties
     private let pasteboard = MainFlutterPasteboard()
     private var methodChannel: FlutterMethodChannel?
     private var eventChannel: FlutterEventChannel?
     private var eventSink: FlutterEventSink?
+
+    override func bitsdojo_window_configure() -> UInt {
+        return BDW_CUSTOM_FRAME | BDW_HIDE_ON_STARTUP
+    }
 
     // MARK: - Lifecycle
     override func awakeFromNib() {
@@ -128,10 +133,10 @@ class MainFlutterWindow: NSWindow {
 
     // MARK: - Pasteboard Monitoring
     private func startPasteboardMonitoring() {
-//        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-//            guard let array = self?.pasteboard.getPasteboardItem() else { return }
-//            self?.eventSink?(array)
-//        }
+        //        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        //            guard let array = self?.pasteboard.getPasteboardItem() else { return }
+        //            self?.eventSink?(array)
+        //        }
     }
 }
 

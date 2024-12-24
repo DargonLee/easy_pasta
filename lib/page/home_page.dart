@@ -122,11 +122,11 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         onSettingsTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => SettingsPage()),
+          MaterialPageRoute(builder: (_) => const SettingsPage()),
         ),
       ),
       body: WindowBorder(
-        color: const Color(0xFF805306),
+        color: Colors.blue,
         width: 1,
         child: _buildBody(),
       ),
@@ -135,7 +135,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget _buildBody() {
     return Container(
-      color: Colors.grey[100],
       child: _buildContent(),
     );
   }
