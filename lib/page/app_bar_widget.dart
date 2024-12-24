@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 
+/// 内容类型枚举
 enum ContentType { all, text, image, file, favorite }
 
+/// 过滤器选项配置
+class FilterOption {
+  final String label;
+  final IconData icon;
+  final ContentType type;
+
+  const FilterOption({
+    required this.label,
+    required this.icon,
+    required this.type,
+  });
+}
+
+/// 自定义应用栏组件
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   final TextEditingController searchController;
   final Function(String) onSearch;
@@ -29,6 +44,35 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
 class _CustomAppBarState extends State<CustomAppBar> {
   ContentType _selectedType = ContentType.all;
 
+  // 过滤器选项配置列表
+  final List<FilterOption> _filterOptions = const [
+    FilterOption(
+      label: '全部',
+      icon: Icons.all_inclusive,
+      type: ContentType.all,
+    ),
+    FilterOption(
+      label: '文本',
+      icon: Icons.text_fields,
+      type: ContentType.text,
+    ),
+    FilterOption(
+      label: '图片',
+      icon: Icons.image,
+      type: ContentType.image,
+    ),
+    FilterOption(
+      label: '文件',
+      icon: Icons.folder,
+      type: ContentType.file,
+    ),
+    FilterOption(
+      label: '收藏',
+      icon: Icons.favorite,
+      type: ContentType.favorite,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -43,33 +87,88 @@ class _CustomAppBarState extends State<CustomAppBar> {
         ],
       ),
       child: MoveWindow(
-        child: _buildTopBar(),
+        child: _AppBarContent(
+          searchController: widget.searchController,
+          onSearch: widget.onSearch,
+          onClear: widget.onClear,
+          onSettingsTap: widget.onSettingsTap,
+          selectedType: _selectedType,
+          filterOptions: _filterOptions,
+          onTypeChanged: (type) {
+            setState(() => _selectedType = type);
+            widget.onTypeChanged(type);
+          },
+        ),
       ),
     );
   }
+}
 
-  Widget _buildTopBar() {
+/// 应用栏内容组件
+class _AppBarContent extends StatelessWidget {
+  final TextEditingController searchController;
+  final Function(String) onSearch;
+  final VoidCallback onClear;
+  final VoidCallback onSettingsTap;
+  final ContentType selectedType;
+  final List<FilterOption> filterOptions;
+  final Function(ContentType) onTypeChanged;
+
+  const _AppBarContent({
+    required this.searchController,
+    required this.onSearch,
+    required this.onClear,
+    required this.onSettingsTap,
+    required this.selectedType,
+    required this.filterOptions,
+    required this.onTypeChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         children: [
           Expanded(
             flex: 2,
-            child: _buildSearchField(),
+            child: _SearchField(
+              controller: searchController,
+              onSearch: onSearch,
+              onClear: onClear,
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
             flex: 3,
-            child: _buildFilterBar(),
+            child: _FilterBar(
+              selectedType: selectedType,
+              filterOptions: filterOptions,
+              onTypeChanged: onTypeChanged,
+            ),
           ),
           const SizedBox(width: 8),
-          _buildSettingsButton(),
+          _SettingsButton(onTap: onSettingsTap),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSearchField() {
+/// 搜索框组件
+class _SearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final Function(String) onSearch;
+  final VoidCallback onClear;
+
+  const _SearchField({
+    required this.controller,
+    required this.onSearch,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       height: 40,
       constraints: const BoxConstraints(minWidth: 100),
@@ -78,19 +177,19 @@ class _CustomAppBarState extends State<CustomAppBar> {
         borderRadius: BorderRadius.circular(20),
       ),
       child: TextField(
-        controller: widget.searchController,
-        onChanged: widget.onSearch,
+        controller: controller,
+        onChanged: onSearch,
         decoration: InputDecoration(
           isDense: true,
           border: InputBorder.none,
           hintText: '搜索',
           hintStyle: TextStyle(color: Colors.grey[400]),
           prefixIcon: const Icon(Icons.search, size: 20),
-          suffixIcon: widget.searchController.text.isNotEmpty
+          suffixIcon: controller.text.isNotEmpty
               ? IconButton(
                   padding: EdgeInsets.zero,
                   icon: const Icon(Icons.clear, size: 20),
-                  onPressed: widget.onClear,
+                  onPressed: onClear,
                 )
               : null,
           contentPadding: const EdgeInsets.symmetric(vertical: 11),
@@ -98,60 +197,58 @@ class _CustomAppBarState extends State<CustomAppBar> {
       ),
     );
   }
+}
 
-  Widget _buildSettingsButton() {
-    return IconButton(
-      constraints: const BoxConstraints(minWidth: 40),
-      padding: EdgeInsets.zero,
-      icon: const Icon(Icons.settings),
-      onPressed: widget.onSettingsTap,
-      tooltip: '设置',
-    );
-  }
+/// 过滤栏组件
+class _FilterBar extends StatelessWidget {
+  final ContentType selectedType;
+  final List<FilterOption> filterOptions;
+  final Function(ContentType) onTypeChanged;
 
-  Widget _buildFilterBar() {
+  const _FilterBar({
+    required this.selectedType,
+    required this.filterOptions,
+    required this.onTypeChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        _buildFilterChip(
-          label: '全部',
-          type: ContentType.all,
-          icon: Icons.all_inclusive,
-        ),
-        const SizedBox(width: 8),
-        _buildFilterChip(
-          label: '文本',
-          type: ContentType.text,
-          icon: Icons.text_fields,
-        ),
-        const SizedBox(width: 8),
-        _buildFilterChip(
-          label: '图片',
-          type: ContentType.image,
-          icon: Icons.image,
-        ),
-        const SizedBox(width: 8),
-        _buildFilterChip(
-          label: '文件',
-          type: ContentType.file,
-          icon: Icons.folder,
-        ),
-        const SizedBox(width: 8),
-        _buildFilterChip(
-          label: '收藏',
-          type: ContentType.favorite,
-          icon: Icons.favorite,
-        ),
-      ],
+      children: filterOptions.map((option) {
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: _FilterChip(
+            label: option.label,
+            icon: option.icon,
+            type: option.type,
+            isSelected: selectedType == option.type,
+            onSelected: onTypeChanged,
+          ),
+        );
+      }).toList(),
     );
   }
+}
 
-  Widget _buildFilterChip({
-    required String label,
-    required ContentType type,
-    required IconData icon,
-  }) {
-    final isSelected = _selectedType == type;
+/// 过滤器选项组件
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final ContentType type;
+  final bool isSelected;
+  final Function(ContentType) onSelected;
+
+  const _FilterChip({
+    required this.label,
+    required this.icon,
+    required this.type,
+    required this.isSelected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 72),
       child: FilterChip(
@@ -174,16 +271,31 @@ class _CustomAppBarState extends State<CustomAppBar> {
           ],
         ),
         selected: isSelected,
-        onSelected: (bool selected) {
-          setState(() => _selectedType = type);
-          widget.onTypeChanged(type);
-        },
+        onSelected: (_) => onSelected(type),
         selectedColor: Colors.blue,
         checkmarkColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         showCheckmark: false,
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
+    );
+  }
+}
+
+/// 设置按钮组件
+class _SettingsButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _SettingsButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      constraints: const BoxConstraints(minWidth: 40),
+      padding: EdgeInsets.zero,
+      icon: const Icon(Icons.settings),
+      onPressed: onTap,
+      tooltip: '设置',
     );
   }
 }
