@@ -36,7 +36,6 @@ dependencies:
   cupertino_icons: ^1.0.2
 
   # 窗口管理
-  bitsdojo_window: ^0.1.6
   window_manager: ^0.4.3
 
   # 快捷键

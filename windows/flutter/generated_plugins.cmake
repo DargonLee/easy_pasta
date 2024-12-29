@@ -3,7 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  bitsdojo_window_windows
   hotkey_manager_windows
   irondash_engine_context
   screen_retriever_windows
