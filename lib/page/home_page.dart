@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
-import 'package:bitsdojo_window/bitsdojo_window.dart';
+// import 'package:bitsdojo_window/bitsdojo_window.dart';
 
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/page/settings_page.dart';
@@ -125,11 +125,7 @@ class _MyHomePageState extends State<MyHomePage> {
           MaterialPageRoute(builder: (_) => const SettingsPage()),
         ),
       ),
-      body: WindowBorder(
-        color: Colors.blue,
-        width: 1,
-        child: _buildBody(),
-      ),
+      body: _buildBody(),
     );
   }
 

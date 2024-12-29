@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:bitsdojo_window/bitsdojo_window.dart';
 
 /// 内容类型枚举
 enum ContentType { all, text, image, file, favorite }
@@ -86,19 +85,17 @@ class _CustomAppBarState extends State<CustomAppBar> {
           ),
         ],
       ),
-      child: MoveWindow(
-        child: _AppBarContent(
-          searchController: widget.searchController,
-          onSearch: widget.onSearch,
-          onClear: widget.onClear,
-          onSettingsTap: widget.onSettingsTap,
-          selectedType: _selectedType,
-          filterOptions: _filterOptions,
-          onTypeChanged: (type) {
-            setState(() => _selectedType = type);
-            widget.onTypeChanged(type);
-          },
-        ),
+      child: _AppBarContent(
+        searchController: widget.searchController,
+        onSearch: widget.onSearch,
+        onClear: widget.onClear,
+        onSettingsTap: widget.onSettingsTap,
+        selectedType: _selectedType,
+        filterOptions: _filterOptions,
+        onTypeChanged: (type) {
+          setState(() => _selectedType = type);
+          widget.onTypeChanged(type);
+        },
       ),
     );
   }

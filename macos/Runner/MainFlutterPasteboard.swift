@@ -214,8 +214,7 @@ extension MainFlutterPasteboard {
     }
 
     private func processFileURL(_ data: Data) -> [String: AnyObject] {
-        guard let path = String(data: data, encoding: .utf8),
-            let url = URL(string: path)
+        guard let path = String(data: data, encoding: .utf8)
         else {
             return [
                 "type": "text" as AnyObject,
@@ -237,7 +236,6 @@ extension MainFlutterPasteboard {
     }
     
     private func processSourceCode(_ data: Data) -> [String: AnyObject] {
-        let language = getSourceMetadata()
         return [
             "type": "source_code" as AnyObject,
             "content": (String(data: data, encoding: .utf8) ?? "") as AnyObject,
