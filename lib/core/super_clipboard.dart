@@ -3,95 +3,116 @@ import 'package:flutter/material.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 
+/// 剪贴板管理器
+/// 负责监听和管理系统剪贴板的变化
 class SuperClipboard {
+  // 单例实现
   static final SuperClipboard _instance = SuperClipboard._internal();
   static SuperClipboard get instance => _instance;
-  final clipboard = SystemClipboard.instance;
 
-  // 剪贴板监听器回调
-  ValueChanged<NSPboardTypeModel?>? _onClipboardChangedCallback;
+  /// 系统剪贴板实例
+  final SystemClipboard? _clipboard = SystemClipboard.instance;
 
-  // 上一次剪贴板内容
-  String? _lastClipboardContent;
+  /// 剪贴板内容变化回调
+  ValueChanged<NSPboardTypeModel?>? _onClipboardChanged;
 
-  // 定时器
-  Timer? _timer;
+  /// 缓存的上一次剪贴板内容
+  String? _cachedContent;
 
-  // 私有构造函数，防止外部创建实例
+  /// 定时检查剪贴板的定时器
+  Timer? _pollingTimer;
+
+  /// 轮询间隔时间
+  static const _pollingInterval = Duration(seconds: 1);
+
   SuperClipboard._internal() {
-    _startTimer();
-    _initializeEventListeners();
+    _initializeClipboardMonitoring();
   }
 
-  // 初始化事件监听器
-  void _initializeEventListeners() {}
-
-  // 启动定时器，定期检查剪贴板
-  void _startTimer() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) async {
-      await _checkClipboard();
-    });
+  /// 初始化剪贴板监控
+  void _initializeClipboardMonitoring() {
+    _startPollingTimer();
   }
 
-  // 检查剪贴板内容
-  Future<void> _checkClipboard() async {
+  /// 启动定时器进行剪贴板轮询
+  void _startPollingTimer() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(_pollingInterval, (_) => _pollClipboard());
+  }
+
+  /// 轮询检查剪贴板内容
+  Future<void> _pollClipboard() async {
     try {
-      final reader = await clipboard?.read();
+      final reader = await _clipboard?.read();
       if (reader == null) return;
-      String? currentContent;
 
-      if (reader.canProvide(Formats.plainText)) {
-        final text = await reader.readValue(Formats.plainText);
-        currentContent = text;
-      }
-
-      // debugPrint('currentContent: $currentContent');
-      // 只有当内容变化时才触发回调
-      if (currentContent != null && currentContent != _lastClipboardContent) {
-        _lastClipboardContent = currentContent;
-        _onClipboardChangedCallback?.call(
-          NSPboardTypeModel(
-            time: DateTime.now().toString(),
-            ptype: 'text',
-            pvalue: currentContent,
-            appid: '',
-            appname: '',
-          ),
-        );
-      }
+      final (currentContent, type) = await _readClipboard(reader);
+      _handleContentChange(currentContent, type);
     } catch (e) {
-      debugPrint('读取剪贴板失败: $e');
+      debugPrint('Clipboard polling error: $e');
     }
   }
 
-  // 设置剪贴板监听回调
-  void onClipboardChanged(ValueChanged<NSPboardTypeModel?> callback) {
-    _onClipboardChangedCallback = callback;
+  /// 读取纯文本内容
+  Future<(String?, String?)> _readClipboard(ClipboardReader reader) async {
+    String type = "text";
+    if (reader.canProvide(Formats.plainText)) {
+      final text = await reader.readValue(Formats.plainText);
+      return (text, type);
+    }
+    return (null, null);
   }
 
-  // 设置剪贴板内容
-  void setPasteboardItem(NSPboardTypeModel model) {
-    setMultiFormatContent(plainText: model.pvalue);
+  /// 处理内容变化
+  void _handleContentChange(String? currentContent, String? type) {
+    if (currentContent != null && currentContent != _cachedContent) {
+      _cachedContent = currentContent;
+      _notifyContentChange(currentContent, type);
+    }
   }
 
-  // 写入多格式内容到剪贴板
-  Future<void> setMultiFormatContent({
-    String? plainText,
-  }) async {
+  /// 通知内容变化
+  void _notifyContentChange(String content, String? type) {
+    _onClipboardChanged?.call(
+      NSPboardTypeModel(
+        time: DateTime.now().toString(),
+        ptype: type ?? 'text',
+        pvalue: content,
+      ),
+    );
+  }
+
+  /// 设置剪贴板变化监听器
+  void setClipboardListener(ValueChanged<NSPboardTypeModel?> listener) {
+    _onClipboardChanged = listener;
+  }
+
+  /// 写入内容到剪贴板
+  Future<void> setPasteboardItem(NSPboardTypeModel model) async {
+    await setContent(plainText: model.pvalue, type: model.ptype);
+  }
+
+  /// 写入多格式内容到剪贴板
+  Future<void> setContent({String? plainText, String? type}) async {
+    if (plainText == null) return;
+
     final item = DataWriterItem();
-    if (plainText != null) {
-      item.add(Formats.plainText(plainText));
-      _lastClipboardContent = plainText;
+    item.add(Formats.plainText(plainText));
+    _cachedContent = plainText;
+
+    try {
+      await _clipboard?.write([item]);
+    } catch (e) {
+      debugPrint('Failed to write to clipboard: $e');
+      rethrow;
     }
-    await clipboard!.write([item]);
   }
 
-  // 移除监听并停止定时器
+  /// 清理资源
   void dispose() {
-    _timer?.cancel();
-    _timer = null;
-    _onClipboardChangedCallback = null;
-    _lastClipboardContent = null;
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    _onClipboardChanged = null;
+    _cachedContent = null;
   }
 }

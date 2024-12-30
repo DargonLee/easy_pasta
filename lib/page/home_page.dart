@@ -39,13 +39,11 @@ class _MyHomePageState extends State<MyHomePage>
 
   void _initializeApp() {
     _getAllPboardList();
-    _superClipboard.onClipboardChanged(
-      (value) {
-        if (value != null) {
-          _handlePboardUpdate(value);
-        }
-      },
-    );
+    _superClipboard.setClipboardListener((value) {
+      if (value != null) {
+        _handlePboardUpdate(value);
+      }
+    });
   }
 
   void _handlePboardUpdate(NSPboardTypeModel model) {
