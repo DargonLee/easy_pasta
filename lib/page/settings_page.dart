@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show exit;
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/tool/counter.dart';
 import 'package:easy_pasta/providers/pboard_provider.dart';
@@ -81,6 +82,7 @@ class _SettingsPageState extends State<SettingsPage> {
               _buildAutoLaunchTile(),
               _buildMaxStorageTile(),
               _buildClearDataTile(),
+              _buildExitAppTile(),
             ],
           ),
           const SizedBox(height: 32),
@@ -194,6 +196,36 @@ class _SettingsPageState extends State<SettingsPage> {
       title: const Text('清除记录', style: TextStyle(color: Colors.red)),
       subtitle: const Text('删除所有剪贴板记录'),
       onTap: _showClearConfirmDialog,
+    );
+  }
+
+  Widget _buildExitAppTile() {
+    return ListTile(
+      leading: const Icon(Icons.exit_to_app, color: Colors.red),
+      title: const Text('退出应用', style: TextStyle(color: Colors.red)),
+      subtitle: const Text('完全退出应用程序'),
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('确认退出'),
+            content: const Text('确定要退出应用吗?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('取消'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  exit(0);
+                },
+                child: const Text('确定', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

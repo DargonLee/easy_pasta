@@ -1,5 +1,6 @@
 import Cocoa
 import FlutterMacOS
+import window_manager
 
 // MARK: - Channel Constants
 private enum ChannelNames {
@@ -25,8 +26,11 @@ class MainFlutterWindow: NSWindow {
     override func awakeFromNib() {
         configureWindow()
         super.awakeFromNib()
-        // setupKeyboardMonitor()
-        // startPasteboardMonitoring()
+    }
+    
+    override public func order(_ place: NSWindow.OrderingMode, relativeTo otherWin: Int) {
+        super.order(place, relativeTo: otherWin)
+        hiddenWindowAtLaunch()
     }
 
     // MARK: - Window Configuration
@@ -37,7 +41,6 @@ class MainFlutterWindow: NSWindow {
         self.setFrame(windowFrame, display: true)
 
         RegisterGeneratedPlugins(registry: flutterViewController)
-        setupChannels(with: flutterViewController)
     }
 
     // MARK: - Channel Setup
@@ -127,10 +130,10 @@ class MainFlutterWindow: NSWindow {
 
     // MARK: - Pasteboard Monitoring
     private func startPasteboardMonitoring() {
-        //        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-        //            guard let array = self?.pasteboard.getPasteboardItem() else { return }
-        //            self?.eventSink?(array)
-        //        }
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            guard let array = self?.pasteboard.getPasteboardItem() else { return }
+            self?.eventSink?(array)
+        }
     }
 }
 
