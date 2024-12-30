@@ -8,6 +8,7 @@ import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/core/super_clipboard.dart';
 import 'package:easy_pasta/core/window_service.dart';
 import 'package:tray_manager/tray_manager.dart';
+import 'package:window_manager/window_manager.dart';
 import 'dart:developer' as developer;
 
 class MyHomePage extends StatefulWidget {
@@ -16,7 +17,8 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> with TrayListener {
+class _MyHomePageState extends State<MyHomePage>
+    with TrayListener, WindowListener {
   // Controller 定义
   final _searchController = TextEditingController();
   final _superClipboard = SuperClipboard.instance;
@@ -31,6 +33,7 @@ class _MyHomePageState extends State<MyHomePage> with TrayListener {
   void initState() {
     trayManager.addListener(this);
     super.initState();
+    windowManager.addListener(this);
     _initializeApp();
   }
 
@@ -121,12 +124,17 @@ class _MyHomePageState extends State<MyHomePage> with TrayListener {
   void dispose() {
     _searchController.dispose();
     trayManager.removeListener(this);
+    windowManager.removeListener(this);
     super.dispose();
   }
 
   @override
   void onTrayIconMouseDown() {
-    developer.log('onTrayIconMouseDown');
     WindowService().showWindow();
+  }
+
+  @override
+  void onWindowBlur() {
+    WindowService().hideWindow();
   }
 }

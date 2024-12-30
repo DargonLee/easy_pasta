@@ -9,13 +9,10 @@ class WindowService {
       size: Size(950, 680),
       minimumSize: Size(370, 680),
       center: true,
-      skipTaskbar: false,
       titleBarStyle: TitleBarStyle.hidden,
       windowButtonVisibility: false,
     );
     windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
     });
   }
 
