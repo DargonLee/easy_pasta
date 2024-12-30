@@ -1,7 +1,7 @@
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:easy_pasta/db/shared_preference_helper.dart';
+import 'package:easy_pasta/core/window_service.dart';
 import 'dart:convert';
-import 'dart:developer' as developer;
 
 class HotkeyService {
   // 单例模式
@@ -24,8 +24,7 @@ class HotkeyService {
     await hotKeyManager.register(
       hotkey,
       keyDownHandler: (hotKey) {
-        // 热键按下时的回调
-        developer.log('热键 ${hotKey.toJson()} 被按下');
+        WindowService().showWindow();
       },
     );
   }

@@ -5,18 +5,17 @@ import 'package:easy_pasta/core/window_service.dart';
 import 'package:easy_pasta/core/hotkey_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// import 'package:bitsdojo_window/bitsdojo_window.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final windowService = WindowService();
-  final hotkeyService = HotkeyService();
-  final trayService = TrayService();
-
   await windowService.init();
-  await hotkeyService.init();
+
+  final trayService = TrayService();
   await trayService.init();
+
+  await HotkeyService().init();
 
   runApp(const MyApp());
 }
@@ -24,7 +23,6 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MultiProvider(

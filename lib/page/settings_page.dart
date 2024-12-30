@@ -7,6 +7,7 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_pasta/tool/channel_mgr.dart';
 import 'package:easy_pasta/core/record_hotkey_dialog.dart';
+import 'package:easy_pasta/core/hotkey_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -144,13 +145,10 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _handleHotKeyRegister(HotKey hotKey) async {
-    await hotKeyManager.register(
-      hotKey,
-    );
     setState(() {
       _hotKey = hotKey;
     });
-    SharedPreferenceHelper.setShortcutKey(json.encode(hotKey.toJson()));
+    HotkeyService().setHotkey(hotKey);
   }
 
   Future<void> _showHotKeyDialog() async {
