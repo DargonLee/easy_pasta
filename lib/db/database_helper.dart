@@ -1,7 +1,7 @@
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:easy_pasta/db/constanst_helper.dart';
+import 'package:easy_pasta/db/shared_preference_helper.dart';
 
 class DatabaseHelper {
   // 单例模式

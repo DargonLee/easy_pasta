@@ -6,9 +6,10 @@ class WindowService {
     await windowManager.ensureInitialized();
 
     WindowOptions windowOptions = const WindowOptions(
-      size: Size(900, 600),
+      size: Size(950, 650),
+      minimumSize: Size(300, 220),
       center: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.red,
       skipTaskbar: false,
       titleBarStyle: TitleBarStyle.hidden,
       windowButtonVisibility: false,

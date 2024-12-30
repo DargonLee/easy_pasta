@@ -46,7 +46,7 @@ class SuperClipboard {
         currentContent = text;
       }
 
-      debugPrint('currentContent: $currentContent');
+      // debugPrint('currentContent: $currentContent');
       // 只有当内容变化时才触发回调
       if (currentContent != null && currentContent != _lastClipboardContent) {
         _lastClipboardContent = currentContent;
@@ -68,6 +68,11 @@ class SuperClipboard {
   // 设置剪贴板监听回调
   void onClipboardChanged(ValueChanged<NSPboardTypeModel?> callback) {
     _onClipboardChangedCallback = callback;
+  }
+
+  // 设置剪贴板内容
+  void setPasteboardItem(NSPboardTypeModel model) {
+    setMultiFormatContent(plainText: model.pvalue);
   }
 
   // 写入多格式内容到剪贴板

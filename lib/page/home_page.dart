@@ -1,17 +1,12 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:hotkey_manager/hotkey_manager.dart';
-// import 'package:bitsdojo_window/bitsdojo_window.dart';
-
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/page/settings_page.dart';
-import 'package:easy_pasta/db/constanst_helper.dart';
 import 'package:easy_pasta/page/grid_view.dart';
 import 'package:easy_pasta/page/app_bar_widget.dart';
-import 'package:easy_pasta/tool/channel_mgr.dart';
 import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/core/super_clipboard.dart';
+import 'dart:developer' as developer;
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -21,9 +16,11 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   // Controller 定义
-  final _chanelMgr = ChannelManager();
   final _searchController = TextEditingController();
   final _superClipboard = SuperClipboard.instance;
+
+  // 选中类型
+  ItemType _selectedType = ItemType.all;
 
   // State
   int _selectedId = 0;
@@ -35,8 +32,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _initializeApp() {
-    _setHotKey();
-    _initializeChannel();
     _getAllPboardList();
     _superClipboard.onClipboardChanged(
       (value) {
@@ -47,28 +42,12 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void _initializeChannel() {
-    _chanelMgr.initChannel();
-    _chanelMgr.onPasteboardChanged = _handlePboardUpdate;
-  }
-
   void _handlePboardUpdate(NSPboardTypeModel model) {
     context.read<PboardProvider>().addPboardModel(model);
   }
 
-  Future<void> _setHotKey() async {
-    final hotkey = await SharedPreferenceHelper.getShortcutKey();
-    if (hotkey.isEmpty) return;
-
-    final hotKey = HotKey.fromJson(json.decode(hotkey));
-    await hotKeyManager.unregisterAll();
-    await hotKeyManager.register(
-      hotKey,
-      keyDownHandler: (_) {
-        _chanelMgr.showMainPasteboardWindow();
-        setState(() {});
-      },
-    );
+  void _setPasteboardItem(NSPboardTypeModel model) {
+    _superClipboard.setPasteboardItem(model);
   }
 
   void _handleSearch(String value) {
@@ -79,6 +58,19 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  void _handleTypeChanged(ItemType type) {
+    setState(() {
+      _selectedType = type;
+    });
+    developer.log('选中类型: $type');
+  }
+
+  void _handleClear() {
+    setState(() {
+      _searchController.clear();
+    });
+  }
+
   void _getAllPboardList() {
     context.read<PboardProvider>().getPboardList();
   }
@@ -87,26 +79,11 @@ class _MyHomePageState extends State<MyHomePage> {
     context.read<PboardProvider>().getPboardListWithString(query);
   }
 
-  // 在 _MyHomePageState 中添加处理分类的方法
-  void _handleTypeChanged(ContentType type) {
-    // 根据类型筛选内容
-    switch (type) {
-      case ContentType.all:
-        _getAllPboardList();
-        break;
-      case ContentType.text:
-        // 实现文本过滤
-        break;
-      case ContentType.image:
-        // 实现图片过滤
-        break;
-      case ContentType.file:
-        // 实现文件过滤
-        break;
-      case ContentType.favorite:
-        // 实现收藏过滤
-        break;
-    }
+  void _handleSettingsTap() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SettingsPage()),
+    );
   }
 
   @override
@@ -116,14 +93,9 @@ class _MyHomePageState extends State<MyHomePage> {
         searchController: _searchController,
         onSearch: _handleSearch,
         onTypeChanged: _handleTypeChanged,
-        onClear: () {
-          _searchController.clear();
-          _getAllPboardList();
-        },
-        onSettingsTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SettingsPage()),
-        ),
+        onClear: _handleClear,
+        onSettingsTap: _handleSettingsTap,
+        selectedType: _selectedType,
       ),
       body: _buildBody(),
     );
@@ -141,7 +113,7 @@ class _MyHomePageState extends State<MyHomePage> {
       pboards: pboards,
       selectedId: _selectedId,
       onItemTap: (model) => setState(() => _selectedId = model.id!.toInt()),
-      onItemDoubleTap: (model) => _chanelMgr.setPasteboardItem(model),
+      onItemDoubleTap: (model) => _setPasteboardItem(model),
     );
   }
 

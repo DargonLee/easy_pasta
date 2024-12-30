@@ -19,16 +19,6 @@ void main() async {
   await trayService.init();
 
   runApp(const MyApp());
-
-  // doWhenWindowReady(() {
-  //   final win = appWindow;
-  //   const initialSize = Size(950, 650);
-  //   win.minSize = initialSize;
-  //   win.size = initialSize;
-  //   win.alignment = Alignment.center;
-  //   win.title = "Custom window with Flutter";
-  //   win.show();
-  // });
 }
 
 class MyApp extends StatelessWidget {

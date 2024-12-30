@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/tool/counter.dart';
 import 'package:easy_pasta/providers/pboard_provider.dart';
-import 'package:easy_pasta/db/constanst_helper.dart';
+import 'package:easy_pasta/db/shared_preference_helper.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_pasta/tool/channel_mgr.dart';

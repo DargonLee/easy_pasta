@@ -5,7 +5,7 @@ import 'package:easy_pasta/page/empty_view.dart';
 
 class PasteboardGridView extends StatefulWidget {
   static const double _kGridSpacing = 8.0;
-  static const int _kCrossAxisCount = 3;
+  static const double _kMinCrossAxisExtent = 250.0;
 
   final List<NSPboardTypeModel> pboards;
   final int selectedId;
@@ -30,11 +30,6 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   bool get wantKeepAlive => true;
 
   @override
-  void didUpdateWidget(PasteboardGridView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
   Widget build(BuildContext context) {
     super.build(context);
 
@@ -42,34 +37,52 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
       return const EmptyStateView();
     }
 
-    return ScrollConfiguration(
-      behavior: CustomScrollBehavior(),
-      child: Scrollbar(
-        child: GridView.builder(
-          key: const PageStorageKey<String>('pasteboard_grid'),
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 计算每行最多能显示多少列
+        final maxColumns =
+            (constraints.maxWidth / PasteboardGridView._kMinCrossAxisExtent)
+                .floor();
+        // 限制列数在1-3之间
+        final columns = maxColumns.clamp(1, 3);
+
+        // 根据列数计算实际的item宽度
+        final itemWidth = (constraints.maxWidth -
+                (columns - 1) * PasteboardGridView._kGridSpacing) /
+            columns;
+        // 设置宽高比
+        final aspectRatio = itemWidth / (itemWidth / 1.2);
+
+        return ScrollConfiguration(
+          behavior: CustomScrollBehavior(),
+          child: Scrollbar(
+            child: GridView.builder(
+              key: const PageStorageKey<String>('pasteboard_grid'),
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                mainAxisSpacing: PasteboardGridView._kGridSpacing,
+                crossAxisSpacing: PasteboardGridView._kGridSpacing,
+                childAspectRatio: aspectRatio,
+              ),
+              cacheExtent: 1000,
+              itemCount: widget.pboards.length,
+              itemBuilder: (context, index) {
+                final model = widget.pboards[index];
+                return NewPboardItemCard(
+                  key: ValueKey(model.id),
+                  model: model,
+                  selectedId: widget.selectedId,
+                  onTap: widget.onItemTap,
+                  onDoubleTap: widget.onItemDoubleTap,
+                );
+              },
+            ),
           ),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: PasteboardGridView._kCrossAxisCount,
-            mainAxisSpacing: PasteboardGridView._kGridSpacing,
-            crossAxisSpacing: PasteboardGridView._kGridSpacing,
-            childAspectRatio: 1.2,
-          ),
-          cacheExtent: 1000,
-          itemCount: widget.pboards.length,
-          itemBuilder: (context, index) {
-            final model = widget.pboards[index];
-            return NewPboardItemCard(
-              key: ValueKey(model.id),
-              model: model,
-              selectedId: widget.selectedId,
-              onTap: widget.onItemTap,
-              onDoubleTap: widget.onItemDoubleTap,
-            );
-          },
-        ),
-      ),
+        );
+      },
     );
   }
 }

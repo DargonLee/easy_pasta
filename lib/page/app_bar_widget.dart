@@ -1,28 +1,23 @@
 import 'package:flutter/material.dart';
 
-/// 内容类型枚举
-enum ContentType { all, text, image, file, favorite }
+enum ItemType { all, text, image, file, favorite }
 
-/// 过滤器选项配置
-class FilterOption {
-  final String label;
-  final IconData icon;
-  final ContentType type;
+typedef FilterOption = ({String label, IconData icon, ItemType type});
+final filterOptions = [
+  (label: '全部', icon: Icons.all_inclusive, type: ItemType.all),
+  (label: '文本', icon: Icons.text_fields, type: ItemType.text),
+  (label: '图片', icon: Icons.image, type: ItemType.image),
+  (label: '文件', icon: Icons.folder, type: ItemType.file),
+  (label: '收藏', icon: Icons.favorite, type: ItemType.favorite),
+];
 
-  const FilterOption({
-    required this.label,
-    required this.icon,
-    required this.type,
-  });
-}
-
-/// 自定义应用栏组件
-class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
+class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final TextEditingController searchController;
-  final Function(String) onSearch;
-  final Function(ContentType) onTypeChanged;
+  final ValueChanged<String> onSearch;
+  final ValueChanged<ItemType> onTypeChanged;
   final VoidCallback onClear;
   final VoidCallback onSettingsTap;
+  final ItemType selectedType;
 
   const CustomAppBar({
     super.key,
@@ -31,46 +26,11 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
     required this.onTypeChanged,
     required this.onClear,
     required this.onSettingsTap,
+    required this.selectedType,
   });
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-
-  @override
-  State<CustomAppBar> createState() => _CustomAppBarState();
-}
-
-class _CustomAppBarState extends State<CustomAppBar> {
-  ContentType _selectedType = ContentType.all;
-
-  // 过滤器选项配置列表
-  final List<FilterOption> _filterOptions = const [
-    FilterOption(
-      label: '全部',
-      icon: Icons.all_inclusive,
-      type: ContentType.all,
-    ),
-    FilterOption(
-      label: '文本',
-      icon: Icons.text_fields,
-      type: ContentType.text,
-    ),
-    FilterOption(
-      label: '图片',
-      icon: Icons.image,
-      type: ContentType.image,
-    ),
-    FilterOption(
-      label: '文件',
-      icon: Icons.folder,
-      type: ContentType.file,
-    ),
-    FilterOption(
-      label: '收藏',
-      icon: Icons.favorite,
-      type: ContentType.favorite,
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -85,49 +45,16 @@ class _CustomAppBarState extends State<CustomAppBar> {
           ),
         ],
       ),
-      child: _AppBarContent(
-        searchController: widget.searchController,
-        onSearch: widget.onSearch,
-        onClear: widget.onClear,
-        onSettingsTap: widget.onSettingsTap,
-        selectedType: _selectedType,
-        filterOptions: _filterOptions,
-        onTypeChanged: (type) {
-          setState(() => _selectedType = type);
-          widget.onTypeChanged(type);
-        },
-      ),
+      child: _buildAppBarContent(),
     );
   }
-}
 
-/// 应用栏内容组件
-class _AppBarContent extends StatelessWidget {
-  final TextEditingController searchController;
-  final Function(String) onSearch;
-  final VoidCallback onClear;
-  final VoidCallback onSettingsTap;
-  final ContentType selectedType;
-  final List<FilterOption> filterOptions;
-  final Function(ContentType) onTypeChanged;
-
-  const _AppBarContent({
-    required this.searchController,
-    required this.onSearch,
-    required this.onClear,
-    required this.onSettingsTap,
-    required this.selectedType,
-    required this.filterOptions,
-    required this.onTypeChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildAppBarContent() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         children: [
-          Expanded(
+          Flexible(
             flex: 2,
             child: _SearchField(
               controller: searchController,
@@ -138,24 +65,46 @@ class _AppBarContent extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             flex: 3,
-            child: _FilterBar(
-              selectedType: selectedType,
-              filterOptions: filterOptions,
-              onTypeChanged: onTypeChanged,
-            ),
+            child: _buildFilterBar(),
           ),
           const SizedBox(width: 8),
-          _SettingsButton(onTap: onSettingsTap),
+          const SizedBox(width: 8),
+          IconButton(
+            constraints: const BoxConstraints(minWidth: 40),
+            padding: EdgeInsets.zero,
+            icon: const Icon(Icons.settings),
+            onPressed: onSettingsTap,
+            tooltip: '设置',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterBar() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final option in filterOptions)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _FilterChip(
+                option: option,
+                isSelected: selectedType == option.type,
+                onSelected: onTypeChanged,
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-/// 搜索框组件
 class _SearchField extends StatelessWidget {
   final TextEditingController controller;
-  final Function(String) onSearch;
+  final ValueChanged<String> onSearch;
   final VoidCallback onClear;
 
   const _SearchField({
@@ -196,50 +145,13 @@ class _SearchField extends StatelessWidget {
   }
 }
 
-/// 过滤栏组件
-class _FilterBar extends StatelessWidget {
-  final ContentType selectedType;
-  final List<FilterOption> filterOptions;
-  final Function(ContentType) onTypeChanged;
-
-  const _FilterBar({
-    required this.selectedType,
-    required this.filterOptions,
-    required this.onTypeChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: filterOptions.map((option) {
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: _FilterChip(
-            label: option.label,
-            icon: option.icon,
-            type: option.type,
-            isSelected: selectedType == option.type,
-            onSelected: onTypeChanged,
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-/// 过滤器选项组件
 class _FilterChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final ContentType type;
+  final FilterOption option;
   final bool isSelected;
-  final Function(ContentType) onSelected;
+  final ValueChanged<ItemType> onSelected;
 
   const _FilterChip({
-    required this.label,
-    required this.icon,
-    required this.type,
+    required this.option,
     required this.isSelected,
     required this.onSelected,
   });
@@ -249,17 +161,20 @@ class _FilterChip extends StatelessWidget {
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 72),
       child: FilterChip(
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        labelPadding: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         label: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              icon,
+              option.icon,
               size: 16,
               color: isSelected ? Colors.white : Colors.grey[600],
             ),
             const SizedBox(width: 4),
             Text(
-              label,
+              option.label,
               style: TextStyle(
                 color: isSelected ? Colors.white : Colors.grey[600],
                 fontSize: 13,
@@ -268,31 +183,11 @@ class _FilterChip extends StatelessWidget {
           ],
         ),
         selected: isSelected,
-        onSelected: (_) => onSelected(type),
+        onSelected: (_) => onSelected(option.type),
         selectedColor: Colors.blue,
         checkmarkColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
         showCheckmark: false,
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
-    );
-  }
-}
-
-/// 设置按钮组件
-class _SettingsButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _SettingsButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      constraints: const BoxConstraints(minWidth: 40),
-      padding: EdgeInsets.zero,
-      icon: const Icon(Icons.settings),
-      onPressed: onTap,
-      tooltip: '设置',
     );
   }
 }
