@@ -6,6 +6,7 @@ import 'package:easy_pasta/page/grid_view.dart';
 import 'package:easy_pasta/page/app_bar_widget.dart';
 import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/core/super_clipboard.dart';
+import 'package:easy_pasta/core/window_service.dart';
 import 'dart:developer' as developer;
 
 class MyHomePage extends StatefulWidget {
@@ -48,6 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _setPasteboardItem(NSPboardTypeModel model) {
     _superClipboard.setPasteboardItem(model);
+    WindowService().hideWindow();
   }
 
   void _handleSearch(String value) {
@@ -97,13 +99,9 @@ class _MyHomePageState extends State<MyHomePage> {
         onSettingsTap: _handleSettingsTap,
         selectedType: _selectedType,
       ),
-      body: _buildBody(),
-    );
-  }
-
-  Widget _buildBody() {
-    return Container(
-      child: _buildContent(),
+      body: Container(
+        child: _buildContent(),
+      ),
     );
   }
 

@@ -27,4 +27,8 @@ class WindowService {
     await Future.delayed(const Duration(milliseconds: 100));
     await windowManager.setAlwaysOnTop(false);
   }
+
+  Future<void> hideWindow() async {
+    await windowManager.hide();
+  }
 }

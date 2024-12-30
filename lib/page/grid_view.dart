@@ -93,12 +93,3 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     );
   }
 }
-
-class CustomScrollBehavior extends ScrollBehavior {
-  @override
-  ScrollPhysics getScrollPhysics(BuildContext context) {
-    return const BouncingScrollPhysics(
-      parent: AlwaysScrollableScrollPhysics(),
-    );
-  }
-}
