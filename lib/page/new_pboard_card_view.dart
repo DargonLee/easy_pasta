@@ -13,13 +13,14 @@ class NewPboardItemCard extends StatelessWidget {
   final int selectedId;
   final Function(NSPboardTypeModel) onTap;
   final Function(NSPboardTypeModel) onDoubleTap;
-
+  final Function(NSPboardTypeModel) onCopy;
   const NewPboardItemCard({
     Key? key,
     required this.model,
     required this.selectedId,
     required this.onTap,
     required this.onDoubleTap,
+    required this.onCopy,
   }) : super(key: key);
 
   @override
@@ -103,8 +104,8 @@ class NewPboardItemCard extends StatelessWidget {
 
   Widget _buildFooter(BuildContext context) {
     return TimestampContent(
-      timestamp: model.time,
-      fontSize: 10,
+      model: model,
+      onCopy: onCopy,
     );
   }
 }

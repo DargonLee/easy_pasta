@@ -117,6 +117,7 @@ class _MyHomePageState extends State<MyHomePage>
       selectedId: _selectedId,
       onItemTap: (model) => setState(() => _selectedId = model.id!.toInt()),
       onItemDoubleTap: (model) => _setPasteboardItem(model),
+      onCopy: (model) => _setPasteboardItem(model),
     );
   }
 

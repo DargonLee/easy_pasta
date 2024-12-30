@@ -1,33 +1,39 @@
 import 'package:flutter/material.dart';
-
+import 'package:easy_pasta/model/pasteboard_model.dart';
 class TimestampContent extends StatelessWidget {
-  final String timestamp;
-  final EdgeInsetsGeometry padding;
-  final double fontSize;
-  final Color? textColor;
-  final TextStyle? style;
+  final NSPboardTypeModel model;
+  final Function(NSPboardTypeModel) onCopy;
 
   const TimestampContent({
     Key? key,
-    required this.timestamp,
-    this.padding = const EdgeInsets.only(top: 8),
-    this.fontSize = 10,
-    this.textColor,
-    this.style,
+    required this.model,
+    required this.onCopy,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final defaultStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: textColor ?? Colors.grey[500],
-          fontSize: fontSize,
+          color: Colors.grey[500],
+          fontSize: 10,
         );
-
     return Padding(
-      padding: padding,
-      child: Text(
-        _formatTimestamp(DateTime.parse(timestamp)),
-        style: style ?? defaultStyle,
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            _formatTimestamp(DateTime.parse(model.time)),
+            style: defaultStyle,
+          ),
+          IconButton(
+            icon: const Icon(Icons.copy, size: 14),
+            onPressed: () => onCopy(model),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            splashRadius: 12,
+            color: Colors.grey[500],
+          ),
+        ],
       ),
     );
   }

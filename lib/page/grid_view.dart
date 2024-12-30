@@ -11,6 +11,7 @@ class PasteboardGridView extends StatefulWidget {
   final int selectedId;
   final Function(NSPboardTypeModel) onItemTap;
   final Function(NSPboardTypeModel) onItemDoubleTap;
+  final Function(NSPboardTypeModel) onCopy;
 
   const PasteboardGridView({
     Key? key,
@@ -18,6 +19,7 @@ class PasteboardGridView extends StatefulWidget {
     required this.selectedId,
     required this.onItemTap,
     required this.onItemDoubleTap,
+    required this.onCopy,
   }) : super(key: key);
 
   @override
@@ -85,6 +87,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
                 selectedId: widget.selectedId,
                 onTap: widget.onItemTap,
                 onDoubleTap: widget.onItemDoubleTap,
+                onCopy: widget.onCopy,
               );
             },
           ),
