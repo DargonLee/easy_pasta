@@ -26,8 +26,16 @@ class PasteboardGridView extends StatefulWidget {
 
 class _PasteboardGridViewState extends State<PasteboardGridView>
     with AutomaticKeepAliveClientMixin {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,33 +61,32 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
         // 设置宽高比
         final aspectRatio = itemWidth / (itemWidth / 1.2);
 
-        return ScrollConfiguration(
-          behavior: CustomScrollBehavior(),
-          child: Scrollbar(
-            child: GridView.builder(
-              key: const PageStorageKey<String>('pasteboard_grid'),
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: columns,
-                mainAxisSpacing: PasteboardGridView._kGridSpacing,
-                crossAxisSpacing: PasteboardGridView._kGridSpacing,
-                childAspectRatio: aspectRatio,
-              ),
-              cacheExtent: 1000,
-              itemCount: widget.pboards.length,
-              itemBuilder: (context, index) {
-                final model = widget.pboards[index];
-                return NewPboardItemCard(
-                  key: ValueKey(model.id),
-                  model: model,
-                  selectedId: widget.selectedId,
-                  onTap: widget.onItemTap,
-                  onDoubleTap: widget.onItemDoubleTap,
-                );
-              },
+        return Scrollbar(
+          controller: _scrollController,
+          child: GridView.builder(
+            key: const PageStorageKey<String>('pasteboard_grid'),
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
             ),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              mainAxisSpacing: PasteboardGridView._kGridSpacing,
+              crossAxisSpacing: PasteboardGridView._kGridSpacing,
+              childAspectRatio: aspectRatio,
+            ),
+            cacheExtent: 1000,
+            itemCount: widget.pboards.length,
+            itemBuilder: (context, index) {
+              final model = widget.pboards[index];
+              return NewPboardItemCard(
+                key: ValueKey(model.id),
+                model: model,
+                selectedId: widget.selectedId,
+                onTap: widget.onItemTap,
+                onDoubleTap: widget.onItemDoubleTap,
+              );
+            },
           ),
         );
       },
