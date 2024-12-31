@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 
@@ -10,20 +9,12 @@ class NSPboardTypeModel {
   final String pvalue;
   final Uint8List? tiffbytes;
 
-  // 应用信息
-  final String? appid;
-  final String? appname;
-  final Uint8List? appicon;
-
   NSPboardTypeModel({
     this.id,
     required this.time,
     required this.ptype,
     required this.pvalue,
     this.tiffbytes,
-    this.appid,
-    this.appname,
-    this.appicon,
   });
 
   // 从剪贴板数据创建模型
@@ -31,9 +22,6 @@ class NSPboardTypeModel {
     String ptype = '';
     String pvalue = '';
     Uint8List? tiffbytes;
-    String appid = '';
-    String appname = '';
-    Uint8List? appicon;
 
     for (var item in itemArray) {
       if (item.containsKey('type')) {
@@ -43,21 +31,6 @@ class NSPboardTypeModel {
         }
         continue;
       }
-      if (item.containsKey('appId')) {
-        Uint8List bytes = item['appId'];
-        appid = utf8.decode(bytes.toList());
-        continue;
-      }
-      if (item.containsKey('appName')) {
-        Uint8List bytes = item['appName'];
-        appname = utf8.decode(bytes.toList());
-        continue;
-      }
-      if (item.containsKey('appIcon')) {
-        Uint8List bytes = item['appIcon'];
-        appicon = Uint8List.fromList(bytes.toList());
-        continue;
-      }
     }
 
     return NSPboardTypeModel(
@@ -65,9 +38,6 @@ class NSPboardTypeModel {
       ptype: ptype,
       pvalue: pvalue,
       tiffbytes: tiffbytes,
-      appid: appid,
-      appname: appname,
-      appicon: appicon,
     );
   }
 
@@ -79,9 +49,6 @@ class NSPboardTypeModel {
       ptype: map['type'],
       pvalue: map['value'],
       tiffbytes: map['tiffbytes'],
-      appname: map['appname'],
-      appid: map['appid'],
-      appicon: map['appicon'],
     );
   }
 
@@ -93,9 +60,6 @@ class NSPboardTypeModel {
       'type': ptype,
       'value': pvalue,
       'tiffbytes': tiffbytes,
-      'appname': appname,
-      'appid': appid,
-      'appicon': appicon,
     };
   }
 }

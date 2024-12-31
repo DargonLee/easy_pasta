@@ -1,11 +1,7 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:easy_pasta/widget/item_app_info_card.dart';
 
 class HeaderContent extends StatelessWidget {
   final IconData typeIcon;
-  final Uint8List? appIcon;
-  final String appName;
   final double iconSize;
   final double spacing;
   final Color? iconColor;
@@ -14,8 +10,6 @@ class HeaderContent extends StatelessWidget {
   const HeaderContent({
     Key? key,
     required this.typeIcon,
-    this.appIcon,
-    required this.appName,
     this.iconSize = 14,
     this.spacing = 6,
     this.iconColor,
@@ -26,12 +20,6 @@ class HeaderContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        AppInfoContent(
-          appIcon: appIcon,
-          appName: appName,
-          iconSize: iconSize,
-        ),
-        SizedBox(width: spacing),
         const Spacer(),
         _buildTypeIcon(context),
       ],
@@ -59,15 +47,6 @@ class HeaderContent extends StatelessWidget {
   /// 获取类型图标的Widget
   Widget getTypeIconWidget(BuildContext context) {
     return _buildTypeIcon(context);
-  }
-
-  /// 获取应用信息的Widget
-  Widget getAppInfoWidget() {
-    return AppInfoContent(
-      appIcon: appIcon,
-      appName: appName,
-      iconSize: iconSize,
-    );
   }
 }
 

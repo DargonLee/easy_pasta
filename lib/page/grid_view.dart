@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:easy_pasta/page/new_pboard_card_view.dart';
+import 'package:easy_pasta/page/pboard_card_view.dart';
 import 'package:easy_pasta/page/empty_view.dart';
 
 class PasteboardGridView extends StatefulWidget {

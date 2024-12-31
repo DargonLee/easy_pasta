@@ -20,12 +20,7 @@ class DatabaseHelper {
   static const String columnTime = 'time';
   static const String columnType = 'type';
   static const String columnValue = 'value';
-  static const String columnPlainText = 'plaintext';
-  static const String columnJson = 'jsonstr';
   static const String columnTiff = 'tiffbytes';
-  static const String columnAppName = 'appname';
-  static const String columnAppId = 'appid';
-  static const String columnAppIcon = 'appicon';
 
   Database? _db;
 
@@ -51,12 +46,7 @@ class DatabaseHelper {
         $columnTime TEXT NOT NULL,
         $columnType TEXT NOT NULL,
         $columnValue TEXT,
-        $columnPlainText TEXT,
-        $columnJson TEXT,
         $columnTiff BLOB,
-        $columnAppName TEXT,
-        $columnAppId TEXT,
-        $columnAppIcon BLOB
       )
     ''');
   }
