@@ -84,7 +84,8 @@ dependencies:
   path_provider: ^2.1.5
 
   # 数据库
-  sqflite: ^2.4.1
+  # sqflite: ^2.4.1
+  sqflite_common_ffi: ^2.3.4+4
 
   # Userdefault
   shared_preferences: ^2.3.4
