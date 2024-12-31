@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:easy_pasta/model/settings_model.dart';
 import 'package:easy_pasta/core/record_hotkey_dialog.dart';
-import 'package:easy_pasta/widget/counter.dart';
+import 'package:easy_pasta/widget/setting_counter.dart';
 import 'package:easy_pasta/model/settings_constants.dart';
 
 class HotkeyTile extends StatelessWidget {

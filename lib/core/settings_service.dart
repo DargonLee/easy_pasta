@@ -39,6 +39,6 @@ class SettingsService {
   }
 
   Future<void> clearAllData(BuildContext context) async {
-    context.read<PboardProvider>().removePboardList();
+    context.read<PboardProvider>().clearAll();
   }
 }

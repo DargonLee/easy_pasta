@@ -1,23 +1,13 @@
 import 'package:flutter/material.dart';
-
-enum ItemType { all, text, image, file, favorite }
-
-typedef FilterOption = ({String label, IconData icon, ItemType type});
-final filterOptions = [
-  (label: '全部', icon: Icons.all_inclusive, type: ItemType.all),
-  (label: '文本', icon: Icons.text_fields, type: ItemType.text),
-  (label: '图片', icon: Icons.image, type: ItemType.image),
-  (label: '文件', icon: Icons.folder, type: ItemType.file),
-  (label: '收藏', icon: Icons.favorite, type: ItemType.favorite),
-];
+import 'package:easy_pasta/model/pboard_sort_type.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final TextEditingController searchController;
   final ValueChanged<String> onSearch;
-  final ValueChanged<ItemType> onTypeChanged;
+  final ValueChanged<NSPboardSortType> onTypeChanged;
   final VoidCallback onClear;
   final VoidCallback onSettingsTap;
-  final ItemType selectedType;
+  final NSPboardSortType selectedType;
 
   const CustomAppBar({
     super.key,
@@ -148,7 +138,7 @@ class _SearchField extends StatelessWidget {
 class _FilterChip extends StatelessWidget {
   final FilterOption option;
   final bool isSelected;
-  final ValueChanged<ItemType> onSelected;
+  final ValueChanged<NSPboardSortType> onSelected;
 
   const _FilterChip({
     required this.option,

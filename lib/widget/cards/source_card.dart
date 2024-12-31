@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_highlight/flutter_highlight.dart';
 import 'package:flutter_highlight/themes/github.dart';
-import 'package:easy_pasta/tool/code_detector.dart';
 
 class SourceCodeContent extends StatelessWidget {
   final String code;
@@ -17,7 +16,7 @@ class SourceCodeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final language = LanguageDetector.detectLanguage(code);
+    final language = 'dart';
 
     return ConstrainedBox(
       constraints: const BoxConstraints(

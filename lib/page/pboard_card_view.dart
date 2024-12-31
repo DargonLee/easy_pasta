@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:easy_pasta/widget/item_tiff_card.dart';
-import 'package:easy_pasta/widget/item_file_card.dart';
-import 'package:easy_pasta/widget/item_utf8_card.dart';
-import 'package:easy_pasta/widget/item_footer_card.dart';
-import 'package:easy_pasta/widget/item_header.card.dart';
-import 'package:easy_pasta/widget/item_html_card.dart';
-import 'package:easy_pasta/widget/item_source_card.dart';
+import 'package:easy_pasta/widget/cards/tiff_card.dart';
+import 'package:easy_pasta/widget/cards/file_card.dart';
+import 'package:easy_pasta/widget/cards/text_card.dart';
+import 'package:easy_pasta/widget/cards/footer_card.dart';
+import 'package:easy_pasta/widget/cards/header.card.dart';
+import 'package:easy_pasta/widget/cards/html_card.dart';
+import 'package:easy_pasta/widget/cards/source_card.dart';
 
 class NewPboardItemCard extends StatelessWidget {
   final NSPboardTypeModel model;

@@ -3,7 +3,8 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:easy_pasta/model/settings_model.dart';
 import 'package:easy_pasta/core/settings_service.dart';
 import 'package:easy_pasta/widget/settting_page_widgets.dart';
-import 'package:easy_pasta/widget/confirm_dialog.dart';
+import 'package:easy_pasta/page/confirm_dialog_view.dart';
+
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
 

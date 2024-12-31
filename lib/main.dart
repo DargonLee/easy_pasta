@@ -1,5 +1,5 @@
 import 'package:easy_pasta/providers/pboard_provider.dart';
-import 'package:easy_pasta/page/home_page.dart';
+import 'package:easy_pasta/page/home_page_view.dart';
 import 'package:easy_pasta/core/tray_service.dart';
 import 'package:easy_pasta/core/window_service.dart';
 import 'package:easy_pasta/core/hotkey_service.dart';
