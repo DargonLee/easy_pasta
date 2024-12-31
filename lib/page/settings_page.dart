@@ -1,15 +1,9 @@
-import 'dart:convert';
-import 'dart:io' show exit;
 import 'package:flutter/material.dart';
-import 'package:easy_pasta/tool/counter.dart';
-import 'package:easy_pasta/providers/pboard_provider.dart';
-import 'package:easy_pasta/db/shared_preference_helper.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
-import 'package:provider/provider.dart';
-import 'package:easy_pasta/tool/channel_mgr.dart';
-import 'package:easy_pasta/core/record_hotkey_dialog.dart';
-import 'package:easy_pasta/core/hotkey_service.dart';
-
+import 'package:easy_pasta/model/settings_model.dart';
+import 'package:easy_pasta/core/settings_service.dart';
+import 'package:easy_pasta/widget/settting_page_widgets.dart';
+import 'package:easy_pasta/widget/confirm_dialog.dart';
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
 
@@ -18,9 +12,46 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  final _settingsService = SettingsService();
   bool _autoLaunch = false;
   HotKey? _hotKey;
-  final _channelMgr = ChannelManager();
+
+  final List<SettingItem> _basicSettings = [
+    const SettingItem(
+      type: SettingType.hotkey,
+      title: '快捷键',
+      subtitle: '设置全局快捷键',
+      icon: Icons.keyboard,
+    ),
+    const SettingItem(
+      type: SettingType.autoLaunch,
+      title: '开机自启',
+      subtitle: '系统启动时自动运行',
+      icon: Icons.launch,
+    ),
+    const SettingItem(
+      type: SettingType.maxStorage,
+      title: '最大存储',
+      subtitle: '设置最大存储条数',
+      icon: Icons.storage,
+    ),
+    const SettingItem(
+      type: SettingType.clearData,
+      title: '清除记录',
+      subtitle: '删除所有剪贴板记录',
+      icon: Icons.delete_outline,
+      iconColor: Colors.red,
+      textColor: Colors.red,
+    ),
+    const SettingItem(
+      type: SettingType.exitApp,
+      title: '退出应用',
+      subtitle: '完全退出应用程序',
+      icon: Icons.exit_to_app,
+      iconColor: Colors.red,
+      textColor: Colors.red,
+    ),
+  ];
 
   @override
   void initState() {
@@ -29,39 +60,9 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _loadSettings() async {
-    final hotkey = await SharedPreferenceHelper.getShortcutKey();
-    if (hotkey.isNotEmpty) {
-      _hotKey = HotKey.fromJson(json.decode(hotkey));
-    }
-
-    _autoLaunch = await SharedPreferenceHelper.getLoginInLaunchKey();
+    _hotKey = await _settingsService.getHotKey();
+    _autoLaunch = await _settingsService.getAutoLaunch();
     setState(() {});
-  }
-
-  Future<void> _showClearConfirmDialog() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认清除'),
-        content: const Text('是否清除所有剪贴板记录？此操作不可恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('确定', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      if (!mounted) return;
-      context.read<PboardProvider>().removePboardList();
-      Navigator.pop(context);
-    }
   }
 
   @override
@@ -77,19 +78,18 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           _buildSection(
             title: '基本设置',
-            children: [
-              _buildHotKeyTile(),
-              _buildAutoLaunchTile(),
-              _buildMaxStorageTile(),
-              _buildClearDataTile(),
-              _buildExitAppTile(),
-            ],
+            items: _basicSettings,
           ),
           const SizedBox(height: 32),
           _buildSection(
             title: '关于',
-            children: [
-              _buildAboutTile(),
+            items: [
+              const SettingItem(
+                type: SettingType.about,
+                title: '版本信息',
+                subtitle: '查看版本和项目信息',
+                icon: Icons.info_outline,
+              ),
             ],
           ),
         ],
@@ -99,7 +99,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildSection({
     required String title,
-    required List<Widget> children,
+    required List<SettingItem> items,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,134 +116,63 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 8),
-          child: Column(children: children),
+          child: Column(
+            children: items.map((item) => _buildSettingTile(item)).toList(),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildHotKeyTile() {
-    return ListTile(
-      leading: const Icon(Icons.keyboard),
-      title: const Text('快捷键'),
-      subtitle: _hotKey != null
-          ? HotKeyVirtualView(hotKey: _hotKey!)
-          : const Text('点击设置快捷键'),
-      trailing: TextButton(
-        onPressed: _showHotKeyDialog,
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
-        ),
-        child: Text(
-          _hotKey != null ? '修改' : '设置',
-          style: TextStyle(
-            color: Theme.of(context).primaryColor,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
+  Widget _buildSettingTile(SettingItem item) {
+    switch (item.type) {
+      case SettingType.hotkey:
+        return HotkeyTile(
+          item: item,
+          hotKey: _hotKey,
+          onHotKeyChanged: (newHotKey) async {
+            await _settingsService.setHotKey(newHotKey);
+            setState(() => _hotKey = newHotKey);
+          },
+        );
+      case SettingType.autoLaunch:
+        return AutoLaunchTile(
+          item: item,
+          value: _autoLaunch,
+          onChanged: (value) async {
+            await _settingsService.setAutoLaunch(value);
+            setState(() => _autoLaunch = value);
+          },
+        );
+      case SettingType.maxStorage:
+        return MaxStorageTile(item: item);
+      case SettingType.clearData:
+        return ClearDataTile(
+          item: item,
+          onClear: () => _showClearConfirmDialog(),
+        );
+      case SettingType.exitApp:
+        return ExitAppTile(item: item);
+      case SettingType.about:
+        return AboutTile(item: item);
+    }
   }
 
-  Future<void> _handleHotKeyRegister(HotKey hotKey) async {
-    setState(() {
-      _hotKey = hotKey;
-    });
-    HotkeyService().setHotkey(hotKey);
-  }
-
-  Future<void> _showHotKeyDialog() async {
-    return showDialog<void>(
+  Future<void> _showClearConfirmDialog() async {
+    final result = await showDialog<bool>(
       context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return RecordHotKeyDialog(
-          onHotKeyRecorded: (newHotKey) => _handleHotKeyRegister(newHotKey),
-        );
-      },
-    );
-  }
-
-  Widget _buildAutoLaunchTile() {
-    return ListTile(
-      leading: const Icon(Icons.launch),
-      title: const Text('开机自启'),
-      subtitle: const Text('系统启动时自动运行'),
-      trailing: Switch(
-        value: _autoLaunch,
-        onChanged: (value) {
-          setState(() => _autoLaunch = value);
-          SharedPreferenceHelper.setLoginInLaunchKey(value);
-          _channelMgr.setLaunchCtl(value);
-        },
+      builder: (context) => const ConfirmDialog(
+        title: '确认清除',
+        content: '是否清除所有剪贴板记录？此操作不可恢复。',
+        confirmText: '确定',
+        cancelText: '取消',
       ),
     );
-  }
 
-  Widget _buildMaxStorageTile() {
-    return const ListTile(
-      leading: Icon(Icons.storage),
-      title: Text('最大存储'),
-      subtitle: Text('设置最大存储条数'),
-      trailing: Counter(),
-    );
-  }
-
-  Widget _buildClearDataTile() {
-    return ListTile(
-      leading: const Icon(Icons.delete_outline, color: Colors.red),
-      title: const Text('清除记录', style: TextStyle(color: Colors.red)),
-      subtitle: const Text('删除所有剪贴板记录'),
-      onTap: _showClearConfirmDialog,
-    );
-  }
-
-  Widget _buildExitAppTile() {
-    return ListTile(
-      leading: const Icon(Icons.exit_to_app, color: Colors.red),
-      title: const Text('退出应用', style: TextStyle(color: Colors.red)),
-      subtitle: const Text('完全退出应用程序'),
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('确认退出'),
-            content: const Text('确定要退出应用吗?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('取消'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  exit(0);
-                },
-                child: const Text('确定', style: TextStyle(color: Colors.red)),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildAboutTile() {
-    return ListTile(
-      leading: const Icon(Icons.info_outline),
-      title: const Text('版本信息'),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('当前版本：v1.0.0'),
-          const SizedBox(height: 4),
-          SelectableText(
-            'https://github.com/DargonLee/easy_pasta',
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-        ],
-      ),
-    );
+    if (result == true) {
+      if (!mounted) return;
+      await _settingsService.clearAllData(context);
+      Navigator.pop(context);
+    }
   }
 }

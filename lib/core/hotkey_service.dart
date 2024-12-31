@@ -11,8 +11,8 @@ class HotkeyService {
 
   Future<void> init() async {
     await hotKeyManager.unregisterAll();
-
-    final hotkey = await SharedPreferenceHelper.getShortcutKey();
+    final prefs = await SharedPreferenceHelper.instance;
+    final hotkey = prefs.getShortcutKey();
     if (hotkey.isEmpty) return;
 
     final hotKey = HotKey.fromJson(json.decode(hotkey));

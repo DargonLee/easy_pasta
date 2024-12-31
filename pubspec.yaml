@@ -47,6 +47,12 @@ dependencies:
   # 系统托盘
   tray_manager: ^0.3.1
 
+  # 开机自启动
+  launch_at_startup: ^0.3.1
+
+  # 获取包信息
+  package_info_plus: ^8.1.2
+
   # 国际化
   intl: ^0.20.1
 

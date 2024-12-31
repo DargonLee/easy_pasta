@@ -3,6 +3,7 @@ import 'package:easy_pasta/page/home_page.dart';
 import 'package:easy_pasta/core/tray_service.dart';
 import 'package:easy_pasta/core/window_service.dart';
 import 'package:easy_pasta/core/hotkey_service.dart';
+import 'package:easy_pasta/core/startup_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -16,6 +17,9 @@ void main() async {
   await trayService.init();
 
   await HotkeyService().init();
+
+  final startupService = StartupService();
+  await startupService.init();
 
   runApp(const MyApp());
 }

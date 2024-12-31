@@ -29,6 +29,7 @@
 		18B64BF52A32CADF006BF0AC /* com.example.easyPasta.plist in Resources */ = {isa = PBXBuildFile; fileRef = 18B64BF42A32CADF006BF0AC /* com.example.easyPasta.plist */; };
 		18C1B3E52D155DE20086D701 /* StatusBarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C1B3E42D155DE20086D701 /* StatusBarManager.swift */; };
 		18C1B3E72D155E020086D701 /* UserDefaults+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C1B3E62D155DF90086D701 /* UserDefaults+Extension.swift */; };
+		18E7C2292D2383D700BE974C /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 18E7C2282D2383D700BE974C /* LaunchAtLogin */; };
 		18F771302A176A1300F62247 /* MainFlutterPasteboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F7712F2A176A1300F62247 /* MainFlutterPasteboard.swift */; };
 		331C80D8294CF71000263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C80D7294CF71000263BE5 /* RunnerTests.swift */; };
 		335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
@@ -121,6 +122,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18E7C2292D2383D700BE974C /* LaunchAtLogin in Frameworks */,
 				C8EEBCE43341A2F11A49495E /* Pods_Runner.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -317,6 +319,9 @@
 				Base,
 			);
 			mainGroup = 33CC10E42044A3C60003C045;
+			packageReferences = (
+				18E7C2272D2383D700BE974C /* XCRemoteSwiftPackageReference "LaunchAtLogin" */,
+			);
 			productRefGroup = 33CC10EE2044A3C60003C045 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -833,6 +838,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		18E7C2272D2383D700BE974C /* XCRemoteSwiftPackageReference "LaunchAtLogin" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		18E7C2282D2383D700BE974C /* LaunchAtLogin */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 18E7C2272D2383D700BE974C /* XCRemoteSwiftPackageReference "LaunchAtLogin" */;
+			productName = LaunchAtLogin;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 33CC10E52044A3C60003C045 /* Project object */;
 }
