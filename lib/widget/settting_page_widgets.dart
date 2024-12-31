@@ -5,6 +5,7 @@ import 'package:easy_pasta/model/settings_model.dart';
 import 'package:easy_pasta/core/record_hotkey_dialog.dart';
 import 'package:easy_pasta/widget/setting_counter.dart';
 import 'package:easy_pasta/model/settings_constants.dart';
+import 'package:easy_pasta/db/database_helper.dart';
 
 class HotkeyTile extends StatelessWidget {
   final SettingItem item;
@@ -33,7 +34,9 @@ class HotkeyTile extends StatelessWidget {
           backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
         ),
         child: Text(
-          hotKey != null ? SettingsConstants.modifyText : SettingsConstants.setUpText,
+          hotKey != null
+              ? SettingsConstants.modifyText
+              : SettingsConstants.setUpText,
           style: TextStyle(
             color: Theme.of(context).primaryColor,
             fontWeight: FontWeight.w500,
@@ -122,10 +125,11 @@ class ClearDataTile extends StatelessWidget {
   }
 }
 
-class ExitAppTile extends StatelessWidget {
+class ResetAppTile extends StatelessWidget {
   final SettingItem item;
 
-  const ExitAppTile({
+  const ResetAppTile({
+    super.key,
     required this.item,
   });
 
@@ -135,29 +139,38 @@ class ExitAppTile extends StatelessWidget {
       leading: Icon(item.icon, color: item.iconColor),
       title: Text(item.title, style: TextStyle(color: item.textColor)),
       subtitle: Text(item.subtitle),
-      onTap: () => _showExitConfirmDialog(context),
+      onTap: () => _showConfirmDialog(
+        context: context,
+        title: SettingsConstants.resetConfirmTitle,
+        content: SettingsConstants.resetConfirmContent,
+        onConfirm: () {
+          DatabaseHelper.deleteDatabase();
+          exit(0);
+        },
+      ),
     );
   }
+}
 
-  Future<void> _showExitConfirmDialog(BuildContext context) async {
-    return showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text(SettingsConstants.exitConfirmTitle),
-        content: const Text(SettingsConstants.exitConfirmContent),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(SettingsConstants.cancelText, style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              exit(0);
-            },
-            child: const Text(SettingsConstants.confirmText, style: TextStyle(color: Colors.red)),
-          ),
-        ],
+class ExitAppTile extends StatelessWidget {
+  final SettingItem item;
+
+  const ExitAppTile({
+    super.key,
+    required this.item,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(item.icon, color: item.iconColor),
+      title: Text(item.title, style: TextStyle(color: item.textColor)),
+      subtitle: Text(item.subtitle),
+      onTap: () => _showConfirmDialog(
+        context: context,
+        title: SettingsConstants.exitConfirmTitle,
+        content: SettingsConstants.exitConfirmContent,
+        onConfirm: () => exit(0),
       ),
     );
   }
@@ -167,6 +180,7 @@ class AboutTile extends StatelessWidget {
   final SettingItem item;
 
   const AboutTile({
+    super.key,
     required this.item,
   });
 
@@ -188,4 +202,35 @@ class AboutTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 显示确认对话框
+Future<void> _showConfirmDialog({
+  required BuildContext context,
+  required String title,
+  required String content,
+  required VoidCallback onConfirm,
+}) async {
+  return showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: Text(content),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text(SettingsConstants.cancelText,
+              style: TextStyle(color: Colors.grey)),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            onConfirm();
+          },
+          child: const Text(SettingsConstants.confirmText,
+              style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
 }

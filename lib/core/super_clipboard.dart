@@ -75,7 +75,6 @@ class SuperClipboard {
   void _notifyContentChange(String content, String? type) {
     _onClipboardChanged?.call(
       NSPboardTypeModel(
-        time: DateTime.now().toString(),
         ptype: type ?? 'text',
         pvalue: content,
       ),

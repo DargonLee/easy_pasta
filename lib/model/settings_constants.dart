@@ -7,6 +7,8 @@ class SettingsConstants {
   static const String clearConfirmContent = '是否清除所有剪贴板记录？此操作不可恢复。';
   static const String exitConfirmTitle = '确认退出';
   static const String exitConfirmContent = '确定要退出应用吗?';
+  static const String resetConfirmTitle = '确认重置';
+  static const String resetConfirmContent = '确定要重置应用吗?';
 
   // Button texts
   static const String confirmText = '确定';

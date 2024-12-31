@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
@@ -20,7 +21,8 @@ class DatabaseHelper {
   static const String columnTime = 'time';
   static const String columnType = 'type';
   static const String columnValue = 'value';
-  static const String columnTiff = 'tiffbytes';
+  static const String columnIsFavorite = 'isFavorite';
+  static const String columnTiff = 'tiffBytes';
 
   Database? _db;
 
@@ -42,11 +44,12 @@ class DatabaseHelper {
   Future<void> _createDb(Database db, int version) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS $_tableName(
-        $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $columnId INTEGER PRIMARY KEY,
         $columnTime TEXT NOT NULL,
         $columnType TEXT NOT NULL,
         $columnValue TEXT,
-        $columnTiff BLOB,
+        $columnIsFavorite INTEGER DEFAULT 0,
+        $columnTiff BLOB
       )
     ''');
   }
@@ -58,7 +61,8 @@ class DatabaseHelper {
   }
 
   /// 根据类型查询剪贴板内容
-  Future<List<Map<String, dynamic>>> getPboardItemListByType(String type) async {
+  Future<List<Map<String, dynamic>>> getPboardItemListByType(
+      String type) async {
     final db = await database;
     return db.query(
       _tableName,
@@ -69,12 +73,23 @@ class DatabaseHelper {
   }
 
   /// 根据关键字搜索剪贴板内容
-  Future<List<Map<String, dynamic>>> getPboardItemListWithString(String query) async {
+  Future<List<Map<String, dynamic>>> getPboardItemListWithString(
+      String query) async {
     final db = await database;
     return db.query(
       _tableName,
       where: '$columnValue LIKE ?',
       whereArgs: ['%$query%'],
+      orderBy: '$columnTime DESC',
+    );
+  }
+
+  /// 获取收藏的剪贴板内容
+  Future<List<Map<String, dynamic>>> getFavoritePboardItemList() async {
+    final db = await database;
+    return db.query(
+      _tableName,
+      where: '$columnIsFavorite = 1',
       orderBy: '$columnTime DESC',
     );
   }
@@ -92,17 +107,17 @@ class DatabaseHelper {
   /// 如果超出最大存储限制,会自动删除最早的记录
   Future<int> insertPboardItem(NSPboardTypeModel model) async {
     final db = await database;
-    
+
     // 开启事务以确保数据一致性
     return await db.transaction((txn) async {
       final result = await txn.insert(_tableName, model.toMap());
-      
+
       final count = await getCount();
       final maxCount = await getMaxCount();
       if (count > maxCount) {
         await deleteOldestItem();
       }
-      
+
       return result;
     });
   }
@@ -110,14 +125,15 @@ class DatabaseHelper {
   /// 获取记录总数
   Future<int> getCount() async {
     final db = await database;
-    final result = await db.rawQuery('SELECT COUNT(*) as count FROM $_tableName');
+    final result =
+        await db.rawQuery('SELECT COUNT(*) as count FROM $_tableName');
     return result.first['count'] as int;
   }
 
   /// 删除最早的记录
   Future<int> deleteOldestItem() async {
     final db = await database;
-    
+
     // 使用事务确保操作的原子性
     return await db.transaction((txn) async {
       final oldestItem = await txn.query(
@@ -126,9 +142,9 @@ class DatabaseHelper {
         orderBy: '$columnTime ASC',
         limit: 1,
       );
-      
+
       if (oldestItem.isEmpty) return 0;
-      
+
       return await txn.delete(
         _tableName,
         where: '$columnId = ?',
@@ -141,5 +157,20 @@ class DatabaseHelper {
   Future<int> deleteAll() async {
     final db = await database;
     return db.delete(_tableName);
+  }
+
+  /// 删除数据库文件
+  static Future<void> deleteDatabase() async {
+    // 获取数据库实例并关闭
+    final db = await instance.database;
+    await db.close();
+
+    // 获取数据库文件路径并删除
+    final directory = await getApplicationDocumentsDirectory();
+    final path = '${directory.path}pboards.db';
+    final file = File(path);
+    if (await file.exists()) {
+      await file.delete();
+    }
   }
 }
