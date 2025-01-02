@@ -50,10 +50,10 @@ class SuperClipboard {
       if (reader == null) return;
 
       if (reader.canProvide(Formats.htmlText)) {
-        final html = await reader.readValue(Formats.plainText);
+        final html = await reader.readValue(Formats.htmlText);
         if (html != null) {
-          // final processedHtml = HtmlProcessor.processHtml(html.toString());
-          _handleContentChange(html.toString(), ClipboardType.text);
+          final processedHtml = HtmlProcessor.processHtml(html.toString());
+          _handleContentChange(processedHtml, ClipboardType.html);
         }
       } else if (reader.canProvide(Formats.fileUri)) {
         final fileUri = await reader.readValue(Formats.fileUri);

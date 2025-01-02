@@ -12,27 +12,26 @@ class HtmlContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: SingleChildScrollView(
-        child: Html(
-          data: htmlData,
-          style: {
-            "pre": Style(
-              margin: Margins.zero,
-              padding: HtmlPaddings.zero,
-              fontFamily: "monospace",
-            ),
-            "code": Style(
-              margin: Margins.zero,
-              padding: HtmlPaddings.zero,
-              display: Display.block,
-            ),
-            "span": Style(
-              lineHeight: const LineHeight(1.2),
-              margin: Margins.zero,
-              padding: HtmlPaddings.zero,
-            ),
-          },
-        ),
+      child: Html(
+        shrinkWrap: true,
+        data: htmlData,
+        style: {
+          "pre": Style(
+            margin: Margins.zero,
+            padding: HtmlPaddings.zero,
+            fontFamily: "monospace",
+          ),
+          "code": Style(
+            margin: Margins.zero,
+            padding: HtmlPaddings.zero,
+            display: Display.block,
+          ),
+          "span": Style(
+            lineHeight: const LineHeight(1.2),
+            margin: Margins.zero,
+            padding: HtmlPaddings.zero,
+          ),
+        },
       ),
     );
   }

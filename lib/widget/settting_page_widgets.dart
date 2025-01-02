@@ -5,7 +5,6 @@ import 'package:easy_pasta/model/settings_model.dart';
 import 'package:easy_pasta/core/record_hotkey_dialog.dart';
 import 'package:easy_pasta/widget/setting_counter.dart';
 import 'package:easy_pasta/model/settings_constants.dart';
-import 'package:easy_pasta/db/database_helper.dart';
 
 class HotkeyTile extends StatelessWidget {
   final SettingItem item;

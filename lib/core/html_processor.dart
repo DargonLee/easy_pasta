@@ -9,22 +9,6 @@ class HtmlProcessor {
     // 替换背景色
     processed = processed.replaceAll(
         'background-color: #ffffff;', 'background-color: transparent;');
-
-    // 处理 div 标签的换行
-    processed = processed.replaceAll('</div><div>', '');
-
-    // 移除多余的缩进空格
-    processed = processed.replaceAll(RegExp(r'\s{2,}'), ' ');
-
-    // 移除行首的空格
-    processed = processed.replaceAll(RegExp(r'^\s+', multiLine: true), '');
-
-    // 移除行尾的空格
-    processed = processed.replaceAll(RegExp(r'\s+$', multiLine: true), '');
-
-    // 移除多余的换行
-    processed = processed.replaceAll(RegExp(r'\n+'), '');
-
     return processed;
   }
 
