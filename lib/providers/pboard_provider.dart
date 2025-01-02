@@ -65,6 +65,42 @@ class PboardProvider extends ChangeNotifier {
     }
   }
 
+  /// 设置收藏
+  Future<void> toggleFavorite(ClipboardItemModel model) async {
+    try {
+      final index = _items.indexWhere((item) => item.id == model.id);
+      if (index != -1) {
+        final newModel = model.copyWith(isFavorite: model.isFavorite ? false : true);
+        _items[index] = newModel;
+        notifyListeners();
+
+        if (newModel.isFavorite) {
+          await _db.cancelFavorite(model);
+        } else {
+          await _db.setFavorite(model);
+        }
+      }
+    } catch (e) {
+      _error = '设置收藏失败: $e';
+      developer.log('设置收藏状态失败: $e');
+      notifyListeners();
+    }
+  }
+
+  /// 删除
+  Future<void> delete(ClipboardItemModel model) async {
+    try {
+      _items.removeWhere((item) => item.id == model.id);
+      notifyListeners();
+
+      await _db.deletePboardItem(model);
+    } catch (e) {
+      _error = '删除失败: $e';
+      developer.log('删除剪贴板内容失败: $e');
+      notifyListeners();
+    }
+  }
+
   /// 根据类型筛选内容
   Future<void> filterByType(NSPboardSortType type) async {
     if (_isLoading || type == _filterType) return;

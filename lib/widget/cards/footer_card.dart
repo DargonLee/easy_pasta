@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
+import 'package:easy_pasta/core/icon_service.dart';
+import 'package:easy_pasta/model/clipboard_type.dart';
 
-class TimestampContent extends StatelessWidget {
+class FooterContent extends StatelessWidget {
   final ClipboardItemModel model;
   final Function(ClipboardItemModel) onCopy;
+  final Function(ClipboardItemModel) onFavorite;
+  final Function(ClipboardItemModel) onDelete;
 
-  const TimestampContent({
+  const FooterContent({
     Key? key,
     required this.model,
     required this.onCopy,
+    required this.onFavorite,
+    required this.onDelete,
   }) : super(key: key);
 
   @override
@@ -17,18 +23,48 @@ class TimestampContent extends StatelessWidget {
           color: Colors.grey[500],
           fontSize: 10,
         );
+
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          Icon(
+            TypeIconHelper.getTypeIcon(model.ptype ?? ClipboardType.unknown,
+                pvalue: model.pvalue),
+            size: 15,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: 4),
           Text(
             _formatTimestamp(DateTime.parse(model.time)),
             style: defaultStyle,
           ),
+          const Spacer(),
           IconButton(
             icon: const Icon(Icons.copy, size: 14),
             onPressed: () => onCopy(model),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            splashRadius: 12,
+            color: Colors.grey[500],
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: Icon(
+              model.isFavorite ? Icons.star : Icons.star_border,
+              size: 15,
+            ),
+            onPressed: () => onFavorite(model),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            splashRadius: 12,
+            color: model.isFavorite ? Colors.amber : Colors.grey[500],
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: const Icon(Icons.delete_outline, size: 15),
+            onPressed: () => onDelete(model),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             splashRadius: 12,

@@ -68,6 +68,14 @@ class _MyHomePageState extends State<MyHomePage>
     setState(() => _selectedId = model.id);
   }
 
+  void _handleFavorite(ClipboardItemModel model) {
+    _pboardProvider.toggleFavorite(model);
+  }
+
+  void _handleDelete(ClipboardItemModel model) {
+    _pboardProvider.delete(model);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,6 +108,8 @@ class _MyHomePageState extends State<MyHomePage>
             onItemTap: _handleItemTap,
             onItemDoubleTap: _setPasteboardItem,
             onCopy: _setPasteboardItem,
+            onFavorite: _handleFavorite,
+            onDelete: _handleDelete,
           );
         },
       ),

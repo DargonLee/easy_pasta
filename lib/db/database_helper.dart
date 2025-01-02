@@ -107,6 +107,38 @@ class DatabaseHelper {
     );
   }
 
+  /// 设置收藏
+  Future<void> setFavorite(ClipboardItemModel model) async {
+    final db = await database;
+    await db.update(
+      _tableName,
+      {columnIsFavorite: 1},
+      where: '$columnId = ?',
+      whereArgs: [model.id],
+    );
+  }
+
+  /// 取消收藏
+  Future<void> cancelFavorite(ClipboardItemModel model) async {
+    final db = await database;
+    await db.update(
+      _tableName,
+      {columnIsFavorite: 0},
+      where: '$columnId = ?',
+      whereArgs: [model.id],
+    );
+  }
+
+  /// 删除
+  Future<void> deletePboardItem(ClipboardItemModel model) async {
+    final db = await database;
+    await db.delete(
+      _tableName,
+      where: '$columnId = ?',
+      whereArgs: [model.id],
+    );
+  }
+
   /// 插入新的剪贴板内容
   /// 如果超出最大存储限制,会自动删除最早的记录
   Future<int> insertPboardItem(ClipboardItemModel model) async {

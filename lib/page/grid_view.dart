@@ -12,6 +12,8 @@ class PasteboardGridView extends StatefulWidget {
   final Function(ClipboardItemModel) onItemTap;
   final Function(ClipboardItemModel) onItemDoubleTap;
   final Function(ClipboardItemModel) onCopy;
+  final Function(ClipboardItemModel) onFavorite;
+  final Function(ClipboardItemModel) onDelete;
 
   const PasteboardGridView({
     Key? key,
@@ -20,6 +22,8 @@ class PasteboardGridView extends StatefulWidget {
     required this.onItemTap,
     required this.onItemDoubleTap,
     required this.onCopy,
+    required this.onFavorite,
+    required this.onDelete,
   }) : super(key: key);
 
   @override
@@ -88,6 +92,8 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
                 onTap: widget.onItemTap,
                 onDoubleTap: widget.onItemDoubleTap,
                 onCopy: widget.onCopy,
+                onFavorite: widget.onFavorite,
+                onDelete: widget.onDelete,
               );
             },
           ),

@@ -45,12 +45,6 @@ class _SettingsPageState extends State<SettingsPage> {
       textColor: Colors.red,
     ),
     const SettingItem(
-      type: SettingType.resetApp,
-      title: '重置应用',
-      subtitle: '重置应用设置',
-      icon: Icons.settings,
-    ),
-    const SettingItem(
       type: SettingType.exitApp,
       title: '退出应用',
       subtitle: '完全退出应用程序',
@@ -158,8 +152,6 @@ class _SettingsPageState extends State<SettingsPage> {
           item: item,
           onClear: () => _showClearConfirmDialog(),
         );
-      case SettingType.resetApp:
-        return ResetAppTile(item: item);
       case SettingType.exitApp:
         return ExitAppTile(item: item);
       case SettingType.about:
@@ -178,10 +170,11 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     );
 
-    if (result == true) {
-      if (!mounted) return;
+    if (result == true && mounted) {
       await _settingsService.clearAllData(context);
-      Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+      }
     }
   }
 }

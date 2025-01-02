@@ -125,33 +125,6 @@ class ClearDataTile extends StatelessWidget {
   }
 }
 
-class ResetAppTile extends StatelessWidget {
-  final SettingItem item;
-
-  const ResetAppTile({
-    super.key,
-    required this.item,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(item.icon, color: item.iconColor),
-      title: Text(item.title, style: TextStyle(color: item.textColor)),
-      subtitle: Text(item.subtitle),
-      onTap: () => _showConfirmDialog(
-        context: context,
-        title: SettingsConstants.resetConfirmTitle,
-        content: SettingsConstants.resetConfirmContent,
-        onConfirm: () {
-          DatabaseHelper.deleteDatabase();
-          exit(0);
-        },
-      ),
-    );
-  }
-}
-
 class ExitAppTile extends StatelessWidget {
   final SettingItem item;
 

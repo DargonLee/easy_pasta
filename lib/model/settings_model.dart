@@ -5,7 +5,6 @@ enum SettingType {
   autoLaunch,
   maxStorage,
   clearData,
-  resetApp,
   exitApp,
   about,
 }

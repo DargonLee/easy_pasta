@@ -8,7 +8,7 @@ class ClipboardItemModel {
   final String time;
   final ClipboardType? ptype;
   final String pvalue;
-  final bool isFavorite;
+  bool isFavorite;
   final Uint8List? imageBytes;
 
   /// 创建剪贴板数据模型

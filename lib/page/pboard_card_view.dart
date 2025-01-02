@@ -5,7 +5,6 @@ import 'package:easy_pasta/widget/cards/tiff_card.dart';
 import 'package:easy_pasta/widget/cards/file_card.dart';
 import 'package:easy_pasta/widget/cards/text_card.dart';
 import 'package:easy_pasta/widget/cards/footer_card.dart';
-import 'package:easy_pasta/widget/cards/header.card.dart';
 import 'package:easy_pasta/widget/cards/html_card.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 
@@ -15,6 +14,8 @@ class NewPboardItemCard extends StatelessWidget {
   final Function(ClipboardItemModel) onTap;
   final Function(ClipboardItemModel) onDoubleTap;
   final Function(ClipboardItemModel) onCopy;
+  final Function(ClipboardItemModel) onFavorite;
+  final Function(ClipboardItemModel) onDelete;
   const NewPboardItemCard({
     Key? key,
     required this.model,
@@ -22,12 +23,13 @@ class NewPboardItemCard extends StatelessWidget {
     required this.onTap,
     required this.onDoubleTap,
     required this.onCopy,
+    required this.onFavorite,
+    required this.onDelete,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final isSelected = selectedId == model.id;
-
     return RepaintBoundary(
         child: Card(
       elevation: isSelected ? 2 : 0,
@@ -40,7 +42,6 @@ class NewPboardItemCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildHeader(context),
               Expanded(child: _buildContent(context)),
               _buildFooter(context),
             ],
@@ -48,16 +49,6 @@ class NewPboardItemCard extends StatelessWidget {
         ),
       ),
     ));
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return HeaderContent(
-      typeIcon: TypeIconHelper.getTypeIcon(
-        model.ptype ?? ClipboardType.unknown,
-        pvalue: model.pvalue,
-      ),
-      iconSize: 14,
-    );
   }
 
   Widget _buildContent(BuildContext context) {
@@ -93,9 +84,11 @@ class NewPboardItemCard extends StatelessWidget {
   }
 
   Widget _buildFooter(BuildContext context) {
-    return TimestampContent(
+    return FooterContent(
       model: model,
       onCopy: onCopy,
+      onFavorite: onFavorite,
+      onDelete: onDelete,
     );
   }
 }
