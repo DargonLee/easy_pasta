@@ -65,7 +65,7 @@ class _MyHomePageState extends State<MyHomePage>
 
   void _handleItemTap(NSPboardTypeModel model) {
     if (!mounted) return;
-    setState(() => _selectedId = model.id!);
+    setState(() => _selectedId = model.id);
   }
 
   @override

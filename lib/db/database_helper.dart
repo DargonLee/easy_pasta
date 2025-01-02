@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:developer' as develop;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
@@ -32,8 +33,8 @@ class DatabaseHelper {
   /// 初始化数据库
   Future<Database> _initDatabase() async {
     final directory = await getApplicationSupportDirectory();
-    print('directory: ${directory.path}');
-    final path = '${directory.path}$_dbName';
+    final path = '${directory.path}/$_dbName';
+    develop.log('database path: $path');
     return await databaseFactoryFfi.openDatabase(
       path,
       options: OpenDatabaseOptions(
