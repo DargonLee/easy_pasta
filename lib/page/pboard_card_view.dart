@@ -38,7 +38,7 @@ class NewPboardItemCard extends StatelessWidget {
         onTap: () => onTap(model),
         onDoubleTap: () => onDoubleTap(model),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.only(left: 12, top: 8, bottom: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

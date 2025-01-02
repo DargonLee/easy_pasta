@@ -3,7 +3,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 class TextContent extends StatelessWidget {
   final String text;
-  final int maxLines;
   final double fontSize;
   final TextStyle? style;
   final TextAlign textAlign;
@@ -12,7 +11,6 @@ class TextContent extends StatelessWidget {
   const TextContent({
     Key? key,
     required this.text,
-    this.maxLines = 3,
     this.fontSize = 13,
     this.style,
     this.textAlign = TextAlign.left,
@@ -35,35 +33,40 @@ class TextContent extends StatelessWidget {
     );
 
     if (urlPattern.hasMatch(text)) {
-      return InkWell(
-        onTap: () => _launchURL(text),
-        child: Text(
-          text,
-          maxLines: maxLines,
-          overflow: TextOverflow.ellipsis,
-          textAlign: textAlign,
-          style: textStyle.copyWith(
-            color: Colors.blue,
-            decoration: TextDecoration.underline,
+      return Flexible(
+        fit: FlexFit.loose,
+        child: InkWell(
+          onTap: () => _launchURL(text),
+          child: Text(
+            text,
+            textAlign: textAlign,
+            softWrap: true,
+            style: textStyle.copyWith(
+              color: Colors.blue,
+              decoration: TextDecoration.underline,
+            ),
           ),
         ),
       );
     }
 
-    return selectable
+    final textWidget = selectable
         ? SelectableText(
             text,
-            maxLines: maxLines,
             textAlign: textAlign,
             style: textStyle,
           )
         : Text(
             text,
-            maxLines: maxLines,
-            overflow: TextOverflow.ellipsis,
             textAlign: textAlign,
+            softWrap: true,
             style: textStyle,
           );
+
+    return Flexible(
+      fit: FlexFit.loose,
+      child: textWidget,
+    );
   }
 
   /// 打开URL

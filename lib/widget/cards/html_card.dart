@@ -16,19 +16,20 @@ class HtmlContent extends StatelessWidget {
         child: Html(
           data: htmlData,
           style: {
-            "body": Style(
+            "pre": Style(
               margin: Margins.zero,
               padding: HtmlPaddings.zero,
-              backgroundColor: Colors.transparent,
-              // 设置宽度和高度为100%以填充容器
-              width: Width.auto(),
-              height: Height.auto(),
+              fontFamily: "monospace",
             ),
-            // 确保内部元素也能填充
-            "div": Style(
-              width: Width.auto(),
-              height: Height.auto(),
-              backgroundColor: Colors.transparent,
+            "code": Style(
+              margin: Margins.zero,
+              padding: HtmlPaddings.zero,
+              display: Display.block,
+            ),
+            "span": Style(
+              lineHeight: const LineHeight(1.2),
+              margin: Margins.zero,
+              padding: HtmlPaddings.zero,
             ),
           },
         ),
