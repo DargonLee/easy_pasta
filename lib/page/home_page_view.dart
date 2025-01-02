@@ -46,7 +46,7 @@ class _MyHomePageState extends State<MyHomePage>
     });
   }
 
-  void _handlePboardUpdate(NSPboardTypeModel model) {
+  void _handlePboardUpdate(ClipboardItemModel model) {
     _pboardProvider.addItem(model);
   }
 
@@ -63,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage>
     _pboardProvider.filterByType(type);
   }
 
-  void _handleItemTap(NSPboardTypeModel model) {
+  void _handleItemTap(ClipboardItemModel model) {
     if (!mounted) return;
     setState(() => _selectedId = model.id);
   }
@@ -113,7 +113,7 @@ class _MyHomePageState extends State<MyHomePage>
     );
   }
 
-  void _setPasteboardItem(NSPboardTypeModel model) {
+  void _setPasteboardItem(ClipboardItemModel model) {
     _superClipboard.setPasteboardItem(model);
     WindowService().hideWindow();
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/widget/cards/tiff_card.dart';
 import 'package:easy_pasta/widget/cards/file_card.dart';
@@ -6,14 +7,14 @@ import 'package:easy_pasta/widget/cards/text_card.dart';
 import 'package:easy_pasta/widget/cards/footer_card.dart';
 import 'package:easy_pasta/widget/cards/header.card.dart';
 import 'package:easy_pasta/widget/cards/html_card.dart';
-import 'package:easy_pasta/widget/cards/source_card.dart';
+import 'package:easy_pasta/model/clipboard_type.dart';
 
 class NewPboardItemCard extends StatelessWidget {
-  final NSPboardTypeModel model;
+  final ClipboardItemModel model;
   final int selectedId;
-  final Function(NSPboardTypeModel) onTap;
-  final Function(NSPboardTypeModel) onDoubleTap;
-  final Function(NSPboardTypeModel) onCopy;
+  final Function(ClipboardItemModel) onTap;
+  final Function(ClipboardItemModel) onDoubleTap;
+  final Function(ClipboardItemModel) onCopy;
   const NewPboardItemCard({
     Key? key,
     required this.model,
@@ -53,7 +54,7 @@ class NewPboardItemCard extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     return HeaderContent(
       typeIcon: TypeIconHelper.getTypeIcon(
-        model.ptype,
+        model.ptype ?? ClipboardType.unknown,
         pvalue: model.pvalue,
       ),
       iconSize: 14,
@@ -69,33 +70,25 @@ class NewPboardItemCard extends StatelessWidget {
 
   Widget _buildContentByType(BuildContext context) {
     switch (model.ptype) {
-      case 'tiff':
+      case ClipboardType.image:
         return ImageContent(
-          imageBytes: model.tiffbytes!,
-          borderRadius: 8.0,
-          fit: BoxFit.cover,
+          imageBytes: model.imageBytes ?? Uint8List(0),
         );
-      case 'file':
+      case ClipboardType.file:
         return FileContent(
           filePath: model.pvalue,
-          iconSize: 16,
-          maxLines: 2,
-          fontSize: 13,
         );
-      case 'rtf':
-      case 'html':
+      case ClipboardType.html:
         return HtmlContent(
           htmlData: model.pvalue,
         );
-      case 'source_code':
-        return SourceCodeContent(
-          code: model.pvalue,
+      case ClipboardType.unknown:
+        return const TextContent(
+          text: 'Unknown',
         );
       default:
         return TextContent(
           text: model.pvalue,
-          maxLines: 3,
-          fontSize: 13,
         );
     }
   }

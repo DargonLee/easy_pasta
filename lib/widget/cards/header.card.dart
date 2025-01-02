@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_pasta/model/clipboard_type.dart';
 
 class HeaderContent extends StatelessWidget {
   final IconData typeIcon;
@@ -57,21 +58,19 @@ class TypeIconHelper {
     caseSensitive: false,
   );
 
-  static IconData getTypeIcon(String type, {String? pvalue}) {
+  static IconData getTypeIcon(ClipboardType type, {String? pvalue}) {
     switch (type) {
-      case 'text':
+      case ClipboardType.text:
         if (urlPattern.hasMatch(pvalue ?? '')) {
           return Icons.link;
         }
         return Icons.text_fields;
-      case 'image':
+      case ClipboardType.image:
         return Icons.image;
-      case 'file':
+      case ClipboardType.file:
         final isDirectory = pvalue?.endsWith('/') ?? false;
         return isDirectory == true ? Icons.folder : Icons.insert_drive_file;
-      case 'rtf':
-        return Icons.article;
-      case 'html':
+      case ClipboardType.html:
         return Icons.code;
       default:
         return Icons.content_copy;

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
+
 class TimestampContent extends StatelessWidget {
-  final NSPboardTypeModel model;
-  final Function(NSPboardTypeModel) onCopy;
+  final ClipboardItemModel model;
+  final Function(ClipboardItemModel) onCopy;
 
   const TimestampContent({
     Key? key,

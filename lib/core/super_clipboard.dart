@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
+import 'package:easy_pasta/model/clipboard_type.dart';
 
 /// 剪贴板管理器
 /// 负责监听和管理系统剪贴板的变化
@@ -14,10 +16,10 @@ class SuperClipboard {
   final SystemClipboard? _clipboard = SystemClipboard.instance;
 
   /// 剪贴板内容变化回调
-  ValueChanged<NSPboardTypeModel?>? _onClipboardChanged;
+  ValueChanged<ClipboardItemModel?>? _onClipboardChanged;
 
   /// 缓存的上一次剪贴板内容
-  String? _cachedContent;
+  ClipboardItemModel? _lastContent;
 
   /// 定时检查剪贴板的定时器
   Timer? _pollingTimer;
@@ -46,58 +48,79 @@ class SuperClipboard {
       final reader = await _clipboard?.read();
       if (reader == null) return;
 
-      final (currentContent, type) = await _readClipboard(reader);
-      _handleContentChange(currentContent, type);
+      if (reader.canProvide(Formats.htmlText)) {
+        final html = await reader.readValue(Formats.htmlText);
+        if (html != null) {
+          _handleContentChange(html.toString(), ClipboardType.html);
+        }
+      } else if (reader.canProvide(Formats.fileUri)) {
+        final fileUri = await reader.readValue(Formats.fileUri);
+        if (fileUri != null) {
+          _handleContentChange(fileUri.toString(), ClipboardType.file);
+        }
+      } else if (reader.canProvide(Formats.plainText)) {
+        final text = await reader.readValue(Formats.plainText);
+        if (text != null) {
+          _handleContentChange(text.toString(), ClipboardType.text);
+        }
+      } else if (reader.canProvide(Formats.png)) {
+        reader.getFile(Formats.png, (file) async {
+          try {
+            final stream = file.getStream();
+            final bytes = await stream.toList();
+            final imageData = bytes.expand((x) => x).toList();
+            _handleContentChange(imageData.toString(), ClipboardType.image);
+          } catch (e) {
+            debugPrint('Error processing image: $e');
+          }
+        });
+      }
     } catch (e) {
       debugPrint('Clipboard polling error: $e');
     }
   }
 
-  /// 读取纯文本内容
-  Future<(String?, String?)> _readClipboard(ClipboardReader reader) async {
-    String type = "text";
-    if (reader.canProvide(Formats.plainText)) {
-      final text = await reader.readValue(Formats.plainText);
-      return (text, type);
-    }
-    return (null, null);
-  }
-
   /// 处理内容变化
-  void _handleContentChange(String? currentContent, String? type) {
-    if (currentContent != null && currentContent != _cachedContent) {
-      _cachedContent = currentContent;
-      _notifyContentChange(currentContent, type);
+  void _handleContentChange(dynamic currentContent, ClipboardType? type) {
+    final contentModel = ClipboardItemModel(
+      ptype: type,
+      pvalue: currentContent,
+    );
+    if (contentModel != _lastContent) {
+      _lastContent = contentModel;
+      _notifyContentChange(contentModel);
     }
   }
 
   /// 通知内容变化
-  void _notifyContentChange(String content, String? type) {
-    _onClipboardChanged?.call(
-      NSPboardTypeModel(
-        ptype: type ?? 'text',
-        pvalue: content,
-      ),
-    );
+  void _notifyContentChange(ClipboardItemModel contentModel) {
+    _onClipboardChanged?.call(contentModel);
   }
 
   /// 设置剪贴板变化监听器
-  void setClipboardListener(ValueChanged<NSPboardTypeModel?> listener) {
+  void setClipboardListener(ValueChanged<ClipboardItemModel?> listener) {
     _onClipboardChanged = listener;
   }
 
   /// 写入内容到剪贴板
-  Future<void> setPasteboardItem(NSPboardTypeModel model) async {
-    await setContent(plainText: model.pvalue, type: model.ptype);
+  Future<void> setPasteboardItem(ClipboardItemModel model) async {
+    await setContent(content: model.pvalue, type: model.ptype);
   }
 
   /// 写入多格式内容到剪贴板
-  Future<void> setContent({String? plainText, String? type}) async {
-    if (plainText == null) return;
+  Future<void> setContent({dynamic content, ClipboardType? type}) async {
+    if (content == null) return;
 
     final item = DataWriterItem();
-    item.add(Formats.plainText(plainText));
-    _cachedContent = plainText;
+    if (type == ClipboardType.html) {
+      item.add(Formats.htmlText(content));
+    } else if (type == ClipboardType.file) {
+      item.add(Formats.fileUri(content));
+    } else if (type == ClipboardType.text) {
+      item.add(Formats.plainText(content));
+    } else if (type == ClipboardType.image) {
+      item.add(Formats.png(Uint8List.fromList(content)));
+    }
 
     try {
       await _clipboard?.write([item]);
@@ -112,6 +135,6 @@ class SuperClipboard {
     _pollingTimer?.cancel();
     _pollingTimer = null;
     _onClipboardChanged = null;
-    _cachedContent = null;
+    _lastContent = null;
   }
 }

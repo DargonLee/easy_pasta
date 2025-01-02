@@ -90,6 +90,9 @@ dependencies:
   # Userdefault
   shared_preferences: ^2.3.4
 
+  # 加密
+  crypto: ^3.0.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

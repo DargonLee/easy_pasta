@@ -10,13 +10,13 @@ class PboardProvider extends ChangeNotifier {
   final DatabaseHelper _db = DatabaseHelper();
 
   // 状态
-  List<NSPboardTypeModel> _items = [];
+  List<ClipboardItemModel> _items = [];
   NSPboardSortType _filterType = NSPboardSortType.all;
   bool _isLoading = false;
   String? _error;
 
   // Getters
-  UnmodifiableListView<NSPboardTypeModel> get items =>
+  UnmodifiableListView<ClipboardItemModel> get items =>
       UnmodifiableListView(_items);
   int get count => _items.length;
   NSPboardSortType get filterType => _filterType;
@@ -24,7 +24,7 @@ class PboardProvider extends ChangeNotifier {
   String? get error => _error;
 
   /// 添加新的剪贴板内容
-  Future<void> addItem(NSPboardTypeModel model) async {
+  Future<void> addItem(ClipboardItemModel model) async {
     try {
       // 先更新UI
       _items.insert(0, model);
@@ -55,7 +55,7 @@ class PboardProvider extends ChangeNotifier {
 
       final result = await _db.getPboardItemList();
       _items =
-          result.map((map) => NSPboardTypeModel.fromMapObject(map)).toList();
+          result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
     } catch (e) {
       _error = '加载失败: $e';
       developer.log('获取剪贴板列表失败: $e');
@@ -83,7 +83,7 @@ class PboardProvider extends ChangeNotifier {
       final result =
           await _db.getPboardItemListByType(type.toString().split('.').last);
       _items =
-          result.map((map) => NSPboardTypeModel.fromMapObject(map)).toList();
+          result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
     } catch (e) {
       _error = '筛选失败: $e';
       developer.log('按类型获取剪贴板列表失败: $e');
@@ -104,7 +104,7 @@ class PboardProvider extends ChangeNotifier {
 
       final result = await _db.getPboardItemListWithString(query);
       _items =
-          result.map((map) => NSPboardTypeModel.fromMapObject(map)).toList();
+          result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
     } catch (e) {
       _error = '搜索失败: $e';
       developer.log('搜索剪贴板内容失败: $e');

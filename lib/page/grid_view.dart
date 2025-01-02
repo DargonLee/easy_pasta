@@ -7,11 +7,11 @@ class PasteboardGridView extends StatefulWidget {
   static const double _kGridSpacing = 8.0;
   static const double _kMinCrossAxisExtent = 250.0;
 
-  final List<NSPboardTypeModel> pboards;
+  final List<ClipboardItemModel> pboards;
   final int selectedId;
-  final Function(NSPboardTypeModel) onItemTap;
-  final Function(NSPboardTypeModel) onItemDoubleTap;
-  final Function(NSPboardTypeModel) onCopy;
+  final Function(ClipboardItemModel) onItemTap;
+  final Function(ClipboardItemModel) onItemDoubleTap;
+  final Function(ClipboardItemModel) onCopy;
 
   const PasteboardGridView({
     Key? key,

@@ -13,8 +13,8 @@ class DatabaseHelper {
   factory DatabaseHelper() => instance;
 
   // 数据库相关常量
-  static const String _dbName = 'pboards.db';
-  static const String _tableName = 'pboards';
+  static const String _dbName = 'easy_pasta.db';
+  static const String _tableName = 'clipboard_items';
   static const int _version = 1;
 
   // 表字段名
@@ -23,7 +23,7 @@ class DatabaseHelper {
   static const String columnType = 'type';
   static const String columnValue = 'value';
   static const String columnIsFavorite = 'isFavorite';
-  static const String columnTiff = 'tiffBytes';
+  static const String columnImage = 'image';
 
   Database? _db;
 
@@ -34,7 +34,7 @@ class DatabaseHelper {
   Future<Database> _initDatabase() async {
     final directory = await getApplicationSupportDirectory();
     final path = '${directory.path}/$_dbName';
-    develop.log('database path: $path');
+    print('database path: $path');
     return await databaseFactoryFfi.openDatabase(
       path,
       options: OpenDatabaseOptions(
@@ -53,7 +53,7 @@ class DatabaseHelper {
         $columnType TEXT NOT NULL,
         $columnValue TEXT,
         $columnIsFavorite INTEGER DEFAULT 0,
-        $columnTiff BLOB
+        $columnImage BLOB
       )
     ''');
   }
@@ -109,7 +109,7 @@ class DatabaseHelper {
 
   /// 插入新的剪贴板内容
   /// 如果超出最大存储限制,会自动删除最早的记录
-  Future<int> insertPboardItem(NSPboardTypeModel model) async {
+  Future<int> insertPboardItem(ClipboardItemModel model) async {
     final db = await database;
 
     // 开启事务以确保数据一致性
