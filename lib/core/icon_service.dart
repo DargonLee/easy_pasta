@@ -2,24 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 
 /// 类型图标助手类
+/// 根据剪贴板内容类型返回对应的图标
 class TypeIconHelper {
-  static final urlPattern = RegExp(
-    r'(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})',
+  static final _urlPattern = RegExp(
+    r'^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$',
     caseSensitive: false,
   );
 
   static IconData getTypeIcon(ClipboardType type, {String? pvalue}) {
+    if (pvalue == null) {
+      return Icons.content_copy;
+    }
+
     switch (type) {
       case ClipboardType.text:
-        if (urlPattern.hasMatch(pvalue ?? '')) {
-          return Icons.link;
-        }
-        return Icons.text_fields;
+        return _urlPattern.hasMatch(pvalue) ? Icons.link : Icons.text_fields;
       case ClipboardType.image:
         return Icons.image;
       case ClipboardType.file:
-        final isDirectory = pvalue?.endsWith('/') ?? false;
-        return isDirectory == true ? Icons.folder : Icons.insert_drive_file;
+        return pvalue.endsWith('/') ? Icons.folder : Icons.insert_drive_file;
       case ClipboardType.html:
         return Icons.code;
       default:

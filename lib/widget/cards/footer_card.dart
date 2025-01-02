@@ -92,14 +92,12 @@ class FooterContent extends StatelessWidget {
     }
   }
 
-  /// 获取详细时间
   String getDetailedTime(DateTime timestamp) {
     return '${timestamp.year}年${timestamp.month}月${timestamp.day}日 '
         '${timestamp.hour.toString().padLeft(2, '0')}:'
         '${timestamp.minute.toString().padLeft(2, '0')}';
   }
 
-  /// 判断是否是今天
   bool isToday(DateTime timestamp) {
     final now = DateTime.now();
     return timestamp.year == now.year &&
