@@ -3,29 +3,35 @@ import 'package:flutter_html/flutter_html.dart';
 
 class HtmlContent extends StatelessWidget {
   final String htmlData;
-  final double? width;
-  final double? height;
-  final int maxLines;
-  final double fontSize;
 
   const HtmlContent({
     Key? key,
     required this.htmlData,
-    this.width,
-    this.height,
-    this.maxLines = 3,
-    this.fontSize = 13,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: BoxConstraints(
-        maxWidth: width ?? double.infinity,
-        maxHeight: height ?? double.infinity,
-      ),
-      child: Html(
-        data: htmlData
+    return Expanded(
+      child: SingleChildScrollView(
+        child: Html(
+          data: htmlData,
+          style: {
+            "body": Style(
+              margin: Margins.zero,
+              padding: HtmlPaddings.zero,
+              backgroundColor: Colors.transparent,
+              // 设置宽度和高度为100%以填充容器
+              width: Width.auto(),
+              height: Height.auto(),
+            ),
+            // 确保内部元素也能填充
+            "div": Style(
+              width: Width.auto(),
+              height: Height.auto(),
+              backgroundColor: Colors.transparent,
+            ),
+          },
+        ),
       ),
     );
   }

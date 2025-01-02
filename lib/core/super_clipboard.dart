@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
+import 'package:easy_pasta/core/html_processor.dart';
 
 /// 剪贴板管理器
 /// 负责监听和管理系统剪贴板的变化
@@ -51,7 +52,8 @@ class SuperClipboard {
       if (reader.canProvide(Formats.htmlText)) {
         final html = await reader.readValue(Formats.htmlText);
         if (html != null) {
-          _handleContentChange(html.toString(), ClipboardType.html);
+          final processedHtml = HtmlProcessor.processHtml(html.toString());
+          _handleContentChange(processedHtml, ClipboardType.html);
         }
       } else if (reader.canProvide(Formats.fileUri)) {
         final fileUri = await reader.readValue(Formats.fileUri);
