@@ -31,7 +31,6 @@ class NewPboardItemCard extends StatelessWidget {
     return RepaintBoundary(
         child: Card(
       elevation: isSelected ? 2 : 0,
-      margin: const EdgeInsets.all(4),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () => onTap(model),
@@ -39,7 +38,7 @@ class NewPboardItemCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildHeader(context),
               Expanded(child: _buildContent(context)),

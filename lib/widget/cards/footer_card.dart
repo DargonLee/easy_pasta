@@ -18,7 +18,7 @@ class TimestampContent extends StatelessWidget {
           fontSize: 10,
         );
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

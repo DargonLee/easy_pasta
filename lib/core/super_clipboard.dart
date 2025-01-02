@@ -69,7 +69,7 @@ class SuperClipboard {
             final stream = file.getStream();
             final bytes = await stream.toList();
             final imageData = bytes.expand((x) => x).toList();
-            _handleContentChange(imageData.toString(), ClipboardType.image);
+            _handleContentChange(imageData, ClipboardType.image);
           } catch (e) {
             debugPrint('Error processing image: $e');
           }
@@ -82,10 +82,19 @@ class SuperClipboard {
 
   /// 处理内容变化
   void _handleContentChange(dynamic currentContent, ClipboardType? type) {
-    final contentModel = ClipboardItemModel(
-      ptype: type,
-      pvalue: currentContent,
-    );
+    ClipboardItemModel? contentModel;
+    if (type == ClipboardType.image) {
+      contentModel = ClipboardItemModel(
+        ptype: type,
+        pvalue: '',
+        imageBytes: Uint8List.fromList(currentContent),
+      );
+    } else {
+      contentModel = ClipboardItemModel(
+        ptype: type,
+        pvalue: currentContent,
+      );
+    }
     if (contentModel != _lastContent) {
       _lastContent = contentModel;
       _notifyContentChange(contentModel);
