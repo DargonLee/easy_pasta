@@ -70,15 +70,12 @@ class PboardProvider extends ChangeNotifier {
     try {
       final index = _items.indexWhere((item) => item.id == model.id);
       if (index != -1) {
-        final newModel = model.copyWith(isFavorite: model.isFavorite ? false : true);
+        final newModel =
+            model.copyWith(isFavorite: model.isFavorite ? false : true);
         _items[index] = newModel;
         notifyListeners();
 
-        if (newModel.isFavorite) {
-          await _db.cancelFavorite(model);
-        } else {
-          await _db.setFavorite(model);
-        }
+        await _db.setFavorite(newModel);
       }
     } catch (e) {
       _error = '设置收藏失败: $e';
@@ -112,7 +109,13 @@ class PboardProvider extends ChangeNotifier {
       notifyListeners();
 
       if (type == NSPboardSortType.all) {
+        _isLoading = false;
         await loadItems();
+        return;
+      }
+      if (type == NSPboardSortType.favorite) {
+        _isLoading = false;
+        await loadFavorites();
         return;
       }
 
@@ -123,6 +126,27 @@ class PboardProvider extends ChangeNotifier {
     } catch (e) {
       _error = '筛选失败: $e';
       developer.log('按类型获取剪贴板列表失败: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// 获取收藏的内容
+  Future<void> loadFavorites() async {
+    if (_isLoading) return;
+
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      final result = await _db.getFavoritePboardItemList();
+      _items =
+          result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
+    } catch (e) {
+      _error = '加载失败: $e';
+      developer.log('获取收藏列表失败: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -145,12 +169,12 @@ class PboardProvider extends ChangeNotifier {
       notifyListeners();
 
       final result = await _db.getPboardItemListWithString(query);
-      _items = result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
+      _items =
+          result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
 
       if (_items.isEmpty) {
         _error = '未找到相关内容';
       }
-
     } catch (e) {
       _error = '搜索失败: $e';
       developer.log('搜索剪贴板内容失败: $e', error: e);

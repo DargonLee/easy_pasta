@@ -122,7 +122,7 @@ class DatabaseHelper {
     final db = await database;
     await db.update(
       _tableName,
-      {columnIsFavorite: 1},
+      {columnIsFavorite: model.isFavorite ? 1 : 0},
       where: '$columnId = ?',
       whereArgs: [model.id],
     );
