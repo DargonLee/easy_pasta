@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final TextEditingController searchController;
   final ValueChanged<String> onSearch;
-  final ValueChanged<NSPboardSortType> onTypeChanged;
+  final TextEditingController searchController;
   final VoidCallback onClear;
-  final VoidCallback onSettingsTap;
+  final ValueChanged<NSPboardSortType> onTypeChanged;
   final NSPboardSortType selectedType;
+  final VoidCallback onSettingsTap;
 
   const CustomAppBar({
     super.key,
-    required this.searchController,
     required this.onSearch,
-    required this.onTypeChanged,
+    required this.searchController,
     required this.onClear,
-    required this.onSettingsTap,
+    required this.onTypeChanged,
     required this.selectedType,
+    required this.onSettingsTap,
   });
 
   @override
@@ -112,24 +112,32 @@ class _SearchField extends StatelessWidget {
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(20),
       ),
-      child: TextField(
-        controller: controller,
-        onChanged: onSearch,
-        decoration: InputDecoration(
-          isDense: true,
-          border: InputBorder.none,
-          hintText: '搜索',
-          hintStyle: TextStyle(color: Colors.grey[400]),
-          prefixIcon: const Icon(Icons.search, size: 20),
-          suffixIcon: controller.text.isNotEmpty
-              ? IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(Icons.clear, size: 20),
-                  onPressed: onClear,
-                )
-              : null,
-          contentPadding: const EdgeInsets.symmetric(vertical: 11),
-        ),
+      child: ValueListenableBuilder<TextEditingValue>(
+        valueListenable: controller,
+        builder: (context, value, child) {
+          return TextField(
+            controller: controller,
+            onSubmitted: (value) => onSearch(value),
+            decoration: InputDecoration(
+              isDense: true,
+              border: InputBorder.none,
+              hintText: '搜索',
+              hintStyle: TextStyle(color: Colors.grey[400]),
+              prefixIcon: const Icon(Icons.search, size: 20),
+              suffixIcon: value.text.isNotEmpty
+                  ? IconButton(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(Icons.clear, size: 20),
+                      onPressed: () {
+                        controller.clear();
+                        onClear();
+                      },
+                    )
+                  : null,
+              contentPadding: const EdgeInsets.symmetric(vertical: 11),
+            ),
+          );
+        },
       ),
     );
   }

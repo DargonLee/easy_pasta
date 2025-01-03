@@ -130,8 +130,14 @@ class PboardProvider extends ChangeNotifier {
   }
 
   /// 搜索内容
+  /// 搜索剪贴板内容
+  /// [query] 搜索关键词
   Future<void> search(String query) async {
     if (_isLoading) return;
+    if (query.trim().isEmpty) {
+      await loadItems();
+      return;
+    }
 
     try {
       _isLoading = true;
@@ -139,11 +145,15 @@ class PboardProvider extends ChangeNotifier {
       notifyListeners();
 
       final result = await _db.getPboardItemListWithString(query);
-      _items =
-          result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
+      _items = result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
+
+      if (_items.isEmpty) {
+        _error = '未找到相关内容';
+      }
+
     } catch (e) {
       _error = '搜索失败: $e';
-      developer.log('搜索剪贴板内容失败: $e');
+      developer.log('搜索剪贴板内容失败: $e', error: e);
     } finally {
       _isLoading = false;
       notifyListeners();

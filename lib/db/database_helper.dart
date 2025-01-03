@@ -81,7 +81,7 @@ class DatabaseHelper {
     final db = await database;
     return db.query(
       _tableName,
-      where: '$columnValue LIKE ?',
+      where: 'LOWER($columnValue) LIKE LOWER(?)',
       whereArgs: ['%$query%'],
       orderBy: '$columnTime DESC',
     );

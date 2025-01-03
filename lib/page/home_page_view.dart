@@ -50,6 +50,10 @@ class _MyHomePageState extends State<MyHomePage>
     _pboardProvider.addItem(model);
   }
 
+  void _handleClear() {
+    _pboardProvider.loadItems();
+  }
+
   void _handleSearch(String value) {
     if (value.isEmpty) {
       _pboardProvider.loadItems();
@@ -80,12 +84,12 @@ class _MyHomePageState extends State<MyHomePage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        searchController: _searchController,
         onSearch: _handleSearch,
+        searchController: _searchController,
+        onClear: _handleClear,
         onTypeChanged: _handleTypeChanged,
-        onClear: () => _searchController.clear(),
-        onSettingsTap: () => _navigateToSettings(),
         selectedType: _selectedType,
+        onSettingsTap: () => _navigateToSettings(),
       ),
       body: Consumer<PboardProvider>(
         builder: (context, provider, child) {
