@@ -70,6 +70,7 @@ class FooterContent extends StatelessWidget {
             splashRadius: 12,
             color: Colors.grey[500],
           ),
+          const SizedBox(width: 8),
         ],
       ),
     );

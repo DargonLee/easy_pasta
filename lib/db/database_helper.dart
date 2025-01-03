@@ -22,7 +22,7 @@ class DatabaseHelper {
   static const String columnType = 'type';
   static const String columnValue = 'value';
   static const String columnIsFavorite = 'isFavorite';
-  static const String columnImage = 'image';
+  static const String columnBytes = 'bytes';
 
   Database? _db;
 
@@ -50,9 +50,9 @@ class DatabaseHelper {
         $columnId INTEGER PRIMARY KEY,
         $columnTime TEXT NOT NULL,
         $columnType TEXT NOT NULL,
-        $columnValue TEXT,
+        $columnValue TEXT NOT NULL,
         $columnIsFavorite INTEGER DEFAULT 0,
-        $columnImage BLOB
+        $columnBytes BLOB
       )
     ''');
   }

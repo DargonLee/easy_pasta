@@ -1,5 +1,6 @@
-import 'package:easy_pasta/model/clipboard_type.dart';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:easy_pasta/model/clipboard_type.dart';
 
 /// 剪贴板数据模型
 class ClipboardItemModel {
@@ -9,24 +10,18 @@ class ClipboardItemModel {
   final ClipboardType? ptype;
   final String pvalue;
   bool isFavorite;
-  final Uint8List? imageBytes;
+  final Uint8List? bytes;
 
   /// 创建剪贴板数据模型
-  /// [id] - 数据ID，默认为 DateTime.now().millisecondsSinceEpoch
-  /// [time] - 创建时间，默认为当前时间
-  /// [ptype] - 数据类型
-  /// [pvalue] - 数据内容
-  /// [imageBytes] - 图片数据，可选
   ClipboardItemModel({
     int? id,
     String? time,
-    required ClipboardType? ptype,
+    required this.ptype,
     required this.pvalue,
     this.isFavorite = false,
-    this.imageBytes,
+    this.bytes,
   })  : id = id ?? DateTime.now().millisecondsSinceEpoch,
-        time = time ?? DateTime.now().toString(),
-        ptype = ptype ?? ClipboardType.unknown;
+        time = time ?? DateTime.now().toString();
 
   /// 从数据库映射创建模型
   factory ClipboardItemModel.fromMapObject(Map<String, dynamic> map) {
@@ -36,13 +31,8 @@ class ClipboardItemModel {
       ptype: ClipboardType.fromString(map['type']),
       pvalue: map['value'],
       isFavorite: map['isFavorite'] == 1,
-      imageBytes: map['image'],
+      bytes: map['bytes'],
     );
-  }
-
-  /// 切换收藏状态
-  ClipboardItemModel toggleFavorite() {
-    return copyWith(isFavorite: !isFavorite);
   }
 
   /// 转换为数据库映射
@@ -53,8 +43,29 @@ class ClipboardItemModel {
       'type': ptype.toString(),
       'value': pvalue,
       'isFavorite': isFavorite ? 1 : 0,
-      'image': imageBytes,
+      'bytes': bytes,
     };
+  }
+
+  /// 获取HTML数据
+  String? get htmlData =>
+      ptype == ClipboardType.html ? bytesToString(bytes ?? Uint8List(0)) : null;
+
+  /// 获取图片数据
+  Uint8List? get imageBytes => ptype == ClipboardType.image ? bytes : null;
+
+  /// 获取文件路径
+  String? get filePath =>
+      ptype == ClipboardType.file ? bytesToString(bytes ?? Uint8List(0)) : null;
+
+  /// 将字符串转换为Uint8List
+  static Uint8List stringToBytes(String str) {
+    return Uint8List.fromList(utf8.encode(str));
+  }
+
+  /// 将Uint8List转换为字符串
+  String bytesToString(Uint8List bytes) {
+    return utf8.decode(bytes);
   }
 
   /// 复制模型并更新部分属性
@@ -64,7 +75,7 @@ class ClipboardItemModel {
     ClipboardType? ptype,
     String? pvalue,
     bool? isFavorite,
-    Uint8List? imageBytes,
+    Uint8List? bytes,
   }) {
     return ClipboardItemModel(
       id: id ?? this.id,
@@ -72,8 +83,13 @@ class ClipboardItemModel {
       ptype: ptype ?? this.ptype,
       pvalue: pvalue ?? this.pvalue,
       isFavorite: isFavorite ?? this.isFavorite,
-      imageBytes: imageBytes ?? this.imageBytes,
+      bytes: bytes ?? this.bytes,
     );
+  }
+
+  /// 切换收藏状态
+  ClipboardItemModel toggleFavorite() {
+    return copyWith(isFavorite: !isFavorite);
   }
 
   @override
@@ -85,35 +101,20 @@ class ClipboardItemModel {
       case ClipboardType.text:
         return pvalue == other.pvalue && ptype == other.ptype;
       case ClipboardType.html:
-        return pvalue == other.pvalue && ptype == other.ptype;
+        return pvalue == other.pvalue &&
+            ptype == other.ptype &&
+            listEquals(bytes, other.bytes);
       case ClipboardType.file:
         return pvalue == other.pvalue && ptype == other.ptype;
       case ClipboardType.image:
-        if (imageBytes == null || other.imageBytes == null) return false;
-        if (imageBytes!.length != other.imageBytes!.length) return false;
-        // 对于图片数据，可以只比较长度和采样点
-        return _compareImageData(imageBytes!, other.imageBytes!);
+        return ptype == other.ptype && listEquals(bytes, other.bytes);
       default:
         return false;
     }
   }
 
-  bool _compareImageData(List<int> data1, List<int> data2) {
-    // 为了提高性能，可以只比较关键采样点
-    const sampleSize = 100; // 采样点数量
-    if (data1.length < sampleSize || data2.length < sampleSize) {
-      return listEquals(data1, data2);
-    }
-
-    final step = data1.length ~/ sampleSize;
-    for (var i = 0; i < sampleSize; i++) {
-      if (data1[i * step] != data2[i * step]) return false;
-    }
-    return true;
-  }
-
   @override
-  int get hashCode => Object.hash(id, time, ptype, pvalue, isFavorite);
+  int get hashCode => Object.hash(id, time, ptype, pvalue, bytes, isFavorite);
 
   @override
   String toString() =>

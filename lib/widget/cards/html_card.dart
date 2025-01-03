@@ -11,28 +11,39 @@ class HtmlContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Html(
-        shrinkWrap: true,
-        data: htmlData,
-        style: {
-          "pre": Style(
-            margin: Margins.zero,
-            padding: HtmlPaddings.zero,
-            fontFamily: "monospace",
-          ),
-          "code": Style(
-            margin: Margins.zero,
-            padding: HtmlPaddings.zero,
-            display: Display.block,
-          ),
-          "span": Style(
-            lineHeight: const LineHeight(1.2),
-            margin: Margins.zero,
-            padding: HtmlPaddings.zero,
-          ),
-        },
-      ),
+    return Html(
+      shrinkWrap: true,
+      data: htmlData,
+      style: {
+        "body": Style(
+          margin: Margins.zero,
+          padding: HtmlPaddings.zero,
+          width: Width.auto(),
+        ),
+        "pre": Style(
+          margin: Margins.zero,
+          padding: HtmlPaddings.zero,
+          fontFamily: "monospace",
+          backgroundColor: Colors.transparent,
+        ),
+        "code": Style(
+          margin: Margins.zero,
+          padding: HtmlPaddings.zero,
+          display: Display.block,
+          backgroundColor: Colors.transparent,
+        ),
+        "span": Style(
+          lineHeight: const LineHeight(1.2),
+          margin: Margins.zero,
+          padding: HtmlPaddings.zero,
+          backgroundColor: Colors.transparent,
+        ),
+        "div": Style(
+          margin: Margins.zero,
+          padding: HtmlPaddings.zero,
+          backgroundColor: Colors.transparent,
+        ),
+      },
     );
   }
 }

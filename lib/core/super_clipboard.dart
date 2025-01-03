@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:super_clipboard/super_clipboard.dart';
@@ -6,131 +7,174 @@ import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:easy_pasta/core/html_processor.dart';
 
-/// 剪贴板管理器
-/// 负责监听和管理系统剪贴板的变化
+/// A singleton class that manages system clipboard operations and monitoring
 class SuperClipboard {
-  // 单例实现
+  // Singleton implementation
   static final SuperClipboard _instance = SuperClipboard._internal();
   static SuperClipboard get instance => _instance;
 
-  /// 系统剪贴板实例
   final SystemClipboard? _clipboard = SystemClipboard.instance;
-
-  /// 剪贴板内容变化回调
   ValueChanged<ClipboardItemModel?>? _onClipboardChanged;
-
-  /// 缓存的上一次剪贴板内容
   ClipboardItemModel? _lastContent;
-
-  /// 定时检查剪贴板的定时器
   Timer? _pollingTimer;
 
-  /// 轮询间隔时间
-  static const _pollingInterval = Duration(seconds: 1);
+  static const Duration _pollingInterval = Duration(seconds: 1);
 
+  // Private constructor
   SuperClipboard._internal() {
-    _initializeClipboardMonitoring();
-  }
-
-  /// 初始化剪贴板监控
-  void _initializeClipboardMonitoring() {
     _startPollingTimer();
   }
 
-  /// 启动定时器进行剪贴板轮询
+  /// Starts monitoring clipboard changes
   void _startPollingTimer() {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(_pollingInterval, (_) => _pollClipboard());
   }
 
-  /// 轮询检查剪贴板内容
+  /// Polls clipboard content for changes
   Future<void> _pollClipboard() async {
     try {
       final reader = await _clipboard?.read();
       if (reader == null) return;
 
-      if (reader.canProvide(Formats.htmlText)) {
-        final html = await reader.readValue(Formats.htmlText);
-        if (html != null) {
-          final processedHtml = HtmlProcessor.processHtml(html.toString());
-          _handleContentChange(processedHtml, ClipboardType.html);
-        }
-      } else if (reader.canProvide(Formats.fileUri)) {
-        final fileUri = await reader.readValue(Formats.fileUri);
-        if (fileUri != null) {
-          _handleContentChange(fileUri.toString(), ClipboardType.file);
-        }
-      } else if (reader.canProvide(Formats.plainText)) {
-        final text = await reader.readValue(Formats.plainText);
-        if (text != null) {
-          _handleContentChange(text.toString(), ClipboardType.text);
-        }
-      } else if (reader.canProvide(Formats.png)) {
-        reader.getFile(Formats.png, (file) async {
-          try {
-            final stream = file.getStream();
-            final bytes = await stream.toList();
-            final imageData = bytes.expand((x) => x).toList();
-            _handleContentChange(imageData, ClipboardType.image);
-          } catch (e) {
-            debugPrint('Error processing image: $e');
-          }
-        });
-      }
+      await _processClipboardContent(reader);
     } catch (e) {
       debugPrint('Clipboard polling error: $e');
     }
   }
 
-  /// 处理内容变化
-  void _handleContentChange(dynamic currentContent, ClipboardType? type) {
-    ClipboardItemModel? contentModel;
-    if (type == ClipboardType.image) {
-      contentModel = ClipboardItemModel(
-        ptype: type,
-        pvalue: '',
-        imageBytes: Uint8List.fromList(currentContent),
-      );
-    } else {
-      contentModel = ClipboardItemModel(
-        ptype: type,
-        pvalue: currentContent,
-      );
+  /// Processes different types of clipboard content
+  Future<void> _processClipboardContent(ClipboardReader reader) async {
+    if (await _processHtmlContent(reader)) return;
+    if (await _processFileContent(reader)) return;
+    if (await _processTextContent(reader)) return;
+    if (await _processImageContent(reader)) return;
+  }
+
+  /// Processes HTML content from clipboard
+  Future<bool> _processHtmlContent(ClipboardReader reader) async {
+    if (!reader.canProvide(Formats.htmlText)) return false;
+
+    final html = await reader.readValue(Formats.htmlText);
+    final htmlPlainText = await reader.readValue(Formats.plainText);
+
+    if (html != null) {
+      final processedHtml = HtmlProcessor.processHtml(html.toString());
+      _handleContentChange(htmlPlainText.toString(), ClipboardType.html,
+          bytes: Uint8List.fromList(utf8.encode(processedHtml)));
+      return true;
     }
+    return false;
+  }
+
+  /// Processes file URI content from clipboard
+  Future<bool> _processFileContent(ClipboardReader reader) async {
+    if (!reader.canProvide(Formats.fileUri)) return false;
+
+    final fileUri = await reader.readValue(Formats.fileUri);
+    final fileUriString = await reader.readValue(Formats.plainText);
+
+    if (fileUri != null) {
+      _handleContentChange(fileUriString.toString(), ClipboardType.file,
+          bytes: Uint8List.fromList(utf8.encode(fileUri.toString())));
+      return true;
+    }
+    return false;
+  }
+
+  /// Processes plain text content from clipboard
+  Future<bool> _processTextContent(ClipboardReader reader) async {
+    if (!reader.canProvide(Formats.plainText)) return false;
+
+    final text = await reader.readValue(Formats.plainText);
+    if (text != null) {
+      _handleContentChange(text.toString(), ClipboardType.text);
+      return true;
+    }
+    return false;
+  }
+
+  /// Processes image content from clipboard
+  Future<bool> _processImageContent(ClipboardReader reader) async {
+    if (!reader.canProvide(Formats.png)) return false;
+
+    try {
+      final completer = Completer<bool>();
+
+      reader.getFile(Formats.png, (file) async {
+        try {
+          final stream = file.getStream();
+          final bytes = await stream.toList();
+          final imageData = bytes.expand((x) => x).toList();
+          _handleContentChange('', ClipboardType.image,
+              bytes: Uint8List.fromList(imageData));
+          completer.complete(true);
+        } catch (e) {
+          debugPrint('Error processing image: $e');
+          completer.complete(false);
+        }
+      });
+
+      return await completer.future;
+    } catch (e) {
+      debugPrint('Error accessing image file: $e');
+      return false;
+    }
+  }
+
+  /// Handles content changes and notifies listeners
+  void _handleContentChange(String content, ClipboardType? type,
+      {Uint8List? bytes}) {
+    final contentModel = _createContentModel(content, type, bytes);
+
     if (contentModel != _lastContent) {
       _lastContent = contentModel;
-      _notifyContentChange(contentModel);
+      _onClipboardChanged?.call(contentModel);
     }
   }
 
-  /// 通知内容变化
-  void _notifyContentChange(ClipboardItemModel contentModel) {
-    _onClipboardChanged?.call(contentModel);
+  /// Creates a content model based on the clipboard type
+  ClipboardItemModel _createContentModel(
+      String content, ClipboardType? type, Uint8List? bytes) {
+    return ClipboardItemModel(
+      ptype: type,
+      pvalue: content,
+      bytes: type == ClipboardType.text ? null : bytes,
+    );
   }
 
-  /// 设置剪贴板变化监听器
+  /// Sets clipboard change listener
   void setClipboardListener(ValueChanged<ClipboardItemModel?> listener) {
     _onClipboardChanged = listener;
   }
 
-  /// 写入内容到剪贴板
-  Future<void> setPasteboardItem(ClipboardItemModel model) async {
-    await setContent(content: model.pvalue, type: model.ptype);
-  }
+  /// Writes content to clipboard
+  Future<void> setPasteboardItem(ClipboardItemModel model) => setContent(model);
 
-  /// 写入多格式内容到剪贴板
-  Future<void> setContent({dynamic content, ClipboardType? type}) async {
-    if (content == null) return;
-
+  /// Writes content to clipboard with proper format
+  Future<void> setContent(ClipboardItemModel model) async {
     final item = DataWriterItem();
-    if (type == ClipboardType.html) {
-      item.add(Formats.htmlText(content));
-    } else if (type == ClipboardType.file) {
-      item.add(Formats.fileUri(content));
-    } else if (type == ClipboardType.text) {
-      item.add(Formats.plainText(content));
-    } else if (type == ClipboardType.image) {
-      item.add(Formats.png(Uint8List.fromList(content)));
+
+    switch (model.ptype) {
+      case ClipboardType.html:
+        item.add(Formats.plainText(model.pvalue));
+        item.add(
+            Formats.htmlText(model.bytesToString(model.bytes ?? Uint8List(0))));
+        break;
+      case ClipboardType.file:
+        item.add(Formats.plainText(model.pvalue));
+        item.add(Formats.fileUri(
+            Uri.parse(model.bytesToString(model.bytes ?? Uint8List(0)))));
+        break;
+      case ClipboardType.text:
+        item.add(Formats.plainText(model.pvalue));
+        break;
+      case ClipboardType.image:
+        item.add(
+            Formats.png(Uint8List.fromList(model.imageBytes ?? Uint8List(0))));
+        break;
+      default:
+        throw ArgumentError('Unsupported clipboard type: ${model.ptype}');
     }
 
     try {
@@ -141,7 +185,7 @@ class SuperClipboard {
     }
   }
 
-  /// 清理资源
+  /// Cleans up resources
   void dispose() {
     _pollingTimer?.cancel();
     _pollingTimer = null;

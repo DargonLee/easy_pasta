@@ -38,7 +38,7 @@ class NewPboardItemCard extends StatelessWidget {
         onTap: () => onTap(model),
         onDoubleTap: () => onDoubleTap(model),
         child: Padding(
-          padding: const EdgeInsets.only(left: 12, top: 8, bottom: 12),
+          padding: const EdgeInsets.only(left: 8, top: 4, bottom: 8, right: 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -62,15 +62,16 @@ class NewPboardItemCard extends StatelessWidget {
     switch (model.ptype) {
       case ClipboardType.image:
         return ImageContent(
-          imageBytes: model.imageBytes ?? Uint8List(0),
+          imageBytes: model.bytes ?? Uint8List(0),
         );
       case ClipboardType.file:
         return FileContent(
-          filePath: model.pvalue,
+          fileName: model.pvalue,
+          fileUri: model.bytesToString(model.bytes ?? Uint8List(0)),
         );
       case ClipboardType.html:
         return HtmlContent(
-          htmlData: model.pvalue,
+          htmlData: model.bytesToString(model.bytes ?? Uint8List(0)),
         );
       case ClipboardType.unknown:
         return const TextContent(
