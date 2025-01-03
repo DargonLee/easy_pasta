@@ -4,213 +4,324 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/db/shared_preference_helper.dart';
 
-/// 数据库帮助类,用于管理剪贴板数据的存储和查询
-class DatabaseHelper {
-  // 单例模式
-  DatabaseHelper._internal();
-  static final DatabaseHelper instance = DatabaseHelper._internal();
-  factory DatabaseHelper() => instance;
+/// Exception thrown when database operations fail
+class DatabaseException implements Exception {
+  final String message;
+  final dynamic error;
 
-  // 数据库相关常量
-  static const String _dbName = 'easy_pasta.db';
-  static const String _tableName = 'clipboard_items';
-  static const int _version = 1;
+  DatabaseException(this.message, [this.error]);
 
-  // 表字段名
+  @override
+  String toString() =>
+      'DatabaseException: $message${error != null ? ' ($error)' : ''}';
+}
+
+/// Configuration for the database
+class DatabaseConfig {
+  static const String dbName = 'easy_pasta.db';
+  static const String tableName = 'clipboard_items';
+  static const int version = 1;
+
+  // Table columns
   static const String columnId = 'id';
   static const String columnTime = 'time';
   static const String columnType = 'type';
   static const String columnValue = 'value';
   static const String columnIsFavorite = 'isFavorite';
   static const String columnBytes = 'bytes';
+}
+
+/// Abstract interface for database operations
+abstract class IDatabaseHelper {
+  Future<List<Map<String, dynamic>>> getPboardItemListByType(String type);
+  Future<List<Map<String, dynamic>>> getPboardItemListWithString(String query);
+  Future<List<Map<String, dynamic>>> getFavoritePboardItemList();
+  Future<List<Map<String, dynamic>>> getPboardItemList();
+  Future<void> setFavorite(ClipboardItemModel model);
+  Future<void> cancelFavorite(ClipboardItemModel model);
+  Future<void> deletePboardItem(ClipboardItemModel model);
+  Future<int> insertPboardItem(ClipboardItemModel model);
+  Future<int> getCount();
+  Future<int> deleteAll();
+}
+
+/// Implementation of database operations for clipboard management
+class DatabaseHelper implements IDatabaseHelper {
+  // Singleton implementation
+  DatabaseHelper._();
+  static final DatabaseHelper instance = DatabaseHelper._();
 
   Database? _db;
 
-  /// 获取数据库实例,如果未初始化则先初始化
-  Future<Database> get database async => _db ??= await _initDatabase();
-
-  /// 获取数据库文件路径
-  Future<String> getDatabasePath() async {
-    final directory = await getApplicationSupportDirectory();
-    return '${directory.path}/$_dbName';
+  /// Returns database instance, initializing if necessary
+  Future<Database> get database async {
+    if (_db != null) return _db!;
+    _db ??= await _initDatabase();
+    return _db!;
   }
 
-  /// 初始化数据库
+  /// Initializes the database
   Future<Database> _initDatabase() async {
-    sqfliteFfiInit();
-    var databaseFactory = databaseFactoryFfi;
-    final path = await getDatabasePath();
-    print('database path: $path');
-    return await databaseFactory.openDatabase(
-      path,
-      options: OpenDatabaseOptions(
-        version: _version,
-        onCreate: _createDb,
-      ),
-    );
-  }
+    try {
+      sqfliteFfiInit();
+      final path = await _getDatabasePath();
+      final databaseFactory = databaseFactoryFfi;
 
-  /// 创建数据表
-  Future<void> _createDb(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS $_tableName(
-        $columnId INTEGER PRIMARY KEY,
-        $columnTime TEXT NOT NULL,
-        $columnType TEXT NOT NULL,
-        $columnValue TEXT NOT NULL,
-        $columnIsFavorite INTEGER DEFAULT 0,
-        $columnBytes BLOB
-      )
-    ''');
-    await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_time ON $_tableName ($columnTime)');
-    await db.execute(
-        'CREATE INDEX IF NOT EXISTS idx_type ON $_tableName ($columnType)');
-  }
-
-  /// 获取最大存储数量
-  Future<int> getMaxCount() async {
-    final prefs = await SharedPreferenceHelper.instance;
-    return prefs.getMaxItemStore();
-  }
-
-  /// 根据类型查询剪贴板内容
-  Future<List<Map<String, dynamic>>> getPboardItemListByType(
-      String type) async {
-    final db = await database;
-    return db.query(
-      _tableName,
-      where: '$columnType = ?',
-      whereArgs: [type],
-      orderBy: '$columnTime DESC',
-    );
-  }
-
-  /// 根据关键字搜索剪贴板内容
-  Future<List<Map<String, dynamic>>> getPboardItemListWithString(
-      String query) async {
-    final db = await database;
-    return db.query(
-      _tableName,
-      where: 'LOWER($columnValue) LIKE LOWER(?)',
-      whereArgs: ['%$query%'],
-      orderBy: '$columnTime DESC',
-    );
-  }
-
-  /// 获取收藏的剪贴板内容
-  Future<List<Map<String, dynamic>>> getFavoritePboardItemList() async {
-    final db = await database;
-    return db.query(
-      _tableName,
-      where: '$columnIsFavorite = 1',
-      orderBy: '$columnTime DESC',
-    );
-  }
-
-  /// 获取所有剪贴板内容
-  Future<List<Map<String, dynamic>>> getPboardItemList() async {
-    final db = await database;
-    return db.query(
-      _tableName,
-      orderBy: '$columnTime DESC',
-    );
-  }
-
-  /// 设置收藏
-  Future<void> setFavorite(ClipboardItemModel model) async {
-    final db = await database;
-    await db.update(
-      _tableName,
-      {columnIsFavorite: model.isFavorite ? 1 : 0},
-      where: '$columnId = ?',
-      whereArgs: [model.id],
-    );
-  }
-
-  /// 取消收藏
-  Future<void> cancelFavorite(ClipboardItemModel model) async {
-    final db = await database;
-    await db.update(
-      _tableName,
-      {columnIsFavorite: 0},
-      where: '$columnId = ?',
-      whereArgs: [model.id],
-    );
-  }
-
-  /// 删除
-  Future<void> deletePboardItem(ClipboardItemModel model) async {
-    final db = await database;
-    await db.delete(
-      _tableName,
-      where: '$columnId = ?',
-      whereArgs: [model.id],
-    );
-  }
-
-  /// 插入新的剪贴板内容
-  /// 如果超出最大存储限制,会自动删除最早的记录
-  Future<int> insertPboardItem(ClipboardItemModel model) async {
-    final db = await database;
-    final result = await db.insert(_tableName, model.toMap());
-    final count = await getCount();
-    final maxCount = await getMaxCount();
-    if (count > maxCount) {
-      await deleteOldestItem();
+      return await databaseFactory.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: DatabaseConfig.version,
+          onCreate: _createDb,
+          onUpgrade: _onUpgrade,
+        ),
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to initialize database', e);
     }
-    return result;
   }
 
-  /// 获取记录总数
-  Future<int> getCount() async {
-    final db = await database;
-    final result =
-        await db.rawQuery('SELECT COUNT(*) as count FROM $_tableName');
-    return result.first['count'] as int;
+  /// Gets the database file path
+  Future<String> _getDatabasePath() async {
+    try {
+      final directory = await getApplicationSupportDirectory();
+      return '${directory.path}/${DatabaseConfig.dbName}';
+    } catch (e) {
+      throw DatabaseException('Failed to get database path', e);
+    }
   }
 
-  /// 删除最早的记录
-  Future<int> deleteOldestItem() async {
-    final db = await database;
+  /// Creates database tables and indexes
+  Future<void> _createDb(Database db, int version) async {
+    await db.transaction((txn) async {
+      // Create main table
+      await txn.execute('''
+        CREATE TABLE IF NOT EXISTS ${DatabaseConfig.tableName}(
+          ${DatabaseConfig.columnId} INTEGER PRIMARY KEY,
+          ${DatabaseConfig.columnTime} TEXT NOT NULL,
+          ${DatabaseConfig.columnType} TEXT NOT NULL,
+          ${DatabaseConfig.columnValue} TEXT NOT NULL,
+          ${DatabaseConfig.columnIsFavorite} INTEGER DEFAULT 0,
+          ${DatabaseConfig.columnBytes} BLOB
+        )
+      ''');
 
-    // 使用事务确保操作的原子性
-    return await db.transaction((txn) async {
-      final oldestItem = await txn.query(
-        _tableName,
-        columns: [columnId],
-        orderBy: '$columnTime ASC',
-        limit: 1,
-      );
-
-      if (oldestItem.isEmpty) return 0;
-
-      return await txn.delete(
-        _tableName,
-        where: '$columnId = ?',
-        whereArgs: [oldestItem.first[columnId]],
-      );
+      // Create indexes
+      await txn.execute(
+          'CREATE INDEX IF NOT EXISTS idx_time ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnTime})');
+      await txn.execute(
+          'CREATE INDEX IF NOT EXISTS idx_type ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnType})');
     });
   }
 
-  /// 删除所有记录
-  Future<int> deleteAll() async {
-    final db = await database;
-    return db.delete(_tableName);
+  /// Handles database upgrades
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    // Add upgrade logic here when needed
   }
 
-  /// 删除数据库文件
-  static Future<void> deleteDatabase() async {
-    // 获取数据库实例并关闭
-    final db = await instance.database;
-    await db.close();
+  /// Returns the maximum number of items to store
+  Future<int> getMaxCount() async {
+    try {
+      final prefs = await SharedPreferenceHelper.instance;
+      return prefs.getMaxItemStore();
+    } catch (e) {
+      throw DatabaseException('Failed to get max count', e);
+    }
+  }
 
-    // 获取数据库文件路径并删除
-    final directory = await getApplicationDocumentsDirectory();
-    final path = '${directory.path}pboards.db';
-    final file = File(path);
-    if (await file.exists()) {
-      await file.delete();
+  @override
+  Future<List<Map<String, dynamic>>> getPboardItemListByType(
+      String type) async {
+    try {
+      final db = await database;
+      return await db.query(
+        DatabaseConfig.tableName,
+        where: '${DatabaseConfig.columnType} = ?',
+        whereArgs: [type],
+        orderBy: '${DatabaseConfig.columnTime} DESC',
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to get items by type', e);
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getPboardItemListWithString(
+      String query) async {
+    try {
+      final db = await database;
+      return await db.query(
+        DatabaseConfig.tableName,
+        where: 'LOWER(${DatabaseConfig.columnValue}) LIKE LOWER(?)',
+        whereArgs: ['%$query%'],
+        orderBy: '${DatabaseConfig.columnTime} DESC',
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to search items', e);
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getFavoritePboardItemList() async {
+    try {
+      final db = await database;
+      return await db.query(
+        DatabaseConfig.tableName,
+        where: '${DatabaseConfig.columnIsFavorite} = 1',
+        orderBy: '${DatabaseConfig.columnTime} DESC',
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to get favorite items', e);
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getPboardItemList() async {
+    try {
+      final db = await database;
+      return await db.query(
+        DatabaseConfig.tableName,
+        orderBy: '${DatabaseConfig.columnTime} DESC',
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to get all items', e);
+    }
+  }
+
+  @override
+  Future<void> setFavorite(ClipboardItemModel model) async {
+    try {
+      final db = await database;
+      await db.update(
+        DatabaseConfig.tableName,
+        {DatabaseConfig.columnIsFavorite: model.isFavorite ? 1 : 0},
+        where: '${DatabaseConfig.columnId} = ?',
+        whereArgs: [model.id],
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to set favorite', e);
+    }
+  }
+
+  @override
+  Future<void> cancelFavorite(ClipboardItemModel model) async {
+    try {
+      final db = await database;
+      await db.update(
+        DatabaseConfig.tableName,
+        {DatabaseConfig.columnIsFavorite: 0},
+        where: '${DatabaseConfig.columnId} = ?',
+        whereArgs: [model.id],
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to cancel favorite', e);
+    }
+  }
+
+  @override
+  Future<void> deletePboardItem(ClipboardItemModel model) async {
+    try {
+      final db = await database;
+      await db.delete(
+        DatabaseConfig.tableName,
+        where: '${DatabaseConfig.columnId} = ?',
+        whereArgs: [model.id],
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to delete item', e);
+    }
+  }
+
+  @override
+  Future<int> insertPboardItem(ClipboardItemModel model) async {
+    final db = await database;
+
+    return await db.transaction((txn) async {
+      try {
+        final result =
+            await txn.insert(DatabaseConfig.tableName, model.toMap());
+
+        final count = await _getCountInTransaction(txn);
+        final maxCount = await getMaxCount();
+
+        if (count > maxCount) {
+          await _deleteOldestItemInTransaction(txn);
+        }
+
+        return result;
+      } catch (e) {
+        throw DatabaseException('Failed to insert item', e);
+      }
+    });
+  }
+
+  Future<int> _getCountInTransaction(Transaction txn) async {
+    final result = await txn
+        .rawQuery('SELECT COUNT(*) as count FROM ${DatabaseConfig.tableName}');
+    return result.first['count'] as int;
+  }
+
+  Future<void> _deleteOldestItemInTransaction(Transaction txn) async {
+    final oldestItem = await txn.query(
+      DatabaseConfig.tableName,
+      columns: [DatabaseConfig.columnId],
+      orderBy: '${DatabaseConfig.columnTime} ASC',
+      limit: 1,
+    );
+
+    if (oldestItem.isNotEmpty) {
+      await txn.delete(
+        DatabaseConfig.tableName,
+        where: '${DatabaseConfig.columnId} = ?',
+        whereArgs: [oldestItem.first[DatabaseConfig.columnId]],
+      );
+    }
+  }
+
+  @override
+  Future<int> getCount() async {
+    try {
+      final db = await database;
+      final result = await db.rawQuery(
+          'SELECT COUNT(*) as count FROM ${DatabaseConfig.tableName}');
+      return result.first['count'] as int;
+    } catch (e) {
+      throw DatabaseException('Failed to get count', e);
+    }
+  }
+
+  @override
+  Future<int> deleteAll() async {
+    try {
+      final db = await database;
+      return await db.delete(DatabaseConfig.tableName);
+    } catch (e) {
+      throw DatabaseException('Failed to delete all items', e);
+    }
+  }
+
+  /// Closes the database connection
+  Future<void> close() async {
+    final db = _db;
+    if (db != null) {
+      await db.close();
+      _db = null;
+    }
+  }
+
+  /// Deletes the database file
+  static Future<void> deleteDatabase() async {
+    try {
+      final instance = DatabaseHelper.instance;
+      await instance.close();
+
+      final directory = await getApplicationDocumentsDirectory();
+      final path = '${directory.path}/${DatabaseConfig.dbName}';
+      final file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (e) {
+      throw DatabaseException('Failed to delete database', e);
     }
   }
 }

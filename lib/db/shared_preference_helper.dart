@@ -19,7 +19,7 @@ class SharedPreferenceHelper {
   static const String maxItemStoreKey = '${_keyPrefix}MaxItemStoreKey';
 
   /// 默认值常量
-  static const int defaultMaxItems = 50;
+  static const int defaultMaxItems = 100;
   static const String defaultShortcut = '';
   static const bool defaultLoginInLaunch = false;
 
