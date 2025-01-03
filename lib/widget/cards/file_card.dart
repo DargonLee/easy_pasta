@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 
 /// A widget that displays a file icon and name in a vertical layout
@@ -9,7 +8,6 @@ class FileContent extends StatelessWidget {
   // Constants for styling
   static const double _iconSize = 56.0;
   static const double _fontSize = 13.0;
-  static const double _spacing = 8.0;
 
   const FileContent({
     super.key,
