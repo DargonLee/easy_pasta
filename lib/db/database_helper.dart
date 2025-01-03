@@ -244,7 +244,7 @@ class DatabaseHelper implements IDatabaseHelper {
         final maxCount = await getMaxCount();
 
         if (count > maxCount) {
-          await _deleteOldestItemInTransaction(txn);
+          await _deleteOldestNonFavoriteItemInTransaction(txn);
         }
 
         return result;
@@ -260,10 +260,12 @@ class DatabaseHelper implements IDatabaseHelper {
     return result.first['count'] as int;
   }
 
-  Future<void> _deleteOldestItemInTransaction(Transaction txn) async {
+  Future<void> _deleteOldestNonFavoriteItemInTransaction(
+      Transaction txn) async {
     final oldestItem = await txn.query(
       DatabaseConfig.tableName,
       columns: [DatabaseConfig.columnId],
+      where: '${DatabaseConfig.columnIsFavorite} = 0',
       orderBy: '${DatabaseConfig.columnTime} ASC',
       limit: 1,
     );
