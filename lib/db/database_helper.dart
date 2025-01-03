@@ -29,12 +29,19 @@ class DatabaseHelper {
   /// 获取数据库实例,如果未初始化则先初始化
   Future<Database> get database async => _db ??= await _initDatabase();
 
+  /// 获取数据库文件路径
+  Future<String> getDatabasePath() async {
+    final directory = await getApplicationSupportDirectory();
+    return '${directory.path}/$_dbName';
+  }
+
   /// 初始化数据库
   Future<Database> _initDatabase() async {
-    final directory = await getApplicationSupportDirectory();
-    final path = '${directory.path}/$_dbName';
+    sqfliteFfiInit();
+    var databaseFactory = databaseFactoryFfi;
+    final path = await getDatabasePath();
     print('database path: $path');
-    return await databaseFactoryFfi.openDatabase(
+    return await databaseFactory.openDatabase(
       path,
       options: OpenDatabaseOptions(
         version: _version,
@@ -55,6 +62,10 @@ class DatabaseHelper {
         $columnBytes BLOB
       )
     ''');
+    await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_time ON $_tableName ($columnTime)');
+    await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_type ON $_tableName ($columnType)');
   }
 
   /// 获取最大存储数量
@@ -142,19 +153,13 @@ class DatabaseHelper {
   /// 如果超出最大存储限制,会自动删除最早的记录
   Future<int> insertPboardItem(ClipboardItemModel model) async {
     final db = await database;
-
-    // 开启事务以确保数据一致性
-    return await db.transaction((txn) async {
-      final result = await txn.insert(_tableName, model.toMap());
-
-      final count = await getCount();
-      final maxCount = await getMaxCount();
-      if (count > maxCount) {
-        await deleteOldestItem();
-      }
-
-      return result;
-    });
+    final result = await db.insert(_tableName, model.toMap());
+    final count = await getCount();
+    final maxCount = await getMaxCount();
+    if (count > maxCount) {
+      await deleteOldestItem();
+    }
+    return result;
   }
 
   /// 获取记录总数

@@ -40,6 +40,8 @@ dependencies:
   shared_preferences: ^2.3.4
   # 加密
   crypto: ^3.0.6
+  # 同步锁
+  synchronized: ^3.3.0+3
 
 dev_dependencies:
   flutter_test:
