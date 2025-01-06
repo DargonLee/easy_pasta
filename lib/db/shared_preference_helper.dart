@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io' show Platform;
 
 /// 持久化存储帮助类
 /// 负责管理应用程序的配置项存储
@@ -20,13 +21,28 @@ class SharedPreferenceHelper {
 
   /// 默认值常量
   static const int defaultMaxItems = 100;
-  static const String defaultShortcut = '';
   static const bool defaultLoginInLaunch = false;
+
+  /// 平台特定的默认快捷键
+  static String get defaultShortcut {
+    if (Platform.isMacOS) {
+      return '{"identifier":"ae9b502e-d9c2-4c8c-acf6-100270b8234a","key":{"usageCode":458758},"modifiers":["meta","shift"],"scope":"system"}'; // macOS 默认快捷键
+    } else if (Platform.isWindows) {
+      return '{"identifier":"ae9b502e-d9c2-4c8c-acf6-100270b8234a","key":{"usageCode":458758},"modifiers":["control","shift"],"scope":"system"}'; // Windows 默认快捷键
+    } else if (Platform.isLinux) {
+      return '{"identifier":"ae9b502e-d9c2-4c8c-acf6-100270b8234a","key":{"usageCode":458758},"modifiers":["control","shift"],"scope":"system"}'; // Linux 默认快捷键
+    } else {
+      return ''; // 其他平台默认为空
+    }
+  }
 
   /// 获取单例实例
   static Future<SharedPreferenceHelper> get instance async {
     _instance ??= SharedPreferenceHelper._();
     _preferences ??= await SharedPreferences.getInstance();
+    if (_preferences?.getString(shortcutKey) == null) {
+      _instance!.setShortcutKey(defaultShortcut);
+    }
     return _instance!;
   }
 
@@ -36,7 +52,7 @@ class SharedPreferenceHelper {
   }
 
   String getShortcutKey() {
-    return _preferences?.getString(shortcutKey) ?? defaultShortcut;
+    return _preferences?.getString(shortcutKey) ?? '';
   }
 
   /// 最大存储数量相关操作
