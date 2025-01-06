@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
 import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:easy_pasta/widget/cards/tiff_card.dart';
+import 'package:easy_pasta/widget/cards/image_card.dart';
 import 'package:easy_pasta/widget/cards/file_card.dart';
 import 'package:easy_pasta/widget/cards/text_card.dart';
 import 'package:easy_pasta/widget/cards/footer_card.dart';

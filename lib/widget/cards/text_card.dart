@@ -33,18 +33,15 @@ class TextContent extends StatelessWidget {
     );
 
     if (urlPattern.hasMatch(text)) {
-      return Flexible(
-        fit: FlexFit.loose,
-        child: InkWell(
-          onTap: () => _launchURL(text),
-          child: Text(
-            text,
-            textAlign: textAlign,
-            softWrap: true,
-            style: textStyle.copyWith(
-              color: Colors.blue,
-              decoration: TextDecoration.underline,
-            ),
+      return InkWell(
+        onTap: () => _launchURL(text),
+        child: Text(
+          text,
+          textAlign: textAlign,
+          softWrap: true,
+          style: textStyle.copyWith(
+            color: Colors.blue,
+            decoration: TextDecoration.underline,
           ),
         ),
       );
@@ -63,10 +60,7 @@ class TextContent extends StatelessWidget {
             style: textStyle,
           );
 
-    return Flexible(
-      fit: FlexFit.loose,
-      child: textWidget,
-    );
+    return textWidget;
   }
 
   /// 打开URL

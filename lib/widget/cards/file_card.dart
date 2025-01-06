@@ -20,18 +20,9 @@ class FileContent extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Expanded(
-          flex: 6,
-          child: Center(
-            child: _buildIcon(),
-          ),
-        ),
-        Expanded(
-          flex: 4,
-          child: Center(
-            child: _buildFileName(),
-          ),
-        ),
+        _buildIcon(),
+        const SizedBox(height: 8),
+        _buildFileName(),
       ],
     );
   }
