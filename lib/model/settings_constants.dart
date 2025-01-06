@@ -1,6 +1,30 @@
 class SettingsConstants {
-  static const String appVersion = 'v1.0.0';
+  static const String aboutTitle = '关于';
+  static const String appVersion = 'v2.0.0';
   static const String githubUrl = 'https://github.com/DargonLee/easy_pasta';
+  static const String versionInfoTitle = '版本信息';
+  static const String versionInfoSubtitle = '查看版本和项目信息';
+
+  static const String basicSettingsTitle = '基本设置';
+  // 快捷键
+  static const String hotkeyTitle = '快捷键';
+  static const String hotkeySubtitle = '设置全局快捷键';
+
+  // 开机自启
+  static const String autoLaunchTitle = '开机自启';
+  static const String autoLaunchSubtitle = '系统启动时自动运行';
+
+  // 最大存储
+  static const String maxStorageTitle = '最大存储';
+  static const String maxStorageSubtitle = '设置最大存储条数';
+
+  // 清除记录
+  static const String clearDataTitle = '清除记录';
+  static const String clearDataSubtitle = '删除所有剪贴板记录';
+
+  // 退出应用
+  static const String exitAppTitle = '退出应用';
+  static const String exitAppSubtitle = '完全退出应用程序';
 
   // Dialog texts
   static const String clearConfirmTitle = '确认清除';

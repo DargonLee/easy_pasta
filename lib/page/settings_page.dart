@@ -4,7 +4,7 @@ import 'package:easy_pasta/model/settings_model.dart';
 import 'package:easy_pasta/core/settings_service.dart';
 import 'package:easy_pasta/widget/settting_page_widgets.dart';
 import 'package:easy_pasta/page/confirm_dialog_view.dart';
-
+import 'package:easy_pasta/model/settings_constants.dart';
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
 
@@ -20,34 +20,34 @@ class _SettingsPageState extends State<SettingsPage> {
   final List<SettingItem> _basicSettings = [
     const SettingItem(
       type: SettingType.hotkey,
-      title: '快捷键',
-      subtitle: '设置全局快捷键',
+      title: SettingsConstants.hotkeyTitle,
+      subtitle: SettingsConstants.hotkeySubtitle,
       icon: Icons.keyboard,
     ),
     const SettingItem(
       type: SettingType.autoLaunch,
-      title: '开机自启',
-      subtitle: '系统启动时自动运行',
+      title: SettingsConstants.autoLaunchTitle,
+      subtitle: SettingsConstants.autoLaunchSubtitle,
       icon: Icons.launch,
     ),
     const SettingItem(
       type: SettingType.maxStorage,
-      title: '最大存储',
-      subtitle: '设置最大存储条数',
+      title: SettingsConstants.maxStorageTitle,
+      subtitle: SettingsConstants.maxStorageSubtitle,
       icon: Icons.storage,
     ),
     const SettingItem(
       type: SettingType.clearData,
-      title: '清除记录',
-      subtitle: '删除所有剪贴板记录',
+      title: SettingsConstants.clearDataTitle,
+      subtitle: SettingsConstants.clearDataSubtitle,
       icon: Icons.delete_outline,
       iconColor: Colors.red,
       textColor: Colors.red,
     ),
     const SettingItem(
       type: SettingType.exitApp,
-      title: '退出应用',
-      subtitle: '完全退出应用程序',
+      title: SettingsConstants.exitAppTitle,
+      subtitle: SettingsConstants.exitAppSubtitle,
       icon: Icons.exit_to_app,
       iconColor: Colors.red,
       textColor: Colors.red,
@@ -78,17 +78,17 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         children: [
           _buildSection(
-            title: '基本设置',
+            title: SettingsConstants.basicSettingsTitle,
             items: _basicSettings,
           ),
           const SizedBox(height: 32),
           _buildSection(
-            title: '关于',
+            title: SettingsConstants.aboutTitle,
             items: [
               const SettingItem(
                 type: SettingType.about,
-                title: '版本信息',
-                subtitle: '查看版本和项目信息',
+                title: SettingsConstants.versionInfoTitle,
+                subtitle: SettingsConstants.versionInfoSubtitle,
                 icon: Icons.info_outline,
               ),
             ],
