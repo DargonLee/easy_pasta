@@ -8,6 +8,14 @@
 
 EasyPasta 是一款强大的跨平台剪贴板管理工具，专为提升您的工作效率而设计。它能够自动记录您的复制历史，并通过简单的快捷键操作随时调用，让信息的复制和粘贴变得更加便捷。
 
+## 📦 下载
+
+[macOS](https://github.com/harlans/EasyPasta/releases/download/v0.0.1/EasyPasta-0.0.1-macos.dmg)
+
+[Windows](https://github.com/harlans/EasyPasta/releases/download/v0.0.1/EasyPasta-0.0.1-windows.exe)
+
+[Linux](https://github.com/harlans/EasyPasta/releases/download/v0.0.1/EasyPasta-0.0.1-linux.deb)
+
 ### ✨ 核心特性
 
 - 🔒 **本地存储**: 所有数据均存储在本地，确保您的隐私安全
