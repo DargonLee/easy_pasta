@@ -1,47 +1,29 @@
 name: easy_pasta
-description: A clipboard manager for macos linux and windows .
+description: A cross-platform clipboard manager for macOS, Linux and Windows, providing convenient copy and paste functionality.
 publish_to: "none"
-version: 1.0.0+1
+version: 2.0.0+1
 package_name: com.harlans.easypasta.app
 environment:
   sdk: ">=3.0.0 <4.0.0"
 dependencies:
   flutter:
     sdk: flutter
-  # 图标
   cupertino_icons: ^1.0.2
-  # 窗口管理
   window_manager: ^0.4.3
-  # 快捷键
   hotkey_manager: ^0.2.3
-  # 复制粘贴
   super_clipboard: ^0.8.24
-  # 系统托盘
   tray_manager: ^0.3.1
-  # 开机自启动
   launch_at_startup: ^0.3.1
-  # 获取包信息
   package_info_plus: ^8.1.2
-  # 国际化
   intl: ^0.20.1
-  # 显示 html 字符串
   flutter_html: ^3.0.0-beta.2
-  # 代码高亮
   flutter_highlight: ^0.7.0
-  # 打开链接
   url_launcher: ^6.3.1
-  # 状态管理
   provider: ^6.1.2
-  # document path
   path_provider: ^2.1.5
-  # 数据库
   sqflite_common_ffi: ^2.3.4+4
-  # Userdefault
   shared_preferences: ^2.3.4
-  # 加密
   crypto: ^3.0.6
-  # 同步锁
-  synchronized: ^3.3.0+3
 
 dev_dependencies:
   flutter_test:

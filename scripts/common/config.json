@@ -1,9 +1,9 @@
 {
   "app": {
-    "name": "easy_paste",
+    "name": "EasyPasta",
     "displayName": "Easy Paste",
     "version": "1.0.0",
-    "publisher": "Your Company",
+    "publisher": "harans",
     "description": "跨平台剪贴板工具"
   },
   "build": {
@@ -13,7 +13,7 @@
   },
   "platforms": {
     "macos": {
-      "bundleId": "com.example.easypaste",
+      "bundleId": "com.harlans.easypasta.app",
       "category": "public.app-category.utilities",
       "minVersion": "10.14",
       "outputFormat": "dmg"

@@ -10,7 +10,7 @@ main() {
     if [ ! -f "$CONFIG_FILE" ]; then
         error "配置文件不存在: $CONFIG_FILE"
         exit 1
-    }
+    fi
     
     # 检查平台
     case "$(uname -s)" in

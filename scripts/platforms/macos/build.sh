@@ -12,9 +12,10 @@ build_macos() {
     local app_name=$(read_config "$config_file" '.app.name')
     local version=$(read_config "$config_file" '.app.version')
     local output_dir=$(read_config "$config_file" '.build.outputDir')
+    local root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../" && pwd)"
     
     info "开始构建 macOS 版本..."
-    
+
     # 构建应用
     flutter build macos --release || {
         error "macOS构建失败"
@@ -23,14 +24,15 @@ build_macos() {
     
     # 创建DMG
     info "创建DMG安装包..."
-    create_dmg \
+    create-dmg \
         --volname "$app_name" \
+        --volicon "$root_dir/assets/images/tray_icon_original.icns" \
         --window-pos 200 120 \
         --window-size 800 400 \
         --icon-size 100 \
         --app-drop-link 600 185 \
-        "$output_dir/macos/$app_name-$version.dmg" \
-        "$output_dir/macos/Build/Products/Release/$app_name.app" || {
+        "$root_dir/$output_dir/macos/$app_name-$version.dmg" \
+        "$root_dir/$output_dir/macos/Build/Products/Release/$app_name.app" || {
         error "DMG创建失败"
         return 1
     }

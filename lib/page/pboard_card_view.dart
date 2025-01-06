@@ -54,7 +54,7 @@ class NewPboardItemCard extends StatelessWidget {
                   ConstrainedBox(
                     constraints: BoxConstraints(
                       minHeight: 50,
-                      maxHeight: constraints.maxHeight - 48, // 减去底部操作栏高度
+                      maxHeight: constraints.maxHeight - 48,
                     ),
                     child: _buildContent(context),
                   ),
