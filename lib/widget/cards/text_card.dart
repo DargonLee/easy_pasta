@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TextContent extends StatelessWidget {
+  static final _urlPattern = RegExp(
+    r'(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})',
+    caseSensitive: false,
+  );
+
   final String text;
   final double fontSize;
   final TextStyle? style;
@@ -9,58 +14,56 @@ class TextContent extends StatelessWidget {
   final bool selectable;
 
   const TextContent({
-    Key? key,
+    super.key,
     required this.text,
     this.fontSize = 13,
     this.style,
     this.textAlign = TextAlign.left,
     this.selectable = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = style ??
-        TextStyle(
-          fontSize: fontSize,
-          height: 1.2,
-          color: Theme.of(context).textTheme.bodyMedium?.color,
-        );
+    final textStyle = style ?? _defaultTextStyle(context);
+    return _urlPattern.hasMatch(text)
+        ? _buildUrlText(textStyle)
+        : _buildNormalText(textStyle);
+  }
 
-    // 检查是否为URL
-    final urlPattern = RegExp(
-      r'(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})',
-      caseSensitive: false,
-    );
-
-    if (urlPattern.hasMatch(text)) {
-      return InkWell(
-        onTap: () => _launchURL(text),
-        child: Text(
-          text,
-          textAlign: textAlign,
-          softWrap: true,
-          style: textStyle.copyWith(
-            color: Colors.blue,
-            decoration: TextDecoration.underline,
-          ),
-        ),
+  TextStyle _defaultTextStyle(BuildContext context) => TextStyle(
+        fontSize: fontSize,
+        height: 1.2,
+        color: Theme.of(context).textTheme.bodyMedium?.color,
       );
-    }
 
-    final textWidget = selectable
+  Widget _buildUrlText(TextStyle baseStyle) {
+    return InkWell(
+      onTap: () => _launchURL(text),
+      child: Text(
+        text,
+        textAlign: textAlign,
+        softWrap: true,
+        style: baseStyle.copyWith(
+          color: Colors.blue,
+          decoration: TextDecoration.underline,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNormalText(TextStyle style) {
+    return selectable
         ? SelectableText(
             text,
             textAlign: textAlign,
-            style: textStyle,
+            style: style,
           )
         : Text(
             text,
             textAlign: textAlign,
             softWrap: true,
-            style: textStyle,
+            style: style,
           );
-
-    return textWidget;
   }
 
   /// 打开URL

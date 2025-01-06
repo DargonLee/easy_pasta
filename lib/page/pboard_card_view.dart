@@ -31,24 +31,42 @@ class NewPboardItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSelected = selectedId == model.id;
     return RepaintBoundary(
-        child: Card(
-      elevation: isSelected ? 2 : 0,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => onTap(model),
-        onDoubleTap: () => onDoubleTap(model),
-        child: Padding(
-          padding: const EdgeInsets.only(left: 8, top: 4, bottom: 8, right: 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: _buildContent(context)),
-              _buildFooter(context),
-            ],
-          ),
+      child: Card(
+        elevation: isSelected ? 2 : 0,
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: isSelected
+              ? BorderSide(color: Theme.of(context).primaryColor, width: 1)
+              : BorderSide.none,
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => onTap(model),
+          onDoubleTap: () => onDoubleTap(model),
+          child: LayoutBuilder(builder: (context, constraints) {
+            return Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: 50,
+                      maxHeight: constraints.maxHeight - 48, // 减去底部操作栏高度
+                    ),
+                    child: _buildContent(context),
+                  ),
+                  const Spacer(),
+                  _buildFooter(context),
+                ],
+              ),
+            );
+          }),
         ),
       ),
-    ));
+    );
   }
 
   Widget _buildContent(BuildContext context) {
