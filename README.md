@@ -1,7 +1,8 @@
 # EasyPasta
 
 <p align="center">
-  <img src="README.assets/20250106143024.jpg" alt="EasyPasta Screenshot" width="600"/>
+  <img src="README.assets/20250106143024.jpg" alt="EasyPasta Screenshot" width="400" style="display: inline-block"/>
+  <img src="README.assets/20250106143037.jpg" alt="EasyPasta Screenshot" width="400" style="display: inline-block"/>
 </p>
 
 ## 📝 概述
@@ -12,9 +13,9 @@ EasyPasta 是一款强大的跨平台剪贴板管理工具，专为提升您的�
 
 [macOS](https://github.com/harlans/EasyPasta/releases/download/v0.0.1/EasyPasta-0.0.1-macos.dmg)
 
-[Windows](https://github.com/harlans/EasyPasta/releases/download/v0.0.1/EasyPasta-0.0.1-windows.exe)
+Windows (暂未发布，欢迎贡献编译版本)
 
-[Linux](https://github.com/harlans/EasyPasta/releases/download/v0.0.1/EasyPasta-0.0.1-linux.deb)
+Linux (暂未发布，欢迎贡献编译版本)
 
 ### ✨ 核心特性
 
@@ -64,6 +65,7 @@ sudo dpkg -i easy_pasta_linux_amd64.deb
    <p align="center">
      <img src="README.assets/20250106143713.jpg" alt="Status Bar Icon" width="200"/>
    </p>
+
 2. **访问剪贴板历史**
 
    - 点击状态栏图标
