@@ -9,13 +9,25 @@
 
 EasyPasta 是一款强大的跨平台剪贴板管理工具，专为提升您的工作效率而设计。它能够自动记录您的复制历史，并通过简单的快捷键操作随时调用，让信息的复制和粘贴变得更加便捷。
 
+## 🛠️ 开发环境
+
+- Flutter 3.24.4
+- Dart 3.5.4
+
 ## 📦 下载
 
-[macOS](https://github.com/harlans/EasyPasta/releases/download/v0.0.1/EasyPasta-0.0.1-macos.dmg)
+[macOS](https://github.com/DargonLee/easy_pasta/releases/download/v2.0.0/EasyPasta-1.0.0.dmg)
 
 Windows (暂未发布，欢迎贡献编译版本)
 
+```
+scripts\build.bat
+```
+
 Linux (暂未发布，欢迎贡献编译版本)
+```
+./scripts/build.sh
+```
 
 ### ✨ 核心特性
 
