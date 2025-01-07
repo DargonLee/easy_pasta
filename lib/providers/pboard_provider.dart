@@ -62,7 +62,7 @@ class PboardProvider extends ChangeNotifier {
           items: [],
           filterType: NSPboardSortType.all,
           isLoading: false,
-          maxItems: 100, // 默认值，后续会更新
+          maxItems: 50, // 默认值，后续会更新
         ) {
     _initializeState();
   }

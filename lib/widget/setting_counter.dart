@@ -13,7 +13,7 @@ class ModernCounter extends StatefulWidget {
     Key? key,
     this.onChanged,
     this.minValue = 10,
-    this.maxValue = 1000,
+    this.maxValue = 500,
     this.defaultValue = 50,
     this.accentColor,
   }) : super(key: key);

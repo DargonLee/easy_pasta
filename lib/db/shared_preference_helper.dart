@@ -20,7 +20,7 @@ class SharedPreferenceHelper {
   static const String maxItemStoreKey = '${_keyPrefix}MaxItemStoreKey';
 
   /// 默认值常量
-  static const int defaultMaxItems = 100;
+  static const int defaultMaxItems = 50;
   static const bool defaultLoginInLaunch = false;
 
   /// 平台特定的默认快捷键
@@ -42,6 +42,9 @@ class SharedPreferenceHelper {
     _preferences ??= await SharedPreferences.getInstance();
     if (_preferences?.getString(shortcutKey) == null) {
       _instance!.setShortcutKey(defaultShortcut);
+    }
+    if (_preferences?.getInt(maxItemStoreKey) == null) {
+      _instance!.setMaxItemStore(defaultMaxItems);
     }
     return _instance!;
   }
