@@ -16,7 +16,7 @@ EasyPasta 是一款强大的跨平台剪贴板管理工具，专为提升您的�
 
 ## 📦 下载
 
-[macOS](https://github.com/DargonLee/easy_pasta/releases/download/v2.0.0/EasyPasta-1.0.0.dmg)
+[macOS](https://github.com/DargonLee/easy_pasta/releases/download/v2.0.0/EasyPasta-2.0.0.dmg)
 
 Windows (暂未发布，欢迎贡献编译版本)
 
@@ -25,6 +25,7 @@ scripts\build.bat
 ```
 
 Linux (暂未发布，欢迎贡献编译版本)
+
 ```shell
 ./scripts/build.sh
 ```
