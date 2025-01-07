@@ -22,7 +22,6 @@ EasyPasta 是一款强大的跨平台剪贴板管理工具，专为提升您的�
 - 🔍 **智能搜索**: 快速查找历史剪贴板内容
 - ⌨️ **快捷键支持**: 自定义快捷键，随时唤起面板
 - 🖼️ **多格式支持**: 支持文本、图片、文件等多种格式
-- 🌙 **深色模式**: 支持系统深色模式
 - 🚀 **启动项**: 支持开机自启动
 - 💪 **跨平台**: 支持 macOS、Windows 和 Linux
 
@@ -61,16 +60,17 @@ sudo dpkg -i easy_pasta_linux_amd64.deb
 1. **启动应用**
 
    - 启动后，状态栏会显示 EasyPasta 图标
+
    <p align="center">
      <img src="README.assets/20250106143713.jpg" alt="Status Bar Icon" width="200"/>
    </p>
-
 2. **访问剪贴板历史**
 
    - 点击状态栏图标
-   - 或使用默认快捷键 `⌘+⇧+V` (macOS) / `Ctrl+Shift+V` (Windows/Linux)
+   - 或使用默认快捷键 `Cmd+Shift+V` (macOS) / `Ctrl+Shift+V` (Windows/Linux)
 
 3. **使用剪贴板内容**
+
    - 单击选中内容
    - 双击复制到系统剪贴板
    - 在目标位置粘贴
@@ -80,7 +80,13 @@ sudo dpkg -i easy_pasta_linux_amd64.deb
 - **快捷键设置**: 自定义唤起快捷键
 - **启动选项**: 设置开机自启动
 - **历史记录**: 配置历史记录保存数量
-- **界面主题**: 选择浅色/深色主题
+
+## TODO
+
+- [ ] 支持 rtf 格式
+- [ ] cmd/ctrl + w 关闭窗口
+- [ ] 暗黑模式
+- [ ] 选中点击空格预览
 
 ## 📄 许可证
 
