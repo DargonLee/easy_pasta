@@ -1,8 +1,13 @@
 # EasyPasta
 
 <p align="center">
-  <img src="README.assets/20250106143024.jpg" alt="EasyPasta Screenshot" width="400" style="display: inline-block"/>
-  <img src="README.assets/20250106143037.jpg" alt="EasyPasta Screenshot" width="400" style="display: inline-block"/>
+  <img src="README.assets/20250106143024.jpg" alt="EasyPasta Screenshot" width="800" style="display: block; margin: 20px auto"/>
+</p>
+<p align="center">
+  <img src="README.assets/20250106143037.jpg" alt="EasyPasta Screenshot" width="800" style="display: inline-block; margin: 10px"/>
+</p>
+<p align="center">
+  <img src="README.assets/20250107164712.jpg" alt="EasyPasta Screenshot" width="800" style="display: inline-block; margin: 10px"/>
 </p>
 
 ## 📝 概述
