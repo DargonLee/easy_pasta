@@ -83,12 +83,10 @@ sudo dpkg -i easy_pasta_linux_amd64.deb
    <p align="center">
      <img src="README.assets/20250106143713.jpg" alt="Status Bar Icon" width="200"/>
    </p>
-
 2. **访问剪贴板历史**
 
    - 点击状态栏图标
    - 或使用默认快捷键 `Cmd+Shift+V` (macOS) / `Ctrl+Shift+V` (Windows/Linux)
-
 3. **使用剪贴板内容**
 
    - 单击选中内容
@@ -104,7 +102,7 @@ sudo dpkg -i easy_pasta_linux_amd64.deb
 ## TODO
 
 - [ ] 支持 rtf 格式
-- [ ] cmd/ctrl + w 关闭窗口
+- [X] cmd/ctrl + w 关闭窗口
 - [ ] 暗黑模式
 - [ ] 选中点击空格预览
 

@@ -28,4 +28,8 @@ class WindowService {
   Future<void> hideWindow() async {
     await windowManager.hide();
   }
+
+  Future<void> closeWindow() async {
+    await windowManager.close();
+  }
 }
