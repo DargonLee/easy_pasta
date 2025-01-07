@@ -5,6 +5,7 @@ import 'package:easy_pasta/core/settings_service.dart';
 import 'package:easy_pasta/widget/settting_page_widgets.dart';
 import 'package:easy_pasta/page/confirm_dialog_view.dart';
 import 'package:easy_pasta/model/settings_constants.dart';
+
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
 
@@ -109,10 +110,6 @@ class _SettingsPageState extends State<SettingsPage> {
           padding: const EdgeInsets.all(16),
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
           ),
         ),
         Card(

@@ -22,7 +22,8 @@ class ModernCounter extends StatefulWidget {
   State<ModernCounter> createState() => _ModernCounterState();
 }
 
-class _ModernCounterState extends State<ModernCounter> with SingleTickerProviderStateMixin {
+class _ModernCounterState extends State<ModernCounter>
+    with SingleTickerProviderStateMixin {
   late int _count;
   bool _isLoading = true;
   Timer? _longPressTimer;
@@ -70,10 +71,9 @@ class _ModernCounterState extends State<ModernCounter> with SingleTickerProvider
 
   Future<void> _updateValue(int newValue) async {
     if (newValue < widget.minValue || newValue > widget.maxValue) {
-      _showMessage(newValue < widget.minValue 
-        ? '最小不能低于 ${widget.minValue}' 
-        : '最大不能超过 ${widget.maxValue}'
-      );
+      _showMessage(newValue < widget.minValue
+          ? '最小不能低于 ${widget.minValue}'
+          : '最大不能超过 ${widget.maxValue}');
       return;
     }
 
@@ -89,7 +89,8 @@ class _ModernCounterState extends State<ModernCounter> with SingleTickerProvider
   }
 
   void _startLongPress(bool isIncrement) {
-    _longPressTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+    _longPressTimer =
+        Timer.periodic(const Duration(milliseconds: 100), (timer) {
       final newValue = isIncrement ? _count + 1 : _count - 1;
       if (newValue >= widget.minValue && newValue <= widget.maxValue) {
         _updateValue(newValue);
@@ -105,7 +106,7 @@ class _ModernCounterState extends State<ModernCounter> with SingleTickerProvider
 
   void _showMessage(String message) {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -125,11 +126,18 @@ class _ModernCounterState extends State<ModernCounter> with SingleTickerProvider
     required IconData icon,
     required VoidCallback? onPressed,
     required bool isIncrement,
+    required bool isDark,
+    required Color color,
   }) {
-    final color = widget.accentColor ?? Theme.of(context).primaryColor;
-    final isDisabled = isIncrement 
-        ? _count >= widget.maxValue 
-        : _count <= widget.minValue;
+    final isDisabled =
+        isIncrement ? _count >= widget.maxValue : _count <= widget.minValue;
+
+    final backgroundColor = isDisabled
+        ? (isDark ? Colors.grey[800] : Colors.grey[200])
+        : color.withOpacity(isDark ? 0.2 : 0.1);
+
+    final iconColor =
+        isDisabled ? (isDark ? Colors.grey[600] : Colors.grey[400]) : color;
 
     return GestureDetector(
       onTapDown: (_) => _animationController.forward(),
@@ -143,7 +151,7 @@ class _ModernCounterState extends State<ModernCounter> with SingleTickerProvider
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: isDisabled ? Colors.grey.withOpacity(0.1) : color.withOpacity(0.1),
+            color: backgroundColor,
             borderRadius: BorderRadius.circular(12),
           ),
           child: IconButton(
@@ -151,7 +159,7 @@ class _ModernCounterState extends State<ModernCounter> with SingleTickerProvider
             icon: Icon(
               icon,
               size: 20,
-              color: isDisabled ? Colors.grey : color,
+              color: iconColor,
             ),
             splashRadius: 20,
             tooltip: isIncrement ? '增加' : '减少',
@@ -172,10 +180,16 @@ class _ModernCounterState extends State<ModernCounter> with SingleTickerProvider
       );
     }
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final color = widget.accentColor ?? theme.colorScheme.primary;
+
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.05),
+        color: isDark
+            ? theme.colorScheme.surface.withOpacity(0.1)
+            : theme.colorScheme.background.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
@@ -185,6 +199,8 @@ class _ModernCounterState extends State<ModernCounter> with SingleTickerProvider
             icon: Icons.remove,
             onPressed: () => _updateValue(_count - 1),
             isIncrement: false,
+            isDark: isDark,
+            color: color,
           ),
           Container(
             width: 60,
@@ -194,7 +210,7 @@ class _ModernCounterState extends State<ModernCounter> with SingleTickerProvider
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: widget.accentColor ?? Theme.of(context).primaryColor,
+                color: color,
               ),
               textAlign: TextAlign.center,
             ),
@@ -203,6 +219,8 @@ class _ModernCounterState extends State<ModernCounter> with SingleTickerProvider
             icon: Icons.add,
             onPressed: () => _updateValue(_count + 1),
             isIncrement: true,
+            isDark: isDark,
+            color: color,
           ),
         ],
       ),

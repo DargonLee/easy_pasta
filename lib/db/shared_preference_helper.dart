@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/material.dart';
 import 'dart:io' show Platform;
 
 /// 持久化存储帮助类
@@ -18,7 +19,7 @@ class SharedPreferenceHelper {
   static const String shortcutKey = '${_keyPrefix}ShortcutKey';
   static const String loginInLaunchKey = '${_keyPrefix}LoginInLaunchKey';
   static const String maxItemStoreKey = '${_keyPrefix}MaxItemStoreKey';
-
+  static const String themeModeKey = '${_keyPrefix}ThemeModeKey';
   /// 默认值常量
   static const int defaultMaxItems = 50;
   static const bool defaultLoginInLaunch = false;
@@ -75,6 +76,15 @@ class SharedPreferenceHelper {
 
   bool getLoginInLaunch() {
     return _preferences?.getBool(loginInLaunchKey) ?? defaultLoginInLaunch;
+  }
+
+  /// 主题模式相关操作
+  Future<void> setThemeMode(int mode) async {
+    await _preferences?.setInt(themeModeKey, mode);
+  }
+
+  int getThemeMode() {
+    return _preferences?.getInt(themeModeKey) ?? ThemeMode.system.index;
   }
 
   /// 批量操作方法

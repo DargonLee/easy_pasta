@@ -25,16 +25,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
       child: _buildAppBarContent(),
     );
   }
@@ -105,11 +95,14 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       height: 40,
       constraints: const BoxConstraints(minWidth: 100),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
         borderRadius: BorderRadius.circular(20),
       ),
       child: ValueListenableBuilder<TextEditingValue>(
@@ -122,8 +115,10 @@ class _SearchField extends StatelessWidget {
               isDense: true,
               border: InputBorder.none,
               hintText: '搜索',
-              hintStyle: TextStyle(color: Colors.grey[400]),
-              prefixIcon: const Icon(Icons.search, size: 20),
+              hintStyle:
+                  TextStyle(color: isDark ? Colors.white60 : Colors.black45),
+              prefixIcon: Icon(Icons.search,
+                  size: 20, color: isDark ? Colors.white54 : Colors.black45),
               suffixIcon: value.text.isNotEmpty
                   ? IconButton(
                       padding: EdgeInsets.zero,

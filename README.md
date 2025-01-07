@@ -6,8 +6,13 @@
 <p align="center">
   <img src="README.assets/20250106143037.jpg" alt="EasyPasta Screenshot" width="800" style="display: inline-block; margin: 10px"/>
 </p>
+
 <p align="center">
   <img src="README.assets/20250107164712.jpg" alt="EasyPasta Screenshot" width="800" style="display: inline-block; margin: 10px"/>
+</p>
+
+<p align="center">
+  <img src="README.assets/20250107184507.jpg" alt="EasyPasta Screenshot" width="800" style="display: inline-block; margin: 10px"/>
 </p>
 
 ## 📝 概述
@@ -86,28 +91,28 @@ sudo dpkg -i easy_pasta_linux_amd64.deb
 
 2. **访问剪贴板历史**
 
-  - 点击状态栏图标
-  - 或使用默认快捷键 `Cmd+Shift+V` (macOS) / `Ctrl+Shift+V` (Windows/Linux)
+- 点击状态栏图标
+- 或使用默认快捷键 `Cmd+Shift+V` (macOS) / `Ctrl+Shift+V` (Windows/Linux)
 
 3. **使用剪贴板内容**
 
-  - 点击复制图标
-  - 双击复制到系统剪贴板
-  - 在目标位置粘贴
+- 点击复制图标
+- 双击复制到系统剪贴板
+- 在目标位置粘贴
 
 4. **剪贴板操作**
 
-  - 点击复制按钮，复制内容到系统剪贴板
-  - 点击收藏按钮，将内容添加到收藏列表
-  - 点击删除按钮，删除选中的内容
+- 点击复制按钮，复制内容到系统剪贴板
+- 点击收藏按钮，将内容添加到收藏列表
+- 点击删除按钮，删除选中的内容
 
 5. **关闭窗口**
 
-  - 使用快捷键 `Cmd+W` (macOS) / `Ctrl+W` (Windows/Linux)
+- 使用快捷键 `Cmd+W` (macOS) / `Ctrl+W` (Windows/Linux)
 
 5. **退出应用**
 
-  - 使用快捷键 `Cmd+Q` (macOS) / `Ctrl+Q` (Windows/Linux)
+- 使用快捷键 `Cmd+Q` (macOS) / `Ctrl+Q` (Windows/Linux)
 
 ## ⚙️ 配置选项
 
@@ -118,7 +123,6 @@ sudo dpkg -i easy_pasta_linux_amd64.deb
 ## TODO
 
 - [ ] 支持 rtf 格式
-- [ ] 暗黑模式
 - [ ] 选中点击空格预览
 
 ## 📄 许可证
