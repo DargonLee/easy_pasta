@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 
 /// 剪贴板数据模型
 class ClipboardItemModel {
   // 基础属性
-  final int id;
+  final String id;
   final String time;
   final ClipboardType? ptype;
   final String pvalue;
@@ -14,13 +15,13 @@ class ClipboardItemModel {
 
   /// 创建剪贴板数据模型
   ClipboardItemModel({
-    int? id,
+    String? id,
     String? time,
     required this.ptype,
     required this.pvalue,
     this.isFavorite = false,
     this.bytes,
-  })  : id = id ?? DateTime.now().millisecondsSinceEpoch,
+  })  : id = id ?? const Uuid().v4(),
         time = time ?? DateTime.now().toString();
 
   /// 从数据库映射创建模型
@@ -70,7 +71,7 @@ class ClipboardItemModel {
 
   /// 复制模型并更新部分属性
   ClipboardItemModel copyWith({
-    int? id,
+    String? id,
     String? time,
     ClipboardType? ptype,
     String? pvalue,

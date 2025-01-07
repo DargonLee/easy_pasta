@@ -40,7 +40,7 @@ abstract class IDatabaseHelper {
   Future<void> setFavorite(ClipboardItemModel model);
   Future<void> cancelFavorite(ClipboardItemModel model);
   Future<void> deletePboardItem(ClipboardItemModel model);
-  Future<int> insertPboardItem(ClipboardItemModel model);
+  Future<String?> insertPboardItem(ClipboardItemModel model);
   Future<int> getCount();
   Future<int> deleteAll();
 }
@@ -65,6 +65,7 @@ class DatabaseHelper implements IDatabaseHelper {
     try {
       sqfliteFfiInit();
       final path = await _getDatabasePath();
+      print('db path: $path');
       final databaseFactory = databaseFactoryFfi;
 
       return await databaseFactory.openDatabase(
@@ -96,7 +97,7 @@ class DatabaseHelper implements IDatabaseHelper {
       // Create main table
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS ${DatabaseConfig.tableName}(
-          ${DatabaseConfig.columnId} INTEGER PRIMARY KEY,
+          ${DatabaseConfig.columnId} TEXT PRIMARY KEY,
           ${DatabaseConfig.columnTime} TEXT NOT NULL,
           ${DatabaseConfig.columnType} TEXT NOT NULL,
           ${DatabaseConfig.columnValue} TEXT NOT NULL,
@@ -232,22 +233,21 @@ class DatabaseHelper implements IDatabaseHelper {
   }
 
   @override
-  Future<int> insertPboardItem(ClipboardItemModel model) async {
+  Future<String?> insertPboardItem(ClipboardItemModel model) async {
     final db = await database;
-
     return await db.transaction((txn) async {
       try {
-        final result =
-            await txn.insert(DatabaseConfig.tableName, model.toMap());
-
+        await txn.insert(DatabaseConfig.tableName, model.toMap());
         final count = await _getCountInTransaction(txn);
         final maxCount = await getMaxCount();
 
         if (count > maxCount) {
-          await _deleteOldestNonFavoriteItemInTransaction(txn);
+          final itemId = await _deleteOldestNonFavoriteItemInTransaction(txn);
+          if (itemId != null) {
+            return itemId;
+          }
         }
-
-        return result;
+        return null;
       } catch (e) {
         throw DatabaseException('Failed to insert item', e);
       }
@@ -260,22 +260,27 @@ class DatabaseHelper implements IDatabaseHelper {
     return result.first['count'] as int;
   }
 
-  Future<void> _deleteOldestNonFavoriteItemInTransaction(
+  Future<String?> _deleteOldestNonFavoriteItemInTransaction(
       Transaction txn) async {
-    final oldestItem = await txn.query(
-      DatabaseConfig.tableName,
-      columns: [DatabaseConfig.columnId],
-      where: '${DatabaseConfig.columnIsFavorite} = 0',
-      orderBy: '${DatabaseConfig.columnTime} ASC',
-      limit: 1,
-    );
-
-    if (oldestItem.isNotEmpty) {
-      await txn.delete(
+    try {
+      final oldestItems = await txn.query(
         DatabaseConfig.tableName,
-        where: '${DatabaseConfig.columnId} = ?',
-        whereArgs: [oldestItem.first[DatabaseConfig.columnId]],
+        where: '${DatabaseConfig.columnIsFavorite} = 0',
+        orderBy: '${DatabaseConfig.columnTime} ASC',
       );
+
+      if (oldestItems.isNotEmpty) {
+        final itemId = oldestItems.first[DatabaseConfig.columnId];
+        await txn.delete(
+          DatabaseConfig.tableName,
+          where: '${DatabaseConfig.columnId} = ?',
+          whereArgs: [itemId],
+        );
+        return itemId as String?;
+      }
+      return null;
+    } catch (e) {
+      throw DatabaseException('Failed to delete oldest non-favorite item', e);
     }
   }
 

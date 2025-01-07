@@ -116,7 +116,12 @@ class PboardProvider extends ChangeNotifier {
       _updateState(_state.copyWith(items: newItems));
 
       // 保存到数据库
-      await _db.insertPboardItem(model);
+      final deletedItemId = await _db.insertPboardItem(model);
+      if (deletedItemId != 0) {
+        final updatedItems =
+            _state.items.where((item) => item.id != deletedItemId).toList();
+        _updateState(_state.copyWith(items: updatedItems));
+      }
 
       return const Result.success(null);
     } catch (e) {

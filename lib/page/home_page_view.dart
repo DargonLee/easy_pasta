@@ -24,7 +24,7 @@ class _MyHomePageState extends State<MyHomePage>
   final _superClipboard = SuperClipboard.instance;
 
   NSPboardSortType _selectedType = NSPboardSortType.all;
-  int _selectedId = 0;
+  String _selectedId = '';
 
   @override
   void initState() {

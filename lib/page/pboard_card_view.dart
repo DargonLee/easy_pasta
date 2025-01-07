@@ -10,7 +10,7 @@ import 'package:easy_pasta/model/clipboard_type.dart';
 
 class NewPboardItemCard extends StatelessWidget {
   final ClipboardItemModel model;
-  final int selectedId;
+  final String selectedId;
   final Function(ClipboardItemModel) onTap;
   final Function(ClipboardItemModel) onDoubleTap;
   final Function(ClipboardItemModel) onCopy;

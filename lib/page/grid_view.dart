@@ -8,7 +8,7 @@ class PasteboardGridView extends StatefulWidget {
   static const double _kMinCrossAxisExtent = 250.0;
 
   final List<ClipboardItemModel> pboards;
-  final int selectedId;
+  final String selectedId;
   final Function(ClipboardItemModel) onItemTap;
   final Function(ClipboardItemModel) onItemDoubleTap;
   final Function(ClipboardItemModel) onCopy;
