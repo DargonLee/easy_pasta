@@ -9,7 +9,9 @@ class HotkeyService {
   // 单例模式
   static final HotkeyService _instance = HotkeyService._internal();
   factory HotkeyService() => _instance;
-  HotkeyService._internal();
+  HotkeyService._internal() {
+    init();
+  }
 
   Future<void> init() async {
     await hotKeyManager.unregisterAll();
@@ -23,23 +25,19 @@ class HotkeyService {
   }
 
   Future<void> setCloseWindowHotkey() async {
-    HotKey hotKey;
-    if (Platform.isWindows) {
-      hotKey = HotKey(
-        key: const PhysicalKeyboardKey(0x0007001a),
-        modifiers: [HotKeyModifier.control],
-        scope: HotKeyScope.inapp,
-      );
-    } else {
-      hotKey = HotKey(
-        key: const PhysicalKeyboardKey(0x0007001a),
-        modifiers: [HotKeyModifier.meta],
-        scope: HotKeyScope.inapp,
-      );
-    }
+    HotKey hotKey = _getCloseWindowHotKey();
     await hotKeyManager.register(hotKey, keyDownHandler: (hotKey) {
       WindowService().closeWindow();
     });
+  }
+
+  HotKey _getCloseWindowHotKey() {
+    return HotKey(
+      key: const PhysicalKeyboardKey(0x0007001a),
+      modifiers:
+          Platform.isWindows ? [HotKeyModifier.control] : [HotKeyModifier.meta],
+      scope: HotKeyScope.inapp,
+    );
   }
 
   // 注册新的热键

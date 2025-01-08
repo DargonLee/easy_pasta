@@ -18,17 +18,11 @@ void main() async {
     debugPrint('Stack trace: ${details.stack}');
   };
 
-  final windowService = WindowService();
-  await windowService.init();
-
-  final trayService = TrayService();
-  await trayService.init();
-
-  await HotkeyService().init();
-
-  final startupService = StartupService();
-  await startupService.init();
-
+  WindowService();
+  TrayService();
+  HotkeyService();
+  StartupService();
+  
   runApp(const MyApp());
 }
 

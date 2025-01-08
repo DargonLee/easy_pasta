@@ -2,6 +2,12 @@ import 'package:window_manager/window_manager.dart';
 import 'package:flutter/material.dart';
 
 class WindowService {
+  static final WindowService _instance = WindowService._internal();
+  factory WindowService() => _instance;
+  WindowService._internal() {
+    init();
+  }
+
   Future<void> init() async {
     await windowManager.ensureInitialized();
 
@@ -12,8 +18,7 @@ class WindowService {
       titleBarStyle: TitleBarStyle.hidden,
       windowButtonVisibility: false,
     );
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
-    });
+    windowManager.waitUntilReadyToShow(windowOptions, () async {});
   }
 
   Future<void> showWindow() async {

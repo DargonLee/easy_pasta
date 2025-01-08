@@ -6,7 +6,9 @@ import 'dart:io' show Platform;
 class StartupService {
   static final StartupService _instance = StartupService._internal();
   factory StartupService() => _instance;
-  StartupService._internal();
+  StartupService._internal() {
+    init();
+  }
 
   Future<void> init() async {
     final prefs = await SharedPreferenceHelper.instance;

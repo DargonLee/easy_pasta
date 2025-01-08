@@ -4,7 +4,9 @@ import 'package:tray_manager/tray_manager.dart';
 class TrayService {
   static final TrayService _instance = TrayService._internal();
   factory TrayService() => _instance;
-  TrayService._internal();
+  TrayService._internal() {
+    init();
+  }
 
   Future<void> init() async {
     await trayManager.setIcon(
