@@ -129,6 +129,18 @@ sudo dpkg -i easy_pasta_linux_amd64.deb
 
 本项目基于 MIT 许可证开源 - 查看 [LICENSE](LICENSE) 文件了解更多详情
 
+## ☕️ 支持项目
+
+如果您觉得这个项目对您有帮助，欢迎请我喝杯咖啡 ：）
+
+<div>
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50" >
+</div>
+
+<div>
+  <img src="README.assets/IMG_0060.jpg" width="200">
+</div>
+
 <p align="center">
   Made with ❤️ by harlans
 </p>
