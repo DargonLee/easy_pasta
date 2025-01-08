@@ -48,7 +48,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             child: _buildFilterBar(),
           ),
           const SizedBox(width: 8),
-          const SizedBox(width: 8),
           IconButton(
             constraints: const BoxConstraints(minWidth: 40),
             padding: EdgeInsets.zero,
