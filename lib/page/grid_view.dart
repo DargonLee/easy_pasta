@@ -1,4 +1,3 @@
-import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
@@ -47,7 +46,20 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   }
 
   void _showPreviewDialog(BuildContext context, ClipboardItemModel model) {
+    print('showPreviewDialog');
     PreviewDialog.show(context, model);
+  }
+
+  /// 计算网格列数和宽度
+  int _calculateMaxColumns(double maxWidth) {
+    return (maxWidth / PasteboardGridView._kMinCrossAxisExtent)
+        .floor()
+        .clamp(1, 3);
+  }
+
+  /// 计算网格的纵横比
+  double _calculateAspectRatio(double itemWidth) {
+    return itemWidth / (itemWidth / 1.2);
   }
 
   @override
@@ -68,15 +80,11 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final maxColumns =
-              (constraints.maxWidth / PasteboardGridView._kMinCrossAxisExtent)
-                  .floor()
-                  .clamp(1, 3);
-
+          final maxColumns = _calculateMaxColumns(constraints.maxWidth);
           final itemWidth = (constraints.maxWidth -
                   (maxColumns - 1) * PasteboardGridView._kGridSpacing) /
               maxColumns;
-          final aspectRatio = itemWidth / (itemWidth / 1.2);
+          final aspectRatio = _calculateAspectRatio(itemWidth);
 
           return Scrollbar(
             controller: _scrollController,
@@ -97,14 +105,8 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
               itemBuilder: (context, index) {
                 final model = widget.pboards[index];
                 return MouseRegion(
-                  onEnter: (_) {
-                    setState(() => _hoveredItem = model);
-                    _focusNode.requestFocus();
-                  },
-                  onExit: (_) {
-                    setState(() => _hoveredItem = null);
-                    _focusNode.unfocus();
-                  },
+                  onEnter: (_) => _updateHoveredItem(model, true),
+                  onExit: (_) => _updateHoveredItem(null, false),
                   child: NewPboardItemCard(
                     key: ValueKey(model.id),
                     model: model,
@@ -122,6 +124,18 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
         },
       ),
     );
+  }
+
+  /// 更新鼠标悬停的项目
+  void _updateHoveredItem(ClipboardItemModel? model, bool isHovered) {
+    setState(() {
+      _hoveredItem = isHovered ? model : null;
+      if (isHovered) {
+        _focusNode.requestFocus();
+      } else {
+        _focusNode.unfocus();
+      }
+    });
   }
 
   @override
