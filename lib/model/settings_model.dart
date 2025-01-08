@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 enum SettingType {
   hotkey,
+  theme,
   autoLaunch,
   maxStorage,
   clearData,

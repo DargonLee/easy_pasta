@@ -117,6 +117,7 @@ class PboardProvider extends ChangeNotifier {
 
       // 保存到数据库
       final deletedItemId = await _db.insertPboardItem(model);
+      // ignore: unrelated_type_equality_checks
       if (deletedItemId != 0) {
         final updatedItems =
             _state.items.where((item) => item.id != deletedItemId).toList();

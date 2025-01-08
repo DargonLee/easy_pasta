@@ -1,7 +1,7 @@
 name: easy_pasta
 description: A cross-platform clipboard manager for macOS, Linux and Windows, providing convenient copy and paste functionality.
 publish_to: "none"
-version: 2.0.0+1
+version: 2.1.0+1
 package_name: com.harlans.easypasta.app
 environment:
   sdk: ">=3.0.0 <4.0.0"

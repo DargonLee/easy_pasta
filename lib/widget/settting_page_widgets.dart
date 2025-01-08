@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:easy_pasta/model/settings_model.dart';
@@ -29,17 +30,14 @@ class HotkeyTile extends StatelessWidget {
       trailing: TextButton(
         onPressed: () => _showHotKeyDialog(context),
         style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+              : Theme.of(context).primaryColor.withOpacity(0.1),
         ),
         child: Text(
           hotKey != null
               ? SettingsConstants.modifyText
               : SettingsConstants.setUpText,
-          style: TextStyle(
-            color: Theme.of(context).primaryColor,
-            fontWeight: FontWeight.w500,
-          ),
         ),
       ),
     );
@@ -54,6 +52,70 @@ class HotkeyTile extends StatelessWidget {
           onHotKeyRecorded: onHotKeyChanged,
         );
       },
+    );
+  }
+}
+
+class ThemeTile extends StatelessWidget {
+  final SettingItem item;
+  final ThemeMode currentThemeMode;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
+
+  const ThemeTile({
+    super.key,
+    required this.item,
+    required this.currentThemeMode,
+    required this.onThemeModeChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(
+        item.icon,
+        color: item.iconColor ?? Theme.of(context).iconTheme.color,
+      ),
+      title: Text(item.title),
+      subtitle: Text(item.subtitle),
+      trailing: CupertinoSegmentedControl<int>(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        children: const {
+          0: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Text('自动'),
+          ),
+          1: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Text('浅色'),
+          ),
+          2: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Text('深色'),
+          ),
+        },
+        groupValue: currentThemeMode == ThemeMode.system
+            ? 0
+            : currentThemeMode == ThemeMode.light
+                ? 1
+                : 2,
+        onValueChanged: (value) {
+          switch (value) {
+            case 0:
+              onThemeModeChanged(ThemeMode.system);
+              break;
+            case 1:
+              onThemeModeChanged(ThemeMode.light);
+              break;
+            case 2:
+              onThemeModeChanged(ThemeMode.dark);
+              break;
+          }
+        },
+        unselectedColor: Theme.of(context).colorScheme.surface,
+        selectedColor: Theme.of(context).colorScheme.primary,
+        borderColor: Theme.of(context).colorScheme.primary,
+        pressedColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+      ),
     );
   }
 }

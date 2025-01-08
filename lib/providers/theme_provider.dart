@@ -6,7 +6,7 @@ import 'package:easy_pasta/db/shared_preference_helper.dart';
 class ThemeProvider extends ChangeNotifier {
   // 私有成员
   late final SharedPreferenceHelper _prefs;
-  late ThemeMode _themeMode;
+  late ThemeMode _themeMode = ThemeMode.system;
 
   // 构造函数
   ThemeProvider() {
@@ -101,20 +101,17 @@ class ThemeProvider extends ChangeNotifier {
             primary: Colors.blue,
             secondary: Colors.blueAccent,
             surface: Color(0xFF1E1E1E),
-            background: Color(0xFF121212),
           )
         : const ColorScheme.light(
             primary: Colors.blue,
             secondary: Colors.blueAccent,
             surface: Colors.white,
-            background: Color(0xFFF5F5F5),
           );
   }
 
   /// 释放资源
   @override
   void dispose() {
-    // 在这里可以添加清理代码
     super.dispose();
   }
 }

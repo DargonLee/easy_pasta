@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
 import 'package:easy_pasta/db/shared_preference_helper.dart';
 
 class ModernCounter extends StatefulWidget {
@@ -7,7 +6,6 @@ class ModernCounter extends StatefulWidget {
   final int minValue;
   final int maxValue;
   final int defaultValue;
-  final Color? accentColor;
 
   const ModernCounter({
     Key? key,
@@ -15,65 +13,52 @@ class ModernCounter extends StatefulWidget {
     this.minValue = 10,
     this.maxValue = 500,
     this.defaultValue = 50,
-    this.accentColor,
   }) : super(key: key);
 
   @override
   State<ModernCounter> createState() => _ModernCounterState();
 }
 
-class _ModernCounterState extends State<ModernCounter>
-    with SingleTickerProviderStateMixin {
+class _ModernCounterState extends State<ModernCounter> {
   late int _count;
   bool _isLoading = true;
-  Timer? _longPressTimer;
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
+  bool _mounted = true;
 
   @override
   void initState() {
     super.initState();
     _count = widget.defaultValue;
-    _setupAnimation();
     _loadStoredValue();
   }
 
-  void _setupAnimation() {
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 150),
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-  }
-
   Future<void> _loadStoredValue() async {
+    if (!_mounted) return;
     try {
       final prefs = await SharedPreferenceHelper.instance;
-      final storedValue = prefs.getMaxItemStore();
-      if (mounted) {
-        setState(() {
-          _count = storedValue;
-          _isLoading = false;
-        });
-      }
+      if (!_mounted) return;
+      setState(() {
+        _count = prefs.getMaxItemStore();
+        _isLoading = false;
+      });
     } catch (e) {
-      debugPrint('Failed to load stored value: $e');
-      if (mounted) {
-        setState(() {
-          _count = widget.defaultValue;
-          _isLoading = false;
-        });
-      }
+      if (!_mounted) return;
+      setState(() {
+        _count = widget.defaultValue;
+        _isLoading = false;
+      });
     }
   }
 
   Future<void> _updateValue(int newValue) async {
+    if (!_mounted) return;
     if (newValue < widget.minValue || newValue > widget.maxValue) {
-      _showMessage(newValue < widget.minValue
-          ? '最小不能低于 ${widget.minValue}'
-          : '最大不能超过 ${widget.maxValue}');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(newValue < widget.minValue
+            ? '最小不能低于 ${widget.minValue}'
+            : '最大不能超过 ${widget.maxValue}'),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ));
       return;
     }
 
@@ -84,87 +69,41 @@ class _ModernCounterState extends State<ModernCounter>
       final prefs = await SharedPreferenceHelper.instance;
       await prefs.setMaxItemStore(newValue);
     } catch (e) {
-      _showMessage('保存失败，请重试');
+      if (!_mounted) return;
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('保存失败，请重试')),
+      );
     }
   }
 
-  void _startLongPress(bool isIncrement) {
-    _longPressTimer =
-        Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      final newValue = isIncrement ? _count + 1 : _count - 1;
-      if (newValue >= widget.minValue && newValue <= widget.maxValue) {
-        _updateValue(newValue);
-      } else {
-        _longPressTimer?.cancel();
-      }
-    });
-  }
-
-  void _stopLongPress() {
-    _longPressTimer?.cancel();
-  }
-
-  void _showMessage(String message) {
-    if (!mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(8),
-        duration: const Duration(seconds: 2),
-        action: SnackBarAction(
-          label: '确定',
-          onPressed: () {},
-        ),
-      ),
-    );
-  }
-
-  Widget _buildButton({
-    required IconData icon,
-    required VoidCallback? onPressed,
-    required bool isIncrement,
-    required bool isDark,
-    required Color color,
-  }) {
+  Widget _buildButton(bool isIncrement, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
     final isDisabled =
         isIncrement ? _count >= widget.maxValue : _count <= widget.minValue;
 
-    final backgroundColor = isDisabled
-        ? (isDark ? Colors.grey[800] : Colors.grey[200])
-        : color.withOpacity(isDark ? 0.2 : 0.1);
-
-    final iconColor =
-        isDisabled ? (isDark ? Colors.grey[600] : Colors.grey[400]) : color;
-
-    return GestureDetector(
-      onTapDown: (_) => _animationController.forward(),
-      onTapUp: (_) => _animationController.reverse(),
-      onTapCancel: () => _animationController.reverse(),
-      onLongPress: isDisabled ? null : () => _startLongPress(isIncrement),
-      onLongPressEnd: (_) => _stopLongPress(),
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: IconButton(
-            onPressed: isDisabled ? null : onPressed,
-            icon: Icon(
-              icon,
-              size: 20,
-              color: iconColor,
-            ),
-            splashRadius: 20,
-            tooltip: isIncrement ? '增加' : '减少',
-          ),
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: isDisabled
+            ? (isDark ? Colors.grey[800] : Colors.grey[200])
+            : theme.colorScheme.primary.withOpacity(isDark ? 0.2 : 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: IconButton(
+        onPressed: isDisabled
+            ? null
+            : () => _updateValue(_count + (isIncrement ? 1 : -1)),
+        icon: Icon(
+          isIncrement ? Icons.add : Icons.remove,
+          size: 20,
+          color: isDisabled
+              ? (isDark ? Colors.grey[600] : Colors.grey[400])
+              : theme.colorScheme.primary,
         ),
+        splashRadius: 20,
+        tooltip: isIncrement ? '增加' : '减少',
       ),
     );
   }
@@ -174,54 +113,35 @@ class _ModernCounterState extends State<ModernCounter>
     if (_isLoading) {
       return const SizedBox(
         width: 150,
-        child: Center(
-          child: CircularProgressIndicator(strokeWidth: 2),
-        ),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       );
     }
 
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final color = widget.accentColor ?? theme.colorScheme.primary;
 
     return Container(
-      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: isDark
-            ? theme.colorScheme.surface.withOpacity(0.1)
-            : theme.colorScheme.background.withOpacity(0.1),
+        color: theme.colorScheme.surface.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildButton(
-            icon: Icons.remove,
-            onPressed: () => _updateValue(_count - 1),
-            isIncrement: false,
-            isDark: isDark,
-            color: color,
-          ),
+          _buildButton(false, theme),
           Container(
-            width: 60,
-            margin: const EdgeInsets.symmetric(horizontal: 12),
+            width: 40,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
               _count.toString(),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
-                color: color,
+                color: theme.colorScheme.primary,
               ),
               textAlign: TextAlign.center,
             ),
           ),
-          _buildButton(
-            icon: Icons.add,
-            onPressed: () => _updateValue(_count + 1),
-            isIncrement: true,
-            isDark: isDark,
-            color: color,
-          ),
+          _buildButton(true, theme),
         ],
       ),
     );
@@ -229,8 +149,7 @@ class _ModernCounterState extends State<ModernCounter>
 
   @override
   void dispose() {
-    _longPressTimer?.cancel();
-    _animationController.dispose();
+    _mounted = false;
     super.dispose();
   }
 }

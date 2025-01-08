@@ -16,7 +16,7 @@ class SourceCodeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final language = 'dart';
+    const language = 'dart';
 
     return ConstrainedBox(
       constraints: const BoxConstraints(

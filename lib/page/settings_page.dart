@@ -5,6 +5,8 @@ import 'package:easy_pasta/core/settings_service.dart';
 import 'package:easy_pasta/widget/settting_page_widgets.dart';
 import 'package:easy_pasta/page/confirm_dialog_view.dart';
 import 'package:easy_pasta/model/settings_constants.dart';
+import 'package:easy_pasta/providers/theme_provider.dart';
+import 'package:provider/provider.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -24,6 +26,12 @@ class _SettingsPageState extends State<SettingsPage> {
       title: SettingsConstants.hotkeyTitle,
       subtitle: SettingsConstants.hotkeySubtitle,
       icon: Icons.keyboard,
+    ),
+    const SettingItem(
+      type: SettingType.theme,
+      title: SettingsConstants.themeTitle,
+      subtitle: SettingsConstants.themeSubtitle,
+      icon: Icons.palette,
     ),
     const SettingItem(
       type: SettingType.autoLaunch,
@@ -131,6 +139,18 @@ class _SettingsPageState extends State<SettingsPage> {
           onHotKeyChanged: (newHotKey) async {
             await _settingsService.setHotKey(newHotKey);
             setState(() => _hotKey = newHotKey);
+          },
+        );
+      case SettingType.theme:
+        return Consumer<ThemeProvider>(
+          builder: (context, themeProvider, _) {
+            return ThemeTile(
+              item: item,
+              currentThemeMode: themeProvider.themeMode,
+              onThemeModeChanged: (ThemeMode mode) {
+                themeProvider.setThemeMode(mode);
+              },
+            );
           },
         );
       case SettingType.autoLaunch:

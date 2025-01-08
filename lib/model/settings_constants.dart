@@ -1,6 +1,6 @@
 class SettingsConstants {
   static const String aboutTitle = '关于';
-  static const String appVersion = 'v2.0.0';
+  static const String appVersion = 'v2.1.0';
   static const String githubUrl = 'https://github.com/DargonLee/easy_pasta';
   static const String versionInfoTitle = '版本信息';
   static const String versionInfoSubtitle = '查看版本和项目信息';
@@ -9,6 +9,10 @@ class SettingsConstants {
   // 快捷键
   static const String hotkeyTitle = '快捷键';
   static const String hotkeySubtitle = '设置全局快捷键';
+
+  // 主题
+  static const String themeTitle = '主题';
+  static const String themeSubtitle = '设置应用主题';
 
   // 开机自启
   static const String autoLaunchTitle = '开机自启';
