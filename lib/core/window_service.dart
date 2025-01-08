@@ -24,7 +24,6 @@ class WindowService {
   Future<void> showWindow() async {
     await windowManager.show();
     await windowManager.focus();
-    // 确保窗口在最前面
     await windowManager.setAlwaysOnTop(true);
     await Future.delayed(const Duration(milliseconds: 100));
     await windowManager.setAlwaysOnTop(false);

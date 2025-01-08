@@ -129,7 +129,7 @@ class _MyHomePageState extends State<MyHomePage>
 
   void _setPasteboardItem(ClipboardItemModel model) {
     _superClipboard.setPasteboardItem(model);
-    WindowService().hideWindow();
+    WindowService().closeWindow();
   }
 
   @override
@@ -146,5 +146,5 @@ class _MyHomePageState extends State<MyHomePage>
   }
 
   @override
-  void onWindowBlur() => WindowService().hideWindow();
+  void onWindowBlur() => WindowService().closeWindow();
 }
