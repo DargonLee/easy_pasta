@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:developer' as developer;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
@@ -65,7 +66,7 @@ class DatabaseHelper implements IDatabaseHelper {
     try {
       sqfliteFfiInit();
       final path = await _getDatabasePath();
-      print('db path: $path');
+      developer.log('db path: $path');
       final databaseFactory = databaseFactoryFfi;
 
       return await databaseFactory.openDatabase(
