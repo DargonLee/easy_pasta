@@ -6,6 +6,7 @@ import 'package:easy_pasta/model/settings_model.dart';
 import 'package:easy_pasta/core/record_hotkey_dialog.dart';
 import 'package:easy_pasta/widget/setting_counter.dart';
 import 'package:easy_pasta/model/settings_constants.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HotkeyTile extends StatelessWidget {
   final SettingItem item;
@@ -218,22 +219,30 @@ class AboutTile extends StatelessWidget {
     required this.item,
   });
 
+  Future<void> _launchUrl() async {
+    final Uri url = Uri.parse(SettingsConstants.githubUrl);
+    try {
+      if (!await launchUrl(url)) {
+        throw Exception('Could not launch $url');
+      }
+    } catch (e) {
+      debugPrint('Error launching URL: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(item.icon, color: item.iconColor),
       title: Text(item.title, style: TextStyle(color: item.textColor)),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('当前版本：${SettingsConstants.appVersion}'),
-          const SizedBox(height: 4),
-          SelectableText(
-            SettingsConstants.githubUrl,
-            style: TextStyle(color: Colors.grey[600]),
-          ),
-        ],
+      subtitle: const Text('当前版本：${SettingsConstants.appVersion}'),
+      trailing: const Text(
+        SettingsConstants.githubUrl,
+        style: TextStyle(
+          color: Colors.blue,
+        ),
       ),
+      onTap: _launchUrl,
     );
   }
 }
