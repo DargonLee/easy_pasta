@@ -12,6 +12,9 @@ class SuperClipboard {
   // Singleton implementation
   static final SuperClipboard _instance = SuperClipboard._internal();
   static SuperClipboard get instance => _instance;
+  SuperClipboard._internal() {
+    _startPollingTimer();
+  }
 
   final SystemClipboard? _clipboard = SystemClipboard.instance;
   ValueChanged<ClipboardItemModel?>? _onClipboardChanged;
@@ -19,11 +22,6 @@ class SuperClipboard {
   Timer? _pollingTimer;
 
   static const Duration _pollingInterval = Duration(seconds: 1);
-
-  // Private constructor
-  SuperClipboard._internal() {
-    _startPollingTimer();
-  }
 
   /// Starts monitoring clipboard changes
   void _startPollingTimer() {

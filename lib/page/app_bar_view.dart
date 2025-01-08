@@ -24,17 +24,11 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: _buildAppBarContent(),
-    );
-  }
-
-  Widget _buildAppBarContent() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         children: [
-          Flexible(
+          Expanded(
             flex: 2,
             child: _SearchField(
               controller: searchController,
@@ -45,36 +39,13 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           const SizedBox(width: 8),
           Expanded(
             flex: 3,
-            child: _buildFilterBar(),
+            child: _FilterBar(
+              selectedType: selectedType,
+              onTypeChanged: onTypeChanged,
+            ),
           ),
           const SizedBox(width: 8),
-          IconButton(
-            constraints: const BoxConstraints(minWidth: 40),
-            padding: EdgeInsets.zero,
-            icon: const Icon(Icons.settings),
-            onPressed: onSettingsTap,
-            tooltip: '设置',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterBar() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final option in filterOptions)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _FilterChip(
-                option: option,
-                isSelected: selectedType == option.type,
-                onSelected: onTypeChanged,
-              ),
-            ),
+          _SettingsButton(onTap: onSettingsTap),
         ],
       ),
     );
@@ -97,41 +68,79 @@ class _SearchField extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      height: 40,
-      constraints: const BoxConstraints(minWidth: 100),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
+    return SearchBar(
+      controller: controller,
+      onSubmitted: onSearch,
+      hintText: '搜索',
+      hintStyle: WidgetStateProperty.all(
+        TextStyle(color: isDark ? Colors.white60 : Colors.black45),
       ),
-      child: ValueListenableBuilder<TextEditingValue>(
-        valueListenable: controller,
-        builder: (context, value, child) {
-          return TextField(
-            controller: controller,
-            onSubmitted: (value) => onSearch(value),
-            decoration: InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              hintText: '搜索',
-              hintStyle:
-                  TextStyle(color: isDark ? Colors.white60 : Colors.black45),
-              prefixIcon: Icon(Icons.search,
-                  size: 20, color: isDark ? Colors.white54 : Colors.black45),
-              suffixIcon: value.text.isNotEmpty
-                  ? IconButton(
-                      padding: EdgeInsets.zero,
-                      icon: const Icon(Icons.clear, size: 20),
-                      onPressed: () {
-                        controller.clear();
-                        onClear();
-                      },
-                    )
-                  : null,
-              contentPadding: const EdgeInsets.symmetric(vertical: 11),
+      leading: Icon(
+        Icons.search,
+        size: 20,
+        color: isDark ? Colors.white54 : Colors.black45,
+      ),
+      trailing: [
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: controller,
+          builder: (context, value, _) {
+            if (value.text.isEmpty) return const SizedBox.shrink();
+            return IconButton(
+              icon: const Icon(Icons.clear, size: 20),
+              onPressed: () {
+                controller.clear();
+                onClear();
+              },
+            );
+          },
+        ),
+      ],
+      elevation: WidgetStateProperty.all(0),
+      backgroundColor: WidgetStateProperty.all(
+        isDark ? Colors.grey[800] : Colors.grey[50],
+      ),
+      shape: WidgetStateProperty.all(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(
+            color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+            width: 1,
+          ),
+        ),
+      ),
+      padding: WidgetStateProperty.all(
+        const EdgeInsets.symmetric(horizontal: 8),
+      ),
+    );
+  }
+}
+
+class _FilterBar extends StatelessWidget {
+  final NSPboardSortType selectedType;
+  final ValueChanged<NSPboardSortType> onTypeChanged;
+
+  const _FilterBar({
+    required this.selectedType,
+    required this.onTypeChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final option in filterOptions)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _FilterChip(
+                option: option,
+                isSelected: selectedType == option.type,
+                onSelected: onTypeChanged,
+              ),
             ),
-          );
-        },
+        ],
       ),
     );
   }
@@ -150,36 +159,51 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minWidth: 72),
-      child: FilterChip(
-        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        labelPadding: EdgeInsets.zero,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        label: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              option.icon,
-              size: 16,
-              color: isSelected ? Colors.white : Colors.grey[600],
+    final theme = Theme.of(context);
+
+    return FilterChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            option.icon,
+            size: 16,
+            color: isSelected ? Colors.white : theme.iconTheme.color,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            option.label,
+            style: TextStyle(
+              color:
+                  isSelected ? Colors.white : theme.textTheme.bodyMedium?.color,
+              fontSize: 13,
             ),
-            const SizedBox(width: 4),
-            Text(
-              option.label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey[600],
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-        selected: isSelected,
-        onSelected: (_) => onSelected(option.type),
-        selectedColor: Colors.blue,
-        checkmarkColor: Colors.white,
-        showCheckmark: false,
+          ),
+        ],
       ),
+      selected: isSelected,
+      onSelected: (_) => onSelected(option.type),
+      selectedColor: theme.colorScheme.primary,
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+  }
+}
+
+class _SettingsButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _SettingsButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.settings),
+      onPressed: onTap,
+      tooltip: '设置',
+      constraints: const BoxConstraints(minWidth: 40),
+      padding: EdgeInsets.zero,
     );
   }
 }
