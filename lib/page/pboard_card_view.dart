@@ -37,7 +37,7 @@ class NewPboardItemCard extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: isSelected
-              ? BorderSide(color: Theme.of(context).primaryColor, width: 1)
+              ? const BorderSide(color: Colors.blue, width: 1)
               : BorderSide.none,
         ),
         child: InkWell(
