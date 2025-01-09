@@ -94,7 +94,7 @@ class _ModernCounterState extends State<ModernCounter> {
       child: IconButton(
         onPressed: isDisabled
             ? null
-            : () => _updateValue(_count + (isIncrement ? 1 : -1)),
+            : () => _updateValue(_count + (isIncrement ? 10 : -10)),
         icon: Icon(
           isIncrement ? Icons.add : Icons.remove,
           size: 20,
