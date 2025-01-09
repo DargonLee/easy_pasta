@@ -40,7 +40,7 @@ class TextContent extends StatelessWidget {
     return InkWell(
       onTap: () => _launchURL(text),
       child: Text(
-        text.substring(0, 500),
+        text.length > 500 ? text.substring(0, 500) : text,
         textAlign: textAlign,
         softWrap: true,
         style: baseStyle.copyWith(

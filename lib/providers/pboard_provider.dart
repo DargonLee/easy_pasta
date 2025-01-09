@@ -5,81 +5,84 @@ import 'package:easy_pasta/db/database_helper.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
 
-/// 剪贴板数据状态
 @immutable
 class PboardState {
-  final List<ClipboardItemModel> items;
+  final List<ClipboardItemModel> allItems; // 存储所有项目
+  final List<ClipboardItemModel> filteredItems; // 存储过滤后的项目
   final NSPboardSortType filterType;
   final bool isLoading;
   final String? error;
   final int maxItems;
+  final String searchQuery;
 
   const PboardState({
-    required this.items,
+    required this.allItems,
+    required this.filteredItems,
     required this.filterType,
     required this.isLoading,
     this.error,
     required this.maxItems,
+    this.searchQuery = '',
   });
 
-  // 复制方法
   PboardState copyWith({
-    List<ClipboardItemModel>? items,
+    List<ClipboardItemModel>? allItems,
+    List<ClipboardItemModel>? filteredItems,
     NSPboardSortType? filterType,
     bool? isLoading,
     String? error,
     int? maxItems,
+    String? searchQuery,
   }) {
     return PboardState(
-      items: items ?? this.items,
+      allItems: allItems ?? this.allItems,
+      filteredItems: filteredItems ?? this.filteredItems,
       filterType: filterType ?? this.filterType,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       maxItems: maxItems ?? this.maxItems,
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 }
 
-/// 剪贴板数据管理器
 class PboardProvider extends ChangeNotifier {
   final DatabaseHelper _db;
 
-  // 状态
   PboardState _state;
 
   // Getters
   UnmodifiableListView<ClipboardItemModel> get items =>
-      UnmodifiableListView(_state.items);
-  int get count => _state.items.length;
+      UnmodifiableListView(_state.filteredItems);
+  int get count => _state.filteredItems.length;
   NSPboardSortType get filterType => _state.filterType;
   bool get isLoading => _state.isLoading;
   String? get error => _state.error;
+  String get searchQuery => _state.searchQuery;
 
-  // 构造函数
   PboardProvider({DatabaseHelper? db})
       : _db = db ?? DatabaseHelper.instance,
         _state = const PboardState(
-          items: [],
+          allItems: [],
+          filteredItems: [],
           filterType: NSPboardSortType.all,
           isLoading: false,
-          maxItems: 50, // 默认值，后续会更新
+          maxItems: 50,
         ) {
     _initializeState();
   }
 
-  // 初始化状态
   Future<void> _initializeState() async {
     final maxCount = await _db.getMaxCount();
     _updateState(_state.copyWith(maxItems: maxCount));
+    await loadItems();
   }
 
-  // 状态更新方法
   void _updateState(PboardState newState) {
     _state = newState;
     notifyListeners();
   }
 
-  // 错误处理方法
   void _handleError(String operation, dynamic error) {
     final errorMessage = '$operation失败: $error';
     developer.log(errorMessage, error: error);
@@ -89,7 +92,6 @@ class PboardProvider extends ChangeNotifier {
     ));
   }
 
-  // 加载状态控制
   Future<T> _withLoading<T>(Future<T> Function() operation) async {
     if (_state.isLoading) return Future.error('操作正在进行中');
 
@@ -108,32 +110,62 @@ class PboardProvider extends ChangeNotifier {
     }
   }
 
-  /// 添加新的剪贴板内容
+  // 应用过滤和搜索
+  void _applyFiltersAndSearch() {
+    var filteredItems = List<ClipboardItemModel>.from(_state.allItems);
+
+    // 应用类型过滤
+    if (_state.filterType != NSPboardSortType.all) {
+      if (_state.filterType == NSPboardSortType.favorite) {
+        filteredItems = filteredItems.where((item) => item.isFavorite).toList();
+      } else {
+        final typeStr = _state.filterType.toString().split('.').last;
+        filteredItems = filteredItems
+            .where((item) => item.ptype.toString().split('.').last == typeStr)
+            .toList();
+      }
+    }
+
+    // 应用搜索过滤
+    if (_state.searchQuery.isNotEmpty) {
+      filteredItems = filteredItems
+          .where((item) => item.pvalue
+              .toLowerCase()
+              .contains(_state.searchQuery.toLowerCase()))
+          .toList();
+    }
+
+    _updateState(_state.copyWith(
+      filteredItems: filteredItems,
+      error: filteredItems.isEmpty ? '未找到相关内容' : null,
+    ));
+  }
+
   Future<Result<void>> addItem(ClipboardItemModel model) async {
     try {
-      // 更新UI
-      final newItems = [model, ..._state.items];
-      _updateState(_state.copyWith(items: newItems));
+      // 更新内存中的数据
+      final newAllItems = [model, ..._state.allItems];
+      _updateState(_state.copyWith(
+        allItems: newAllItems,
+      ));
+      _applyFiltersAndSearch();
 
       // 保存到数据库
       final deletedItemId = await _db.insertPboardItem(model);
-      // ignore: unrelated_type_equality_checks
       if (deletedItemId != 0) {
-        final updatedItems =
-            _state.items.where((item) => item.id != deletedItemId).toList();
-        _updateState(_state.copyWith(items: updatedItems));
+        final updatedAllItems =
+            _state.allItems.where((item) => item.id != deletedItemId).toList();
+        _updateState(_state.copyWith(allItems: updatedAllItems));
+        _applyFiltersAndSearch();
       }
 
       return const Result.success(null);
     } catch (e) {
-      // 回滚UI更新
-      _updateState(_state.copyWith(items: _state.items));
       _handleError('添加', e);
       return Result.failure(e.toString());
     }
   }
 
-  /// 加载所有剪贴板内容
   Future<Result<void>> loadItems() async {
     return await _withLoading(() async {
       try {
@@ -142,8 +174,10 @@ class PboardProvider extends ChangeNotifier {
             result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
 
         _updateState(_state.copyWith(
-          items: items,
+          allItems: items,
+          filteredItems: items,
           filterType: NSPboardSortType.all,
+          searchQuery: '',
         ));
 
         return const Result.success(null);
@@ -154,17 +188,17 @@ class PboardProvider extends ChangeNotifier {
     });
   }
 
-  /// 切换收藏状态
   Future<Result<void>> toggleFavorite(ClipboardItemModel model) async {
     try {
-      final index = _state.items.indexWhere((item) => item.id == model.id);
+      final index = _state.allItems.indexWhere((item) => item.id == model.id);
       if (index == -1) return const Result.failure('项目不存在');
 
       final newModel = model.copyWith(isFavorite: !model.isFavorite);
-      final newItems = List<ClipboardItemModel>.from(_state.items);
-      newItems[index] = newModel;
+      final newAllItems = List<ClipboardItemModel>.from(_state.allItems);
+      newAllItems[index] = newModel;
 
-      _updateState(_state.copyWith(items: newItems));
+      _updateState(_state.copyWith(allItems: newAllItems));
+      _applyFiltersAndSearch();
 
       await _db.setFavorite(newModel);
       return const Result.success(null);
@@ -174,12 +208,13 @@ class PboardProvider extends ChangeNotifier {
     }
   }
 
-  /// 删除项目
   Future<Result<void>> delete(ClipboardItemModel model) async {
     try {
-      final newItems =
-          _state.items.where((item) => item.id != model.id).toList();
-      _updateState(_state.copyWith(items: newItems));
+      final newAllItems =
+          _state.allItems.where((item) => item.id != model.id).toList();
+
+      _updateState(_state.copyWith(allItems: newAllItems));
+      _applyFiltersAndSearch();
 
       await _db.deletePboardItem(model);
       return const Result.success(null);
@@ -189,72 +224,42 @@ class PboardProvider extends ChangeNotifier {
     }
   }
 
-  /// 按类型筛选
+  // 优化后的filterByType方法 - 只在内存中操作
   Future<Result<void>> filterByType(NSPboardSortType type) async {
     if (type == _state.filterType) return const Result.success(null);
 
-    return await _withLoading(() async {
-      try {
-        List<Map<String, dynamic>> result;
-
-        switch (type) {
-          case NSPboardSortType.all:
-            result = await _db.getPboardItemList();
-          case NSPboardSortType.favorite:
-            result = await _db.getFavoritePboardItemList();
-            break;
-          default:
-            result = await _db
-                .getPboardItemListByType(type.toString().split('.').last);
-        }
-
-        final items =
-            result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
-
-        _updateState(_state.copyWith(
-          items: items,
-          filterType: type,
-        ));
-
-        return const Result.success(null);
-      } catch (e) {
-        _handleError('筛选', e);
-        return Result.failure(e.toString());
-      }
-    });
+    try {
+      _updateState(_state.copyWith(filterType: type));
+      _applyFiltersAndSearch();
+      return const Result.success(null);
+    } catch (e) {
+      _handleError('筛选', e);
+      return Result.failure(e.toString());
+    }
   }
 
-  /// 搜索内容
+  // 优化后的search方法 - 只在内存中操作
   Future<Result<void>> search(String query) async {
     query = query.trim();
-    if (query.isEmpty) return await loadItems();
 
-    return await _withLoading(() async {
-      try {
-        final result = await _db.getPboardItemListWithString(query);
-        final items =
-            result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
-
-        _updateState(_state.copyWith(
-          items: items,
-          error: items.isEmpty ? '未找到相关内容' : null,
-        ));
-
-        return const Result.success(null);
-      } catch (e) {
-        _handleError('搜索', e);
-        return Result.failure(e.toString());
-      }
-    });
+    try {
+      _updateState(_state.copyWith(searchQuery: query));
+      _applyFiltersAndSearch();
+      return const Result.success(null);
+    } catch (e) {
+      _handleError('搜索', e);
+      return Result.failure(e.toString());
+    }
   }
 
-  /// 清空所有内容
   Future<Result<void>> clearAll() async {
     try {
       await _db.deleteAll();
       _updateState(_state.copyWith(
-        items: [],
+        allItems: [],
+        filteredItems: [],
         error: null,
+        searchQuery: '',
       ));
       return const Result.success(null);
     } catch (e) {
@@ -263,14 +268,8 @@ class PboardProvider extends ChangeNotifier {
     }
   }
 
-  @override
-  void dispose() {
-    // 清理资源
-    super.dispose();
-  }
 }
 
-// 新增: 用于处理操作结果的工具类
 class Result<T> {
   final T? data;
   final String? error;

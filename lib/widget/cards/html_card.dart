@@ -45,7 +45,7 @@ class HtmlContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Html(
       shrinkWrap: true,
-      data: htmlData.substring(0, 800),
+      data: htmlData.length > 800 ? htmlData.substring(0, 800) : htmlData,
       style: _defaultStyles,
       onLinkTap: (url, _, __) {
         if (url != null) {
