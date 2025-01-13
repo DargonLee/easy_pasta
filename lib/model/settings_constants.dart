@@ -1,6 +1,6 @@
 class SettingsConstants {
   static const String aboutTitle = '关于';
-  static const String appVersion = 'v2.1.0';
+  static const String appVersion = 'v2.2.0';
   static const String githubUrl = 'https://github.com/DargonLee/easy_pasta';
   static const String versionInfoTitle = '版本信息';
   static const String versionInfoSubtitle = '查看版本和项目信息';
