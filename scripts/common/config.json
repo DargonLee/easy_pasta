@@ -2,7 +2,7 @@
   "app": {
     "name": "EasyPasta",
     "displayName": "Easy Paste",
-    "version": "2.1.0",
+    "version": "2.2.0",
     "publisher": "DargonLee",
     "description": "跨平台剪贴板工具"
   },
