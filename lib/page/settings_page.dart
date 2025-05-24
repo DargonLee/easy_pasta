@@ -19,6 +19,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final _settingsService = SettingsService();
   bool _autoLaunch = false;
+  bool _bonjourEnabled = false;
   HotKey? _hotKey;
 
   final List<SettingItem> _basicSettings = [
@@ -45,6 +46,12 @@ class _SettingsPageState extends State<SettingsPage> {
       title: SettingsConstants.maxStorageTitle,
       subtitle: SettingsConstants.maxStorageSubtitle,
       icon: Icons.storage,
+    ),
+    const SettingItem(
+      type: SettingType.bonjour,
+      title: SettingsConstants.bonjourTitle,
+      subtitle: SettingsConstants.bonjourSubtitle,
+      icon: Icons.network_wifi,
     ),
     const SettingItem(
       type: SettingType.clearData,
@@ -162,6 +169,20 @@ class _SettingsPageState extends State<SettingsPage> {
             await _settingsService.setAutoLaunch(value);
             setState(() => _autoLaunch = value);
           },
+        );
+      case SettingType.bonjour:  // Handle the new Bonjour setting type
+        return SwitchListTile(
+          title: Text(item.title),
+          subtitle: Text(item.subtitle),
+          value: _bonjourEnabled,
+          onChanged: (bool value) async {
+            setState(() {
+              _bonjourEnabled = value;
+            });
+            // Here you could add logic to start or stop Bonjour service
+            // For example: _startBonjourService(value);
+          },
+          secondary: Icon(item.icon),
         );
       case SettingType.maxStorage:
         return MaxStorageTile(item: item);

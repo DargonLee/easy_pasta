@@ -8,6 +8,7 @@ enum SettingType {
   clearData,
   exitApp,
   about,
+  bonjour,
 }
 
 class SettingItem {

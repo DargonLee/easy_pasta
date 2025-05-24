@@ -6,6 +6,7 @@
 
 #include "generated_plugin_registrant.h"
 
+#include <bonsoir_windows/bonsoir_windows_plugin_c_api.h>
 #include <hotkey_manager_windows/hotkey_manager_windows_plugin_c_api.h>
 #include <irondash_engine_context/irondash_engine_context_plugin_c_api.h>
 #include <screen_retriever_windows/screen_retriever_windows_plugin_c_api.h>
@@ -15,6 +16,8 @@
 #include <window_manager/window_manager_plugin.h>
 
 void RegisterPlugins(flutter::PluginRegistry* registry) {
+  BonsoirWindowsPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("BonsoirWindowsPluginCApi"));
   HotkeyManagerWindowsPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("HotkeyManagerWindowsPluginCApi"));
   IrondashEngineContextPluginCApiRegisterWithRegistrar(

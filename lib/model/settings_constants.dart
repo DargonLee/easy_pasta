@@ -22,6 +22,10 @@ class SettingsConstants {
   static const String maxStorageTitle = '最大存储';
   static const String maxStorageSubtitle = '设置最大存储条数';
 
+  // 启用Bonjour
+  static const String bonjourTitle = '启用Bonjour';
+  static const String bonjourSubtitle = '测试Bonjour功能';
+
   // 清除记录
   static const String clearDataTitle = '清除记录';
   static const String clearDataSubtitle = '删除所有剪贴板记录';
