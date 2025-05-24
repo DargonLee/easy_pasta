@@ -5,16 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7f8681c4-08fb-438a-8f53-c680caad4950" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/lib/page/bonsoir_page.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/model/settings_constants.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/model/settings_constants.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/model/settings_model.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/model/settings_model.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/page/settings_page.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/page/settings_page.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Flutter/GeneratedPluginRegistrant.swift" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Podfile" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Podfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/macos/Podfile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/macos/Podfile.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pubspec.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/windows/flutter/generated_plugin_registrant.cc" beforeDir="false" afterPath="$PROJECT_DIR$/windows/flutter/generated_plugin_registrant.cc" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/windows/flutter/generated_plugins.cmake" beforeDir="false" afterPath="$PROJECT_DIR$/windows/flutter/generated_plugins.cmake" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/core/bonsoir_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/core/bonsoir_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/lib/main.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,7 +78,7 @@
       <workItem from="1748064195891" duration="2808000" />
       <workItem from="1748068518058" duration="1115000" />
       <workItem from="1748071027057" duration="1297000" />
-      <workItem from="1748072332597" duration="443000" />
+      <workItem from="1748072332597" duration="4223000" />
     </task>
     <servers />
   </component>
