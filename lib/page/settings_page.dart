@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
-import 'package:easy_pasta/model/settings_model.dart';
-import 'package:easy_pasta/core/settings_service.dart';
-import 'package:easy_pasta/widget/settting_page_widgets.dart';
-import 'package:easy_pasta/page/confirm_dialog_view.dart';
-import 'package:easy_pasta/model/settings_constants.dart';
-import 'package:easy_pasta/providers/theme_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_pasta/model/settings_constants.dart';
+import 'package:easy_pasta/model/settings_model.dart';
+import 'package:easy_pasta/providers/theme_provider.dart';
+import 'package:easy_pasta/widget/setting_tiles.dart' hide ThemeTile, HotkeyTile;
+import 'package:easy_pasta/core/settings_service.dart';
+import 'package:easy_pasta/page/confirm_dialog_view.dart';
+import 'package:easy_pasta/widget/settting_page_widgets.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
