@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
+import 'package:easy_pasta/model/design_tokens.dart';
+import 'package:easy_pasta/model/app_typography.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final ValueChanged<String> onSearch;
@@ -20,12 +23,27 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(64);
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      height: 64,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? AppColors.darkDivider : AppColors.lightDivider,
+            width: 1,
+          ),
+        ),
+      ),
       child: Row(
         children: [
           Expanded(
@@ -36,7 +54,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               onClear: onClear,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             flex: 3,
             child: _FilterBar(
@@ -44,7 +62,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               onTypeChanged: onTypeChanged,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.md),
           _SettingsButton(onTap: onSettingsTap),
         ],
       ),
@@ -65,51 +83,75 @@ class _SearchField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return SearchBar(
-      controller: controller,
-      onSubmitted: onSearch,
-      hintText: '搜索',
-      hintStyle: WidgetStateProperty.all(
-        TextStyle(color: isDark ? Colors.white60 : Colors.black45),
+    return Container(
+      height: 36,
+      decoration: BoxDecoration(
+        color: isDark 
+            ? AppColors.darkSecondaryBackground 
+            : AppColors.lightSecondaryBackground,
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
-      leading: Icon(
-        Icons.search,
-        size: 20,
-        color: isDark ? Colors.white54 : Colors.black45,
-      ),
-      trailing: [
-        ValueListenableBuilder<TextEditingValue>(
-          valueListenable: controller,
-          builder: (context, value, _) {
-            if (value.text.isEmpty) return const SizedBox.shrink();
-            return IconButton(
-              icon: const Icon(Icons.clear, size: 20),
-              onPressed: () {
-                controller.clear();
-                onClear();
-              },
-            );
-          },
-        ),
-      ],
-      elevation: WidgetStateProperty.all(0),
-      backgroundColor: WidgetStateProperty.all(
-        isDark ? Colors.grey[800] : Colors.grey[50],
-      ),
-      shape: WidgetStateProperty.all(
-        RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(
-            color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
-            width: 1,
+      child: TextField(
+        controller: controller,
+        onSubmitted: onSearch,
+        style: isDark ? AppTypography.darkBody : AppTypography.lightBody,
+        decoration: InputDecoration(
+          hintText: '搜索',
+          hintStyle: (isDark 
+              ? AppTypography.darkBody 
+              : AppTypography.lightBody
+          ).copyWith(
+            color: isDark 
+                ? AppColors.darkTextSecondary 
+                : AppColors.lightTextSecondary,
           ),
+          prefixIcon: Icon(
+            Icons.search,
+            size: 18,
+            color: isDark 
+                ? AppColors.darkTextSecondary 
+                : AppColors.lightTextSecondary,
+          ),
+          suffixIcon: ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) {
+              if (value.text.isEmpty) return const SizedBox.shrink();
+              return IconButton(
+                icon: Icon(
+                  Icons.clear,
+                  size: 16,
+                  color: isDark 
+                      ? AppColors.darkTextSecondary 
+                      : AppColors.lightTextSecondary,
+                ),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  controller.clear();
+                  onClear();
+                },
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                splashRadius: 16,
+              );
+            },
+          ),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            borderSide: const BorderSide(
+              color: AppColors.primary,
+              width: 2,
+            ),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
+          isDense: true,
         ),
-      ),
-      padding: WidgetStateProperty.all(
-        const EdgeInsets.symmetric(horizontal: 8),
       ),
     );
   }
@@ -133,7 +175,7 @@ class _FilterBar extends StatelessWidget {
         children: [
           for (final option in filterOptions)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
               child: _FilterChip(
                 option: option,
                 isSelected: selectedType == option.type,
@@ -159,34 +201,72 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            option.icon,
-            size: 16,
-            color: isSelected ? Colors.white : theme.iconTheme.color,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            option.label,
-            style: TextStyle(
-              color:
-                  isSelected ? Colors.white : theme.textTheme.bodyMedium?.color,
-              fontSize: 13,
+    return AnimatedContainer(
+      duration: AppDurations.fast,
+      curve: AppCurves.standard,
+      decoration: BoxDecoration(
+        color: isSelected
+            ? AppColors.primary
+            : (isDark 
+                ? AppColors.darkSecondaryBackground 
+                : AppColors.lightSecondaryBackground),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: isSelected
+              ? AppColors.primary
+              : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onSelected(option.type);
+          },
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  option.icon,
+                  size: 16,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark 
+                          ? AppColors.darkTextPrimary 
+                          : AppColors.lightTextPrimary),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  option.label,
+                  style: (isDark 
+                      ? AppTypography.darkBody 
+                      : AppTypography.lightBody
+                  ).copyWith(
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark 
+                            ? AppColors.darkTextPrimary 
+                            : AppColors.lightTextPrimary),
+                    fontWeight: isSelected 
+                        ? AppFontWeights.semiBold 
+                        : AppFontWeights.regular,
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
-      selected: isSelected,
-      onSelected: (_) => onSelected(option.type),
-      selectedColor: theme.colorScheme.primary,
-      showCheckmark: false,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }
@@ -198,12 +278,37 @@ class _SettingsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: const Icon(Icons.settings),
-      onPressed: onTap,
-      tooltip: '设置',
-      constraints: const BoxConstraints(minWidth: 40),
-      padding: EdgeInsets.zero,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Tooltip(
+      message: '设置',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onTap();
+          },
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: isDark 
+                  ? AppColors.darkSecondaryBackground 
+                  : AppColors.lightSecondaryBackground,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Icon(
+              Icons.settings,
+              size: 20,
+              color: isDark 
+                  ? AppColors.darkTextPrimary 
+                  : AppColors.lightTextPrimary,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

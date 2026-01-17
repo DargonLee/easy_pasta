@@ -24,8 +24,8 @@ void main() async {
   HotkeyService();
   StartupService();
   
-  // runApp(const MyApp());
-  runApp(MyTextApp());
+  runApp(const MyApp());
+  // runApp(MyTextApp());
 }
 
 class MyTextApp extends StatelessWidget {

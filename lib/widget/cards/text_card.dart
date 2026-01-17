@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:easy_pasta/model/design_tokens.dart';
+import 'package:easy_pasta/model/app_typography.dart';
 
 class TextContent extends StatelessWidget {
   static final _urlPattern = RegExp(
@@ -24,9 +26,13 @@ class TextContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textStyle = style ?? _defaultTextStyle(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textStyle = style ?? (isDark 
+        ? AppTypography.darkBody 
+        : AppTypography.lightBody);
+    
     return _urlPattern.hasMatch(text)
-        ? _buildUrlText(textStyle)
+        ? _buildUrlText(textStyle, isDark)
         : _buildNormalText(textStyle);
   }
 
@@ -36,32 +42,46 @@ class TextContent extends StatelessWidget {
         color: Theme.of(context).textTheme.bodyMedium?.color,
       );
 
-  Widget _buildUrlText(TextStyle baseStyle) {
+  Widget _buildUrlText(TextStyle baseStyle, bool isDark) {
     return InkWell(
       onTap: () => _launchURL(text),
-      child: Text(
-        text.length > 500 ? text.substring(0, 500) : text,
-        textAlign: textAlign,
-        softWrap: true,
-        style: baseStyle.copyWith(
-          color: Colors.blue,
-          decoration: TextDecoration.underline,
+      borderRadius: BorderRadius.circular(AppRadius.xs),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xs),
+        child: Text(
+          text.length > 500 ? text.substring(0, 500) : text,
+          textAlign: textAlign,
+          softWrap: true,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          style: baseStyle.copyWith(
+            color: AppColors.primary,
+            decoration: TextDecoration.underline,
+            decorationColor: AppColors.primary,
+          ),
         ),
       ),
     );
   }
 
   Widget _buildNormalText(TextStyle style) {
+    final displayText = text.length > 300 
+        ? '${text.substring(0, 297)}...' 
+        : text;
+    
     return selectable
         ? SelectableText(
-            text,
+            displayText,
             textAlign: textAlign,
             style: style,
+            maxLines: 6,
           )
         : Text(
-            text,
+            displayText,
             textAlign: textAlign,
             softWrap: true,
+            maxLines: 6,
+            overflow: TextOverflow.ellipsis,
             style: style,
           );
   }

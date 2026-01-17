@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:typed_data';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/widget/cards/image_card.dart';
@@ -7,8 +8,9 @@ import 'package:easy_pasta/widget/cards/text_card.dart';
 import 'package:easy_pasta/widget/cards/footer_card.dart';
 import 'package:easy_pasta/widget/cards/html_card.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
+import 'package:easy_pasta/model/design_tokens.dart';
 
-class NewPboardItemCard extends StatelessWidget {
+class NewPboardItemCard extends StatefulWidget {
   final ClipboardItemModel model;
   final String selectedId;
   final Function(ClipboardItemModel) onTap;
@@ -16,6 +18,7 @@ class NewPboardItemCard extends StatelessWidget {
   final Function(ClipboardItemModel) onCopy;
   final Function(ClipboardItemModel) onFavorite;
   final Function(ClipboardItemModel) onDelete;
+  
   const NewPboardItemCard({
     Key? key,
     required this.model,
@@ -28,42 +31,84 @@ class NewPboardItemCard extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  State<NewPboardItemCard> createState() => _NewPboardItemCardState();
+}
+
+class _NewPboardItemCardState extends State<NewPboardItemCard> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    final isSelected = selectedId == model.id;
-    return RepaintBoundary(
-      child: Card(
-        elevation: isSelected ? 2 : 0,
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: isSelected
-              ? const BorderSide(color: Colors.blue, width: 1)
-              : BorderSide.none,
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => onTap(model),
-          onDoubleTap: () => onDoubleTap(model),
-          child: LayoutBuilder(builder: (context, constraints) {
-            return Padding(
-              padding: const EdgeInsets.all(8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: 50,
-                      maxHeight: constraints.maxHeight - 38,
-                    ),
-                    child: _buildContent(context),
+    final isSelected = widget.selectedId == widget.model.id;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: RepaintBoundary(
+        child: AnimatedContainer(
+          duration: AppDurations.fast,
+          curve: AppCurves.standard,
+          margin: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: isDark 
+                ? AppColors.darkCardBackground 
+                : AppColors.lightCardBackground,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: isSelected
+                ? Border.all(
+                    color: AppColors.primary,
+                    width: 2,
+                  )
+                : Border.all(
+                    color: isDark 
+                        ? AppColors.darkBorder.withOpacity(0.3)
+                        : AppColors.lightBorder.withOpacity(0.3),
+                    width: 1,
                   ),
-                  const Spacer(),
-                  _buildFooter(context),
-                ],
+            boxShadow: _isHovered || isSelected ? AppShadows.md : AppShadows.sm,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              onTap: () {
+                HapticFeedback.selectionClick();
+                widget.onTap(widget.model);
+              },
+              onDoubleTap: () {
+                HapticFeedback.mediumImpact();
+                widget.onDoubleTap(widget.model);
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.cardPadding),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Expanded(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              minHeight: 50,
+                              maxHeight: constraints.maxHeight - 28,
+                            ),
+                            child: _buildContent(context),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        _buildFooter(context),
+                      ],
+                    );
+                  },
+                ),
               ),
-            );
-          }),
+            ),
+          ),
         ),
       ),
     );
@@ -77,19 +122,19 @@ class NewPboardItemCard extends StatelessWidget {
   }
 
   Widget _buildContentByType(BuildContext context) {
-    switch (model.ptype) {
+    switch (widget.model.ptype) {
       case ClipboardType.image:
         return ImageContent(
-          imageBytes: model.bytes ?? Uint8List(0),
+          imageBytes: widget.model.bytes ?? Uint8List(0),
         );
       case ClipboardType.file:
         return FileContent(
-          fileName: model.pvalue,
-          fileUri: model.bytesToString(model.bytes ?? Uint8List(0)),
+          fileName: widget.model.pvalue,
+          fileUri: widget.model.bytesToString(widget.model.bytes ?? Uint8List(0)),
         );
       case ClipboardType.html:
         return HtmlContent(
-          htmlData: model.bytesToString(model.bytes ?? Uint8List(0)),
+          htmlData: widget.model.bytesToString(widget.model.bytes ?? Uint8List(0)),
         );
       case ClipboardType.unknown:
         return const TextContent(
@@ -97,17 +142,17 @@ class NewPboardItemCard extends StatelessWidget {
         );
       default:
         return TextContent(
-          text: model.pvalue,
+          text: widget.model.pvalue,
         );
     }
   }
 
   Widget _buildFooter(BuildContext context) {
     return FooterContent(
-      model: model,
-      onCopy: onCopy,
-      onFavorite: onFavorite,
-      onDelete: onDelete,
+      model: widget.model,
+      onCopy: widget.onCopy,
+      onFavorite: widget.onFavorite,
+      onDelete: widget.onDelete,
     );
   }
 }

@@ -1,12 +1,15 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:easy_pasta/model/settings_model.dart';
 import 'package:easy_pasta/core/record_hotkey_dialog.dart';
 import 'package:easy_pasta/widget/setting_counter.dart';
 import 'package:easy_pasta/model/settings_constants.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:easy_pasta/model/design_tokens.dart';
+import 'package:easy_pasta/model/app_typography.dart';
 
 class HotkeyTile extends StatelessWidget {
   final SettingItem item;
@@ -22,23 +25,93 @@ class HotkeyTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(item.icon, color: item.iconColor),
-      title: Text(item.title, style: TextStyle(color: item.textColor)),
-      subtitle: hotKey != null
-          ? HotKeyVirtualView(hotKey: hotKey!)
-          : Text(item.subtitle),
-      trailing: TextButton(
-        onPressed: () => _showHotKeyDialog(context),
-        style: TextButton.styleFrom(
-          backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-              : Theme.of(context).primaryColor.withOpacity(0.1),
-        ),
-        child: Text(
-          hotKey != null
-              ? SettingsConstants.modifyText
-              : SettingsConstants.setUpText,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showHotKeyDialog(context),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
+          ),
+          child: Row(
+            children: [
+              // 图标
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: (item.iconColor ?? AppColors.primary).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Icon(
+                  item.icon,
+                  color: item.iconColor ?? AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              
+              // 文字内容
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: (isDark 
+                          ? AppTypography.darkBody 
+                          : AppTypography.lightBody
+                      ).copyWith(
+                        color: item.textColor,
+                        fontWeight: AppFontWeights.regular,
+                      ),
+                    ),
+                    if (hotKey != null) ...
+                    [
+                      const SizedBox(height: AppSpacing.xs),
+                      HotKeyVirtualView(hotKey: hotKey!),
+                    ] else ...
+                    [
+                      const SizedBox(height: AppSpacing.xs / 2),
+                      Text(
+                        item.subtitle,
+                        style: isDark 
+                            ? AppTypography.darkFootnote 
+                            : AppTypography.lightFootnote,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              
+              // 按钮
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Text(
+                  hotKey != null 
+                      ? SettingsConstants.modifyText 
+                      : SettingsConstants.setUpText,
+                  style: (isDark 
+                      ? AppTypography.darkFootnote 
+                      : AppTypography.lightFootnote
+                  ).copyWith(
+                    color: AppColors.primary,
+                    fontWeight: AppFontWeights.semiBold,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -71,51 +144,117 @@ class ThemeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(
-        item.icon,
-        color: item.iconColor ?? Theme.of(context).iconTheme.color,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
       ),
-      title: Text(item.title),
-      subtitle: Text(item.subtitle),
-      trailing: CupertinoSegmentedControl<int>(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        children: const {
-          0: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Text('自动'),
+      child: Row(
+        children: [
+          // 图标
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: (item.iconColor ?? AppColors.primary).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Icon(
+              item.icon,
+              color: item.iconColor ?? AppColors.primary,
+              size: 20,
+            ),
           ),
-          1: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Text('浅色'),
+          const SizedBox(width: AppSpacing.md),
+          
+          // 文字内容
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: isDark 
+                      ? AppTypography.darkBody 
+                      : AppTypography.lightBody,
+                ),
+                const SizedBox(height: AppSpacing.xs / 2),
+                Text(
+                  item.subtitle,
+                  style: isDark 
+                      ? AppTypography.darkFootnote 
+                      : AppTypography.lightFootnote,
+                ),
+              ],
+            ),
           ),
-          2: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Text('深色'),
+          
+          // 分段控制器
+          CupertinoSegmentedControl<int>(
+            padding: const EdgeInsets.all(2),
+            children: {
+              0: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                child: Text(
+                  '自动',
+                  style: AppTypography.lightCaption,
+                ),
+              ),
+              1: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                child: Text(
+                  '浅色',
+                  style: AppTypography.lightCaption,
+                ),
+              ),
+              2: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                child: Text(
+                  '深色',
+                  style: AppTypography.lightCaption,
+                ),
+              ),
+            },
+            groupValue: currentThemeMode == ThemeMode.system
+                ? 0
+                : currentThemeMode == ThemeMode.light
+                    ? 1
+                    : 2,
+            onValueChanged: (value) {
+              HapticFeedback.selectionClick();
+              switch (value) {
+                case 0:
+                  onThemeModeChanged(ThemeMode.system);
+                  break;
+                case 1:
+                  onThemeModeChanged(ThemeMode.light);
+                  break;
+                case 2:
+                  onThemeModeChanged(ThemeMode.dark);
+                  break;
+              }
+            },
+            unselectedColor: isDark 
+                ? AppColors.darkSecondaryBackground 
+                : AppColors.lightSecondaryBackground,
+            selectedColor: AppColors.primary,
+            borderColor: isDark 
+                ? AppColors.darkBorder 
+                : AppColors.lightBorder,
+            pressedColor: AppColors.primary.withOpacity(0.1),
           ),
-        },
-        groupValue: currentThemeMode == ThemeMode.system
-            ? 0
-            : currentThemeMode == ThemeMode.light
-                ? 1
-                : 2,
-        onValueChanged: (value) {
-          switch (value) {
-            case 0:
-              onThemeModeChanged(ThemeMode.system);
-              break;
-            case 1:
-              onThemeModeChanged(ThemeMode.light);
-              break;
-            case 2:
-              onThemeModeChanged(ThemeMode.dark);
-              break;
-          }
-        },
-        unselectedColor: Theme.of(context).colorScheme.surface,
-        selectedColor: Theme.of(context).colorScheme.primary,
-        borderColor: Theme.of(context).colorScheme.primary,
-        pressedColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+        ],
       ),
     );
   }
@@ -135,13 +274,15 @@ class AutoLaunchTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(item.icon, color: item.iconColor),
-      title: Text(item.title, style: TextStyle(color: item.textColor)),
-      subtitle: Text(item.subtitle),
-      trailing: Switch(
+    return _BaseSettingTile(
+      item: item,
+      trailing: CupertinoSwitch(
         value: value,
-        onChanged: onChanged,
+        onChanged: (val) {
+          HapticFeedback.lightImpact();
+          onChanged(val);
+        },
+        activeColor: AppColors.primary,
       ),
     );
   }
@@ -157,10 +298,8 @@ class MaxStorageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(item.icon, color: item.iconColor),
-      title: Text(item.title, style: TextStyle(color: item.textColor)),
-      subtitle: Text(item.subtitle),
+    return _BaseSettingTile(
+      item: item,
       trailing: const ModernCounter(),
     );
   }
@@ -178,11 +317,12 @@ class ClearDataTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(item.icon, color: item.iconColor),
-      title: Text(item.title, style: TextStyle(color: item.textColor)),
-      subtitle: Text(item.subtitle),
-      onTap: onClear,
+    return _BaseSettingTile(
+      item: item,
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        onClear();
+      },
     );
   }
 }
@@ -197,16 +337,17 @@ class ExitAppTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(item.icon, color: item.iconColor),
-      title: Text(item.title, style: TextStyle(color: item.textColor)),
-      subtitle: Text(item.subtitle),
-      onTap: () => _showConfirmDialog(
-        context: context,
-        title: SettingsConstants.exitConfirmTitle,
-        content: SettingsConstants.exitConfirmContent,
-        onConfirm: () => exit(0),
-      ),
+    return _BaseSettingTile(
+      item: item,
+      onTap: () {
+        HapticFeedback.mediumImpact();
+        _showConfirmDialog(
+          context: context,
+          title: SettingsConstants.exitConfirmTitle,
+          content: SettingsConstants.exitConfirmContent,
+          onConfirm: () => exit(0),
+        );
+      },
     );
   }
 }
@@ -232,18 +373,155 @@ class AboutTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(item.icon, color: item.iconColor),
-      title: Text(item.title, style: TextStyle(color: item.textColor)),
-      subtitle: const Text('当前版本：${SettingsConstants.appVersion}'),
-      trailing: const Text(
-        SettingsConstants.githubUrl,
-        style: TextStyle(
-          color: Colors.blue,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          _launchUrl();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
+          ),
+          child: Row(
+            children: [
+              // 图标
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Icon(
+                  item.icon,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              
+              // 文字内容
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: isDark 
+                          ? AppTypography.darkBody 
+                          : AppTypography.lightBody,
+                    ),
+                    const SizedBox(height: AppSpacing.xs / 2),
+                    Text(
+                      '当前版本：${SettingsConstants.appVersion}',
+                      style: isDark 
+                          ? AppTypography.darkFootnote 
+                          : AppTypography.lightFootnote,
+                    ),
+                  ],
+                ),
+              ),
+              
+              // GitHub 链接
+              Icon(
+                Icons.open_in_new,
+                size: 16,
+                color: AppColors.primary,
+              ),
+            ],
+          ),
         ),
       ),
-      onTap: _launchUrl,
     );
+  }
+}
+
+/// 基础设置项组件
+class _BaseSettingTile extends StatelessWidget {
+  final SettingItem item;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  const _BaseSettingTile({
+    required this.item,
+    this.trailing,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final content = Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
+      child: Row(
+        children: [
+          // 图标
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: (item.iconColor ?? AppColors.primary).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Icon(
+              item.icon,
+              color: item.iconColor ?? AppColors.primary,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          
+          // 文字内容
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: (isDark 
+                      ? AppTypography.darkBody 
+                      : AppTypography.lightBody
+                  ).copyWith(
+                    color: item.textColor,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs / 2),
+                Text(
+                  item.subtitle,
+                  style: isDark 
+                      ? AppTypography.darkFootnote 
+                      : AppTypography.lightFootnote,
+                ),
+              ],
+            ),
+          ),
+          
+          // 右侧内容
+          if (trailing != null) trailing!,
+        ],
+      ),
+    );
+
+    if (onTap != null) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: content,
+        ),
+      );
+    }
+
+    return content;
   }
 }
 

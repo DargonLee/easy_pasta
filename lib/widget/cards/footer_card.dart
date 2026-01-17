@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/core/icon_service.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
+import 'package:easy_pasta/model/design_tokens.dart';
+import 'package:easy_pasta/model/app_typography.dart';
 
 class FooterContent extends StatelessWidget {
   final ClipboardItemModel model;
@@ -19,58 +22,72 @@ class FooterContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final defaultStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Colors.grey[500],
-          fontSize: 10,
-        );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // 类型图标
           Icon(
-            TypeIconHelper.getTypeIcon(model.ptype ?? ClipboardType.unknown,
-                pvalue: model.pvalue),
-            size: 15,
-            color: Theme.of(context).colorScheme.primary,
+            TypeIconHelper.getTypeIcon(
+              model.ptype ?? ClipboardType.unknown,
+              pvalue: model.pvalue,
+            ),
+            size: 14,
+            color: AppColors.primary,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSpacing.xs),
+          
+          // 时间戳
           Text(
             _formatTimestamp(DateTime.parse(model.time)),
-            style: defaultStyle,
-          ),
-          const Spacer(),
-          IconButton(
-            icon: const Icon(Icons.copy, size: 14),
-            onPressed: () => onCopy(model),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            splashRadius: 12,
-            color: Colors.grey[500],
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: Icon(
-              model.isFavorite ? Icons.star : Icons.star_border,
-              size: 15,
+            style: (isDark 
+                ? AppTypography.darkCaption 
+                : AppTypography.lightCaption
+            ).copyWith(
+              color: isDark 
+                  ? AppColors.darkTextSecondary 
+                  : AppColors.lightTextSecondary,
             ),
-            onPressed: () => onFavorite(model),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            splashRadius: 12,
-            color: model.isFavorite ? Colors.amber : Colors.grey[500],
           ),
-          const SizedBox(width: 8),
-          IconButton(
-            icon: const Icon(Icons.delete_outline, size: 15),
-            onPressed: () => onDelete(model),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            splashRadius: 12,
-            color: Colors.grey[500],
+          
+          const Spacer(),
+          
+          // 复制按钮
+          _ActionButton(
+            icon: Icons.copy,
+            tooltip: '复制',
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              onCopy(model);
+            },
           ),
-          const SizedBox(width: 8),
+          
+          const SizedBox(width: AppSpacing.xs),
+          
+          // 收藏按钮
+          _ActionButton(
+            icon: model.isFavorite ? Icons.star : Icons.star_border,
+            tooltip: model.isFavorite ? '取消收藏' : '收藏',
+            color: model.isFavorite ? AppColors.favorite : null,
+            onPressed: () {
+              HapticFeedback.selectionClick();
+              onFavorite(model);
+            },
+          ),
+          
+          const SizedBox(width: AppSpacing.xs),
+          
+          // 删除按钮
+          _ActionButton(
+            icon: Icons.delete_outline,
+            tooltip: '删除',
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              onDelete(model);
+            },
+          ),
         ],
       ),
     );
@@ -104,5 +121,67 @@ class FooterContent extends StatelessWidget {
     return timestamp.year == now.year &&
         timestamp.month == now.month &&
         timestamp.day == now.day;
+  }
+}
+
+/// 操作按钮组件
+class _ActionButton extends StatefulWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+  final Color? color;
+
+  const _ActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+    this.color,
+  });
+
+  @override
+  State<_ActionButton> createState() => _ActionButtonState();
+}
+
+class _ActionButtonState extends State<_ActionButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveColor = widget.color ??
+        (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary);
+
+    return Tooltip(
+      message: widget.tooltip,
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: GestureDetector(
+          onTap: widget.onPressed,
+          child: AnimatedContainer(
+            duration: AppDurations.fast,
+            curve: AppCurves.standard,
+            padding: const EdgeInsets.all(AppSpacing.xs),
+            decoration: BoxDecoration(
+              color: _isHovered
+                  ? (isDark
+                      ? AppColors.darkSecondaryBackground
+                      : AppColors.lightSecondaryBackground)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppRadius.xs),
+            ),
+            child: Icon(
+              widget.icon,
+              size: 14,
+              color: _isHovered
+                  ? (isDark
+                      ? AppColors.darkTextPrimary
+                      : AppColors.lightTextPrimary)
+                  : effectiveColor,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
