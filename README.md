@@ -2,6 +2,7 @@
 
 <div align="center">
   <img src="README.assets/HomePage.png" alt="EasyPasta 主界面" width="800"/>
+  <img src="README.assets/HomePageDark.png" alt="EasyPasta 主界面" width="800"/>
 </div>
 
 ## 📝 概述
