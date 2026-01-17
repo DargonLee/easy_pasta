@@ -50,6 +50,9 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   bool _hasFocus = false;
   bool _isScrolling = false;
   Timer? _scrollEndTimer;
+  
+  // 删除动画状态
+  final Map<String, _DeleteAnimationController> _deleteAnimations = {};
 
   @override
   void initState() {
@@ -74,6 +77,11 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     _scrollController.dispose();
     _scrollEndTimer?.cancel();
     _focusNode.dispose();
+    // 清理删除动画控制器
+    for (final controller in _deleteAnimations.values) {
+      controller.dispose();
+    }
+    _deleteAnimations.clear();
     super.dispose();
   }
 
@@ -219,24 +227,16 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   Widget _buildGridItem(BuildContext context, int index) {
     final model = widget.pboards[index];
     
-    // 使用 Flutter 官方 AnimatedSwitcher 实现项目变化动画
-    Widget card = AnimatedSwitcher(
-      duration: AppDurations.normal,
-      switchInCurve: Curves.easeOut,
-      switchOutCurve: Curves.easeIn,
-      transitionBuilder: (child, animation) {
-        // Flutter 官方标准的 FadeTransition + ScaleTransition 组合
-        return FadeTransition(
-          opacity: animation,
-          child: ScaleTransition(
-            scale: animation,
-            child: child,
-          ),
-        );
-      },
-      child: _buildCard(model),
-    );
+    // 检查是否正在删除
+    final deleteController = _deleteAnimations[model.id];
+    if (deleteController != null) {
+      return _AnimatedDeleteCard(
+        controller: deleteController,
+        child: _buildCardContent(model),
+      );
+    }
     
+    // 初始加载动画
     if (_isInitialLoad && index < 20) {
       final delay = Duration(milliseconds: index * 25);
       return TweenAnimationBuilder<double>(
@@ -252,15 +252,15 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
             ),
           );
         },
-        child: card,
+        child: _buildCardContent(model),
       );
     }
 
-    return card;
+    return _buildCardContent(model);
   }
 
-  /// 构建卡片
-  Widget _buildCard(ClipboardItemModel model) {
+  /// 构建卡片内容
+  Widget _buildCardContent(ClipboardItemModel model) {
     return MouseRegion(
       onEnter: (_) {
         if (_isScrolling) return;
@@ -290,35 +290,29 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
         },
         onCopy: widget.onCopy,
         onFavorite: widget.onFavorite,
-        onDelete: (item) {
-          // 使用 Flutter 官方标准的 Dismissible 动画效果
-          _handleDelete(item);
-        },
+        onDelete: _startDeleteAnimation,
       ),
     );
   }
   
-  /// 处理删除操作，使用官方动画
-  void _handleDelete(ClipboardItemModel item) {
-    // 显示 SnackBar 提供撤销选项（官方推荐做法）
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
+  /// 开始删除动画
+  void _startDeleteAnimation(ClipboardItemModel item) {
+    if (_deleteAnimations.containsKey(item.id)) return;
     
-    // 立即调用删除回调
-    widget.onDelete(item);
-    
-    // 显示确认信息
-    messenger.showSnackBar(
-      SnackBar(
-        content: const Text('已删除'),
-        duration: const Duration(milliseconds: 1500),
-        behavior: SnackBarBehavior.floating,
-        width: 200,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-      ),
+    final controller = _DeleteAnimationController(
+      onComplete: () {
+        // 动画完成后执行实际删除
+        _deleteAnimations.remove(item.id);
+        widget.onDelete(item);
+      },
     );
+    
+    setState(() {
+      _deleteAnimations[item.id] = controller;
+    });
+    
+    // 启动动画
+    controller.start();
   }
 
   /// 更新鼠标悬停的项目
@@ -335,4 +329,72 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
 
   @override
   bool get wantKeepAlive => true;
+}
+
+/// 删除动画控制器
+class _DeleteAnimationController {
+  final VoidCallback onComplete;
+  final _notifier = ValueNotifier<double>(1.0);
+  Timer? _timer;
+  
+  _DeleteAnimationController({required this.onComplete});
+  
+  ValueNotifier<double> get animation => _notifier;
+  
+  void start() {
+    const duration = Duration(milliseconds: 200);
+    const frames = 20;
+    final interval = duration.inMilliseconds ~/ frames;
+    int currentFrame = 0;
+    
+    _timer = Timer.periodic(Duration(milliseconds: interval), (timer) {
+      currentFrame++;
+      // 使用 easeOut 曲线
+      final t = currentFrame / frames;
+      final value = 1.0 - _easeOutCubic(t);
+      _notifier.value = value.clamp(0.0, 1.0);
+      
+      if (currentFrame >= frames) {
+        timer.cancel();
+        onComplete();
+      }
+    });
+  }
+  
+  // Cubic ease-out 曲线
+  double _easeOutCubic(double t) {
+    return 1 - ((1 - t) * (1 - t) * (1 - t));
+  }
+  
+  void dispose() {
+    _timer?.cancel();
+    _notifier.dispose();
+  }
+}
+
+/// 删除动画卡片
+class _AnimatedDeleteCard extends StatelessWidget {
+  final _DeleteAnimationController controller;
+  final Widget child;
+  
+  const _AnimatedDeleteCard({
+    required this.controller,
+    required this.child,
+  });
+  
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<double>(
+      valueListenable: controller.animation,
+      builder: (context, value, _) {
+        return Opacity(
+          opacity: value,
+          child: Transform.scale(
+            scale: 0.8 + (0.2 * value), // 1.0 -> 0.8
+            child: child,
+          ),
+        );
+      },
+    );
+  }
 }
