@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
@@ -87,11 +86,6 @@ class _CategoryEmptyStateState extends State<CategoryEmptyState>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // 插图
-                _buildIllustration(config, isDark),
-                
-                const SizedBox(height: AppSpacing.xxl),
-                
                 // 标题
                 Text(
                   config.title,
@@ -129,94 +123,6 @@ class _CategoryEmptyStateState extends State<CategoryEmptyState>
           ),
         ),
       ),
-    );
-  }
-
-  /// 构建插图
-  Widget _buildIllustration(_EmptyConfig config, bool isDark) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        // 背景圆圈
-        Container(
-          width: 140,
-          height: 140,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [
-                config.color.withOpacity(0.15),
-                config.color.withOpacity(0.05),
-                Colors.transparent,
-              ],
-              stops: const [0.3, 0.7, 1.0],
-            ),
-          ),
-        ),
-        // 主图标容器
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: (isDark
-                    ? AppColors.darkSecondaryBackground
-                    : AppColors.lightSecondaryBackground)
-                .withOpacity(0.8),
-            border: Border.all(
-              color: config.color.withOpacity(0.3),
-              width: 2,
-            ),
-          ),
-          child: Icon(
-            config.icon,
-            size: 48,
-            color: config.color,
-          ),
-        ),
-        // 装饰元素
-        ...config.decorations.asMap().entries.map((entry) {
-          final index = entry.key;
-          final decoration = entry.value;
-          final angle = (index * 2 * math.pi) / config.decorations.length;
-          final radius = 60.0;
-          
-          return Positioned(
-            left: 70 + radius * math.cos(angle) - 12,
-            top: 70 + radius * math.sin(angle) - 12,
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: Duration(milliseconds: 600 + index * 100),
-              curve: Curves.elasticOut,
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: value,
-                  child: child,
-                );
-              },
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: decoration.withOpacity(0.2),
-                  border: Border.all(
-                    color: decoration.withOpacity(0.5),
-                    width: 1.5,
-                  ),
-                ),
-                child: Icon(
-                  decoration == config.color
-                      ? Icons.add_rounded
-                      : Icons.circle,
-                  size: 12,
-                  color: decoration,
-                ),
-              ),
-            ),
-          );
-        }),
-      ],
     );
   }
 

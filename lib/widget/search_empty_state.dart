@@ -77,11 +77,6 @@ class _SearchEmptyStateState extends State<SearchEmptyState>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // 动画放大镜图标
-                _buildSearchIcon(isDark),
-                
-                const SizedBox(height: AppSpacing.xxl),
-                
                 // 主标题
                 Text(
                   '未找到相关内容',
@@ -115,81 +110,6 @@ class _SearchEmptyStateState extends State<SearchEmptyState>
           ),
         ),
       ),
-    );
-  }
-
-  /// 构建搜索图标
-  Widget _buildSearchIcon(bool isDark) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: Transform.rotate(
-            angle: _rotateAnimation.value,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: isDark
-                      ? [
-                          AppColors.darkSecondaryBackground,
-                          AppColors.darkTertiaryBackground,
-                        ]
-                      : [
-                          AppColors.lightSecondaryBackground,
-                          AppColors.lightBackground,
-                        ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: (isDark ? Colors.black : Colors.grey)
-                        .withOpacity(0.1),
-                    blurRadius: 20,
-                    spreadRadius: 5,
-                  ),
-                ],
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // 搜索图标
-                  Icon(
-                    Icons.search_rounded,
-                    size: 56,
-                    color: (isDark
-                            ? AppColors.darkTextTertiary
-                            : AppColors.lightTextTertiary)
-                        .withOpacity(0.6),
-                  ),
-                  // X 标记
-                  Positioned(
-                    right: 25,
-                    bottom: 25,
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: Colors.red[400],
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.close_rounded,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 
