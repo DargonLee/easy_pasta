@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
+import 'package:easy_pasta/model/pboard_sort_type.dart';
 import 'package:easy_pasta/page/pboard_card_view.dart';
 import 'package:easy_pasta/page/empty_view.dart';
 import 'package:easy_pasta/widget/preview_dialog.dart';
@@ -14,6 +15,7 @@ class PasteboardGridView extends StatefulWidget {
   static const int _kMaxColumns = 4;
 
   final List<ClipboardItemModel> pboards;
+  final NSPboardSortType currentCategory;
   final String selectedId;
   final Function(ClipboardItemModel) onItemTap;
   final Function(ClipboardItemModel) onItemDoubleTap;
@@ -24,6 +26,7 @@ class PasteboardGridView extends StatefulWidget {
   const PasteboardGridView({
     Key? key,
     required this.pboards,
+    this.currentCategory = NSPboardSortType.all,
     required this.selectedId,
     required this.onItemTap,
     required this.onItemDoubleTap,
@@ -37,40 +40,24 @@ class PasteboardGridView extends StatefulWidget {
 }
 
 class _PasteboardGridViewState extends State<PasteboardGridView>
-    with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+    with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
   ClipboardItemModel? _hoveredItem;
   final FocusNode _focusNode = FocusNode();
-  late AnimationController _listAnimationController;
-  bool _isInitialLoad = true;
 
   @override
   void initState() {
     super.initState();
-    _listAnimationController = AnimationController(
-      vsync: this,
-      duration: AppDurations.normal,
-    );
-    
-    // 延迟启动动画，让布局先完成
-    Future.delayed(const Duration(milliseconds: 50), () {
-      if (mounted) {
-        _listAnimationController.forward();
-        setState(() => _isInitialLoad = false);
-      }
-    });
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     _focusNode.dispose();
-    _listAnimationController.dispose();
     super.dispose();
   }
 
   void _showPreviewDialog(BuildContext context, ClipboardItemModel model) {
-    print('showPreviewDialog');
     PreviewDialog.show(context, model);
   }
 
@@ -95,7 +82,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     super.build(context);
 
     if (widget.pboards.isEmpty) {
-      return const EmptyStateView();
+      return EmptyStateView(category: widget.currentCategory);
     }
 
     return KeyboardListener(
@@ -152,31 +139,9 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     );
   }
 
-  /// 构建网格项（带交错动画）
+  /// 构建网格项
   Widget _buildGridItem(BuildContext context, int index) {
     final model = widget.pboards[index];
-    
-    // 只在初始加载时应用交错动画
-    if (_isInitialLoad && index < 20) {
-      final delay = Duration(milliseconds: index * 30);
-      
-      return TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
-        duration: AppDurations.normal + delay,
-        curve: AppCurves.standard,
-        builder: (context, value, child) {
-          return Opacity(
-            opacity: value,
-            child: Transform.translate(
-              offset: Offset(0, 20 * (1 - value)),
-              child: child,
-            ),
-          );
-        },
-        child: _buildCard(model),
-      );
-    }
-    
     return _buildCard(model);
   }
 

@@ -85,19 +85,18 @@ class _SearchField extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
+    return SizedBox(
       height: 36,
-      decoration: BoxDecoration(
-        color: isDark 
-            ? AppColors.darkSecondaryBackground 
-            : AppColors.lightSecondaryBackground,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
       child: TextField(
         controller: controller,
         onSubmitted: onSearch,
+        textAlignVertical: TextAlignVertical.center,
         style: isDark ? AppTypography.darkBody : AppTypography.lightBody,
         decoration: InputDecoration(
+          filled: true,
+          fillColor: isDark 
+              ? AppColors.darkSecondaryBackground 
+              : AppColors.lightSecondaryBackground,
           hintText: '搜索',
           hintStyle: (isDark 
               ? AppTypography.darkBody 
@@ -137,8 +136,14 @@ class _SearchField extends StatelessWidget {
               );
             },
           ),
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            borderSide: BorderSide.none,
+          ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
             borderSide: const BorderSide(
@@ -147,8 +152,8 @@ class _SearchField extends StatelessWidget {
             ),
           ),
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.sm,
+            horizontal: 0,
+            vertical: 0,
           ),
           isDense: true,
         ),

@@ -113,9 +113,11 @@ class PboardProvider extends ChangeNotifier {
   // 应用过滤和搜索
   void _applyFiltersAndSearch() {
     var filteredItems = List<ClipboardItemModel>.from(_state.allItems);
+    bool hasSearch = _state.searchQuery.isNotEmpty;
+    bool hasFilter = _state.filterType != NSPboardSortType.all;
 
     // 应用类型过滤
-    if (_state.filterType != NSPboardSortType.all) {
+    if (hasFilter) {
       if (_state.filterType == NSPboardSortType.favorite) {
         filteredItems = filteredItems.where((item) => item.isFavorite).toList();
       } else {
@@ -127,7 +129,7 @@ class PboardProvider extends ChangeNotifier {
     }
 
     // 应用搜索过滤
-    if (_state.searchQuery.isNotEmpty) {
+    if (hasSearch) {
       filteredItems = filteredItems
           .where((item) => item.pvalue
               .toLowerCase()
@@ -135,9 +137,17 @@ class PboardProvider extends ChangeNotifier {
           .toList();
     }
 
+    // 区分两种空状态：
+    // 1. 有搜索条件但无结果 -> error = '未找到相关内容'
+    // 2. 无数据或筛选后无数据 -> error = null（显示分类空状态）
+    String? errorMessage;
+    if (filteredItems.isEmpty && hasSearch) {
+      errorMessage = '未找到相关内容';
+    }
+
     _updateState(_state.copyWith(
       filteredItems: filteredItems,
-      error: filteredItems.isEmpty ? '未找到相关内容' : null,
+      error: errorMessage,
     ));
   }
 

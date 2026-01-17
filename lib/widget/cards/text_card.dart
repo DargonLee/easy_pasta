@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
+import 'package:easy_pasta/core/content_processor.dart';
 
 class TextContent extends StatelessWidget {
   static final _urlPattern = RegExp(
@@ -31,9 +32,13 @@ class TextContent extends StatelessWidget {
         ? AppTypography.darkBody 
         : AppTypography.lightBody);
     
-    return _urlPattern.hasMatch(text)
-        ? _buildUrlText(textStyle, isDark)
-        : _buildNormalText(textStyle);
+    // 清理文本内容
+    final cleanedText = ContentProcessor.cleanText(text);
+    
+    // 检查是否为URL
+    return _urlPattern.hasMatch(cleanedText)
+        ? _buildUrlText(cleanedText, textStyle, isDark)
+        : _buildNormalText(cleanedText, textStyle);
   }
 
   TextStyle _defaultTextStyle(BuildContext context) => TextStyle(
@@ -42,14 +47,14 @@ class TextContent extends StatelessWidget {
         color: Theme.of(context).textTheme.bodyMedium?.color,
       );
 
-  Widget _buildUrlText(TextStyle baseStyle, bool isDark) {
+  Widget _buildUrlText(String urlText, TextStyle baseStyle, bool isDark) {
     return InkWell(
-      onTap: () => _launchURL(text),
+      onTap: () => _launchURL(urlText),
       borderRadius: BorderRadius.circular(AppRadius.xs),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xs),
         child: Text(
-          text.length > 500 ? text.substring(0, 500) : text,
+          urlText.length > 500 ? '${urlText.substring(0, 497)}...' : urlText,
           textAlign: textAlign,
           softWrap: true,
           maxLines: 3,
@@ -64,20 +69,19 @@ class TextContent extends StatelessWidget {
     );
   }
 
-  Widget _buildNormalText(TextStyle style) {
-    final displayText = text.length > 300 
-        ? '${text.substring(0, 297)}...' 
-        : text;
+  Widget _buildNormalText(String displayText, TextStyle style) {
+    // 智能截断，保持完整单词
+    final truncatedText = ContentProcessor.truncateText(displayText, 300);
     
     return selectable
         ? SelectableText(
-            displayText,
+            truncatedText,
             textAlign: textAlign,
             style: style,
             maxLines: 6,
           )
         : Text(
-            displayText,
+            truncatedText,
             textAlign: textAlign,
             softWrap: true,
             maxLines: 6,

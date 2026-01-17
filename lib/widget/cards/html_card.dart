@@ -1,39 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_html/flutter_html.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:easy_pasta/model/design_tokens.dart';
+import 'package:easy_pasta/model/app_typography.dart';
+import 'package:easy_pasta/core/content_processor.dart';
 
+/// HTML内容卡片
+/// 使用纯文本显示，避免复杂的HTML渲染问题
 class HtmlContent extends StatelessWidget {
-  static final Map<String, Style> _defaultStyles = {
-    "body": Style(
-      margin: Margins.zero,
-      padding: HtmlPaddings.zero,
-      width: Width.auto(),
-    ),
-    "pre": Style(
-      margin: Margins.zero,
-      padding: HtmlPaddings.zero,
-      fontFamily: "monospace",
-      backgroundColor: Colors.transparent,
-    ),
-    "code": Style(
-      margin: Margins.zero,
-      padding: HtmlPaddings.zero,
-      display: Display.block,
-      backgroundColor: Colors.transparent,
-    ),
-    "span": Style(
-      lineHeight: const LineHeight(1.2),
-      margin: Margins.zero,
-      padding: HtmlPaddings.zero,
-      backgroundColor: Colors.transparent,
-    ),
-    "div": Style(
-      margin: Margins.zero,
-      padding: HtmlPaddings.zero,
-      backgroundColor: Colors.transparent,
-    ),
-  };
-
   final String htmlData;
 
   const HtmlContent({
@@ -43,15 +15,65 @@ class HtmlContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Html(
-      shrinkWrap: true,
-      data: htmlData.length > 800 ? htmlData.substring(0, 800) : htmlData,
-      style: _defaultStyles,
-      onLinkTap: (url, _, __) {
-        if (url != null) {
-          launchUrl(Uri.parse(url));
-        }
-      },
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // 从FIML中提取纯文本
+    final plainText = ContentProcessor.extractTextFromHtml(htmlData);
+    
+    // 如果提取失败或为空，显示提示
+    if (plainText.isEmpty) {
+      return _buildEmptyState(isDark);
+    }
+    
+    // 截断文本以适应卡片显示
+    final displayText = ContentProcessor.truncateText(plainText, 300);
+    
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      child: Text(
+        displayText,
+        maxLines: 6,
+        overflow: TextOverflow.ellipsis,
+        style: (isDark 
+            ? AppTypography.darkBody 
+            : AppTypography.lightBody
+        ).copyWith(
+          height: 1.5,
+        ),
+      ),
+    );
+  }
+  
+  /// 构建空状态
+  Widget _buildEmptyState(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.code,
+            size: 20,
+            color: (isDark 
+                ? AppColors.darkTextSecondary 
+                : AppColors.lightTextSecondary
+            ).withOpacity(0.5),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            'HTML 内容',
+            style: (isDark 
+                ? AppTypography.darkCaption 
+                : AppTypography.lightCaption
+            ).copyWith(
+              color: (isDark 
+                  ? AppColors.darkTextSecondary 
+                  : AppColors.lightTextSecondary
+              ).withOpacity(0.5),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

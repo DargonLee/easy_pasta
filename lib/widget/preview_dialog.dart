@@ -6,8 +6,7 @@ import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
-import 'package:easy_pasta/widget/cards/text_card.dart';
-import 'package:easy_pasta/widget/cards/html_card.dart';
+import 'package:easy_pasta/core/content_processor.dart';
 
 class PreviewDialog extends StatelessWidget {
   final ClipboardItemModel model;
@@ -208,7 +207,7 @@ class PreviewDialog extends StatelessWidget {
         return _buildImageContent();
       
       case ClipboardType.html:
-        return _buildHtmlContent();
+        return _buildHtmlContent(isDark);
       
       case ClipboardType.file:
         return _buildFileContent(isDark);
@@ -255,15 +254,28 @@ class PreviewDialog extends StatelessWidget {
   }
 
   /// 构建 HTML 内容
-  Widget _buildHtmlContent() {
+  Widget _buildHtmlContent(bool isDark) {
+    // 从 HTML 中提取纯文本
+    final htmlString = model.bytesToString(model.bytes ?? Uint8List(0));
+    final plainText = ContentProcessor.extractTextFromHtml(htmlString);
+    
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColors.lightSecondaryBackground.withOpacity(0.3),
+        color: isDark 
+            ? AppColors.darkSecondaryBackground.withOpacity(0.3)
+            : AppColors.lightSecondaryBackground.withOpacity(0.3),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
-      child: HtmlContent(
-        htmlData: model.bytesToString(model.bytes ?? Uint8List(0)),
+      child: SelectableText(
+        plainText.isEmpty ? 'HTML 内容' : plainText,
+        style: (isDark 
+            ? AppTypography.darkBody 
+            : AppTypography.lightBody
+        ).copyWith(
+          height: 1.6,
+          letterSpacing: 0.3,
+        ),
       ),
     );
   }
@@ -271,75 +283,92 @@ class PreviewDialog extends StatelessWidget {
   /// 构建文件内容
   Widget _buildFileContent(bool isDark) {
     final fileUri = model.bytesToString(model.bytes ?? Uint8List(0));
+    final fileList = ContentProcessor.extractFileList(fileUri);
     
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: isDark 
-            ? AppColors.darkSecondaryBackground.withOpacity(0.5)
-            : AppColors.lightSecondaryBackground.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: isDark 
-              ? AppColors.darkBorder.withOpacity(0.3)
-              : AppColors.lightBorder.withOpacity(0.3),
-        ),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.insert_drive_file_outlined,
-                size: 48,
-                color: AppColors.primary,
-              ),
-              const SizedBox(width: AppSpacing.lg),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      model.pvalue,
-                      style: (isDark 
-                          ? AppTypography.darkCallout 
-                          : AppTypography.lightCallout
-                      ).copyWith(
-                        fontWeight: AppFontWeights.semiBold,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      '文件路径',
-                      style: isDark 
-                          ? AppTypography.darkCaption 
-                          : AppTypography.lightCaption,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
+          // 文件数量标签
           Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
             decoration: BoxDecoration(
               color: isDark 
-                  ? AppColors.darkTertiaryBackground.withOpacity(0.5)
-                  : Colors.white.withOpacity(0.5),
+                  ? AppColors.darkSecondaryBackground 
+                  : AppColors.lightSecondaryBackground,
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
-            child: SelectableText(
-              fileUri,
+            child: Text(
+              fileList.length == 1 ? '1 个项目' : '${fileList.length} 个项目',
               style: (isDark 
-                  ? AppTypography.darkMonospace 
-                  : AppTypography.lightMonospace
+                  ? AppTypography.darkCaption 
+                  : AppTypography.lightCaption
               ).copyWith(
-                fontSize: AppFontSizes.sm,
+                fontWeight: AppFontWeights.semiBold,
               ),
             ),
           ),
+          const SizedBox(height: AppSpacing.lg),
+          // 文件列表
+          ...fileList.map((filePath) {
+            final fileName = ContentProcessor.extractFileName(filePath);
+            final isDir = ContentProcessor.isDirectory(filePath);
+            final extension = ContentProcessor.getFileExtension(filePath);
+            
+            return Container(
+              margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: isDark 
+                    ? AppColors.darkSecondaryBackground.withOpacity(0.3)
+                    : AppColors.lightSecondaryBackground.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Row(
+                children: [
+                  // 文件图标
+                  Icon(
+                    isDir ? Icons.folder_rounded : _getFileIcon(extension),
+                    size: 32,
+                    color: isDir 
+                        ? Colors.blue[600] 
+                        : _getFileColor(extension),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  // 文件信息
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          fileName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: (isDark 
+                              ? AppTypography.darkBody 
+                              : AppTypography.lightBody
+                          ).copyWith(
+                            fontWeight: AppFontWeights.medium,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          isDir ? '文件夹' : (extension.isEmpty ? '文件' : extension.toUpperCase()),
+                          style: isDark 
+                              ? AppTypography.darkCaption 
+                              : AppTypography.lightCaption,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -396,5 +425,65 @@ class PreviewDialog extends StatelessWidget {
       default:
         return '文本';
     }
+  }
+  
+  /// 获取文件图标
+  IconData _getFileIcon(String extension) {
+    const iconMap = {
+      // 文档
+      'pdf': Icons.picture_as_pdf,
+      'doc': Icons.description,
+      'docx': Icons.description,
+      'txt': Icons.article,
+      // 表格
+      'xls': Icons.table_chart,
+      'xlsx': Icons.table_chart,
+      'csv': Icons.table_chart,
+      // 图片
+      'jpg': Icons.image,
+      'jpeg': Icons.image,
+      'png': Icons.image,
+      'gif': Icons.gif,
+      'svg': Icons.image,
+      // 音频
+      'mp3': Icons.audio_file,
+      'wav': Icons.audio_file,
+      'm4a': Icons.audio_file,
+      // 视频
+      'mp4': Icons.video_file,
+      'mov': Icons.video_file,
+      'avi': Icons.video_file,
+      // 压缩包
+      'zip': Icons.folder_zip,
+      'rar': Icons.folder_zip,
+      '7z': Icons.folder_zip,
+      // 代码
+      'js': Icons.code,
+      'py': Icons.code,
+      'java': Icons.code,
+      'dart': Icons.code,
+    };
+    return iconMap[extension] ?? Icons.insert_drive_file_rounded;
+  }
+  
+  /// 获取文件颜色
+  Color _getFileColor(String extension) {
+    const colorMap = {
+      'pdf': Colors.red,
+      'doc': Colors.blue,
+      'docx': Colors.blue,
+      'xls': Colors.green,
+      'xlsx': Colors.green,
+      'jpg': Colors.purple,
+      'jpeg': Colors.purple,
+      'png': Colors.purple,
+      'mp3': Colors.orange,
+      'wav': Colors.orange,
+      'mp4': Colors.red,
+      'mov': Colors.red,
+      'zip': Colors.brown,
+      'rar': Colors.brown,
+    };
+    return colorMap[extension]?[600] ?? Colors.grey[600]!;
   }
 }

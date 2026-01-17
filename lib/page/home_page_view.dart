@@ -8,6 +8,8 @@ import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/core/super_clipboard.dart';
 import 'package:easy_pasta/core/window_service.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
+import 'package:easy_pasta/model/design_tokens.dart';
+import 'package:easy_pasta/widget/search_empty_state.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -96,27 +98,68 @@ class _MyHomePageState extends State<MyHomePage>
           if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
-
-          if (provider.error != null) {
-            return Center(
-              child: Text(
-                provider.error!,
-                style: const TextStyle(color: Colors.red),
-              ),
-            );
-          }
-
-          return PasteboardGridView(
-            pboards: provider.items,
-            selectedId: _selectedId,
-            onItemTap: _handleItemTap,
-            onItemDoubleTap: _setPasteboardItem,
-            onCopy: _setPasteboardItem,
-            onFavorite: _handleFavorite,
-            onDelete: _handleDelete,
+      
+          // 使用 AnimatedSwitcher 实现切换动画
+          return AnimatedSwitcher(
+            duration: AppDurations.normal,
+            switchInCurve: AppCurves.standard,
+            switchOutCurve: AppCurves.standard,
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              // 渐变 + 缩放 + 微妙位移动画
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(
+                    begin: 0.95,
+                    end: 1.0,
+                  ).animate(animation),
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.0, 0.02),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                ),
+              );
+            },
+            child: _buildContent(
+              provider,
+              // 使用分类作为 key，确保切换时触发动画
+              key: ValueKey('${_selectedType.toString()}_${provider.items.length}'),
+            ),
           );
         },
       ),
+    );
+  }
+
+  /// 构建内容区域
+  Widget _buildContent(PboardProvider provider, {Key? key}) {
+    // 显示搜索空状态（有搜索条件但无结果）
+    if (provider.error != null) {
+      return SearchEmptyState(
+        key: key,
+        searchQuery: _searchController.text,
+        onClear: () {
+          _searchController.clear();
+          setState(() => _selectedType = NSPboardSortType.all);
+          _pboardProvider.loadItems();
+        },
+      );
+    }
+
+    // 显示网格视图（包括分类空状态）
+    return PasteboardGridView(
+      key: key,
+      pboards: provider.items,
+      currentCategory: _selectedType,
+      selectedId: _selectedId,
+      onItemTap: _handleItemTap,
+      onItemDoubleTap: _setPasteboardItem,
+      onCopy: _setPasteboardItem,
+      onFavorite: _handleFavorite,
+      onDelete: _handleDelete,
     );
   }
 
