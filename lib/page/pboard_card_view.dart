@@ -20,6 +20,7 @@ class NewPboardItemCard extends StatefulWidget {
   final Function(ClipboardItemModel) onFavorite;
   final Function(ClipboardItemModel) onDelete;
   final GridDensity density;
+  final bool enableHover;
   final bool showFocus;
   
   const NewPboardItemCard({
@@ -32,6 +33,7 @@ class NewPboardItemCard extends StatefulWidget {
     required this.onFavorite,
     required this.onDelete,
     required this.density,
+    this.enableHover = true,
     this.showFocus = false,
   }) : super(key: key);
 
@@ -43,11 +45,20 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
   bool _isHovered = false;
 
   @override
+  void didUpdateWidget(covariant NewPboardItemCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.enableHover && _isHovered) {
+      _isHovered = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isSelected = widget.selectedId == widget.model.id;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final spec = widget.density.spec;
-    final isElevated = _isHovered || isSelected;
+    final isHovered = widget.enableHover && _isHovered;
+    final isElevated = isHovered || isSelected;
     final showFocus = widget.showFocus;
     final borderColor = isSelected
         ? AppColors.primary
@@ -68,8 +79,8 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
     ];
 
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
+      onEnter: widget.enableHover ? (_) => setState(() => _isHovered = true) : null,
+      onExit: widget.enableHover ? (_) => setState(() => _isHovered = false) : null,
       child: RepaintBoundary(
         child: AnimatedScale(
           scale: isElevated ? 1.01 : 1.0,

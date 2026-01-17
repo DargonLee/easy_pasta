@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
@@ -45,6 +48,8 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   final FocusNode _focusNode = FocusNode();
   bool _isInitialLoad = true;
   bool _hasFocus = false;
+  bool _isScrolling = false;
+  Timer? _scrollEndTimer;
 
   @override
   void initState() {
@@ -53,6 +58,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
       if (!mounted) return;
       setState(() => _hasFocus = _focusNode.hasFocus);
     });
+    _scrollController.addListener(_handleScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(AppDurations.fast, () {
         if (mounted) {
@@ -64,9 +70,28 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
 
   @override
   void dispose() {
+    _scrollController.removeListener(_handleScroll);
     _scrollController.dispose();
+    _scrollEndTimer?.cancel();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _handleScroll() {
+    if (!_isScrolling || _hoveredItem != null) {
+      setState(() {
+        _isScrolling = true;
+        _hoveredItem = null;
+      });
+    }
+    _scrollEndTimer?.cancel();
+    _scrollEndTimer = Timer(const Duration(milliseconds: 120), () {
+      if (!mounted) return;
+      setState(() {
+        _isScrolling = false;
+      });
+      RendererBinding.instance.mouseTracker.updateAllDevices();
+    });
   }
 
   void _showPreviewDialog(BuildContext context, ClipboardItemModel model) {
@@ -145,19 +170,21 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     return KeyboardListener(
       focusNode: _focusNode,
       onKeyEvent: _handleKeyEvent,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final spec = widget.density.spec;
-          final maxColumns = _calculateMaxColumns(constraints.maxWidth);
-          final totalSpacing =
-              (maxColumns - 1) * spec.gridSpacing + (spec.gridPadding * 2);
-          final aspectRatio = _calculateAspectRatio();
+      child: Listener(
+        onPointerSignal: (event) {
+          if (event is PointerScrollEvent) {
+            _handleScroll();
+          }
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final spec = widget.density.spec;
+            final maxColumns = _calculateMaxColumns(constraints.maxWidth);
+            final totalSpacing =
+                (maxColumns - 1) * spec.gridSpacing + (spec.gridPadding * 2);
+            final aspectRatio = _calculateAspectRatio();
 
-          return Scrollbar(
-            controller: _scrollController,
-            thickness: 6,
-            radius: const Radius.circular(AppRadius.sm),
-            child: Padding(
+            return Padding(
               padding: EdgeInsets.symmetric(horizontal: spec.gridPadding),
               child: GridView.builder(
                 key: const PageStorageKey<String>('pasteboard_grid'),
@@ -181,9 +208,9 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
                   return _buildGridItem(context, index);
                 },
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -216,13 +243,23 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   /// 构建卡片
   Widget _buildCard(ClipboardItemModel model) {
     return MouseRegion(
-      onEnter: (_) => _updateHoveredItem(model, true),
+      onEnter: (_) {
+        if (_isScrolling) return;
+        _updateHoveredItem(model, true);
+      },
+      onHover: (_) {
+        if (_isScrolling) return;
+        if (_hoveredItem?.id != model.id) {
+          _updateHoveredItem(model, true);
+        }
+      },
       onExit: (_) => _updateHoveredItem(null, false),
       child: NewPboardItemCard(
         key: ValueKey(model.id),
         model: model,
         selectedId: widget.selectedId,
         density: widget.density,
+        enableHover: !_isScrolling,
         showFocus: _hasFocus && widget.selectedId == model.id,
         onTap: (item) {
           _focusNode.requestFocus();
