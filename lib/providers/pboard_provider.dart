@@ -60,6 +60,8 @@ class PboardProvider extends ChangeNotifier {
   String? get error => _state.error;
   String get searchQuery => _state.searchQuery;
 
+  bool _isInitialized = false;
+
   PboardProvider({DatabaseHelper? db})
       : _db = db ?? DatabaseHelper.instance,
         _state = const PboardState(
@@ -69,13 +71,37 @@ class PboardProvider extends ChangeNotifier {
           isLoading: false,
           maxItems: 50,
         ) {
-    _initializeState();
+    // 延迟初始化，避免与其他服务冲突
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (!_isInitialized) {
+        _initializeState();
+      }
+    });
   }
 
   Future<void> _initializeState() async {
-    final maxCount = await _db.getMaxCount();
-    _updateState(_state.copyWith(maxItems: maxCount));
-    await loadItems();
+    if (_isInitialized) return;
+    _isInitialized = true;
+    
+    try {
+      final maxCount = await _db.getMaxCount();
+      _updateState(_state.copyWith(maxItems: maxCount));
+      
+      // 直接加载，不通过 _withLoading
+      final result = await _db.getPboardItemList();
+      final items =
+          result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
+
+      _updateState(_state.copyWith(
+        allItems: items,
+        filteredItems: items,
+        filterType: NSPboardSortType.all,
+        searchQuery: '',
+      ));
+    } catch (e) {
+      developer.log('初始化失败: $e', error: e);
+      _isInitialized = false; // 允许重试
+    }
   }
 
   void _updateState(PboardState newState) {
@@ -93,7 +119,15 @@ class PboardProvider extends ChangeNotifier {
   }
 
   Future<T> _withLoading<T>(Future<T> Function() operation) async {
-    if (_state.isLoading) return Future.error('操作正在进行中');
+    if (_state.isLoading) {
+      developer.log('操作已在进行中，等待完成...');
+      // 等待一小段时间后重试，而不是直接抛出错误
+      await Future.delayed(const Duration(milliseconds: 100));
+      if (_state.isLoading) {
+        developer.log('操作仍在进行中，跳过此次请求');
+        throw '操作正在进行中';
+      }
+    }
 
     _updateState(_state.copyWith(
       isLoading: true,

@@ -12,6 +12,7 @@ class ClipboardItemModel {
   final String pvalue;
   bool isFavorite;
   final Uint8List? bytes;
+  final String? sourceAppId;
 
   /// 创建剪贴板数据模型
   ClipboardItemModel({
@@ -21,6 +22,7 @@ class ClipboardItemModel {
     required this.pvalue,
     this.isFavorite = false,
     this.bytes,
+    this.sourceAppId,
   })  : id = id ?? const Uuid().v4(),
         time = time ?? DateTime.now().toString();
 
@@ -33,6 +35,7 @@ class ClipboardItemModel {
       pvalue: map['value'],
       isFavorite: map['isFavorite'] == 1,
       bytes: map['bytes'],
+      sourceAppId: map['sourceAppId'],
     );
   }
 
@@ -45,6 +48,7 @@ class ClipboardItemModel {
       'value': pvalue,
       'isFavorite': isFavorite ? 1 : 0,
       'bytes': bytes,
+      'sourceAppId': sourceAppId,
     };
   }
 
@@ -77,6 +81,7 @@ class ClipboardItemModel {
     String? pvalue,
     bool? isFavorite,
     Uint8List? bytes,
+    String? sourceAppId,
   }) {
     return ClipboardItemModel(
       id: id ?? this.id,
@@ -85,6 +90,7 @@ class ClipboardItemModel {
       pvalue: pvalue ?? this.pvalue,
       isFavorite: isFavorite ?? this.isFavorite,
       bytes: bytes ?? this.bytes,
+      sourceAppId: sourceAppId ?? this.sourceAppId,
     );
   }
 
@@ -119,5 +125,5 @@ class ClipboardItemModel {
 
   @override
   String toString() =>
-      'ClipboardItemModel(id: $id, time: $time, type: $ptype, value: $pvalue, isFavorite: $isFavorite)';
+      'ClipboardItemModel(id: $id, time: $time, type: $ptype, value: $pvalue, isFavorite: $isFavorite, sourceAppId: $sourceAppId)';
 }

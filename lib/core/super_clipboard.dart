@@ -6,6 +6,7 @@ import 'package:super_clipboard/super_clipboard.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:easy_pasta/core/html_processor.dart';
+import 'package:easy_pasta/core/app_source_service.dart';
 
 /// A singleton class that manages system clipboard operations and monitoring
 class SuperClipboard {
@@ -43,14 +44,17 @@ class SuperClipboard {
 
   /// Processes different types of clipboard content
   Future<void> _processClipboardContent(ClipboardReader reader) async {
-    if (await _processHtmlContent(reader)) return;
-    if (await _processFileContent(reader)) return;
-    if (await _processTextContent(reader)) return;
-    if (await _processImageContent(reader)) return;
+    final sourceAppId =
+        await AppSourceService().getFrontmostAppBundleId();
+    if (await _processHtmlContent(reader, sourceAppId)) return;
+    if (await _processFileContent(reader, sourceAppId)) return;
+    if (await _processTextContent(reader, sourceAppId)) return;
+    if (await _processImageContent(reader, sourceAppId)) return;
   }
 
   /// Processes HTML content from clipboard
-  Future<bool> _processHtmlContent(ClipboardReader reader) async {
+  Future<bool> _processHtmlContent(
+      ClipboardReader reader, String? sourceAppId) async {
     if (!reader.canProvide(Formats.htmlText)) return false;
 
     final html = await reader.readValue(Formats.htmlText);
@@ -59,14 +63,16 @@ class SuperClipboard {
     if (html != null) {
       final processedHtml = HtmlProcessor.processHtml(html.toString());
       _handleContentChange(htmlPlainText.toString(), ClipboardType.html,
-          bytes: Uint8List.fromList(utf8.encode(processedHtml)));
+          bytes: Uint8List.fromList(utf8.encode(processedHtml)),
+          sourceAppId: sourceAppId);
       return true;
     }
     return false;
   }
 
   /// Processes file URI content from clipboard
-  Future<bool> _processFileContent(ClipboardReader reader) async {
+  Future<bool> _processFileContent(
+      ClipboardReader reader, String? sourceAppId) async {
     if (!reader.canProvide(Formats.fileUri)) return false;
 
     final fileUri = await reader.readValue(Formats.fileUri);
@@ -74,26 +80,30 @@ class SuperClipboard {
 
     if (fileUri != null) {
       _handleContentChange(fileUriString.toString(), ClipboardType.file,
-          bytes: Uint8List.fromList(utf8.encode(fileUri.toString())));
+          bytes: Uint8List.fromList(utf8.encode(fileUri.toString())),
+          sourceAppId: sourceAppId);
       return true;
     }
     return false;
   }
 
   /// Processes plain text content from clipboard
-  Future<bool> _processTextContent(ClipboardReader reader) async {
+  Future<bool> _processTextContent(
+      ClipboardReader reader, String? sourceAppId) async {
     if (!reader.canProvide(Formats.plainText)) return false;
 
     final text = await reader.readValue(Formats.plainText);
     if (text != null) {
-      _handleContentChange(text.toString(), ClipboardType.text);
+      _handleContentChange(text.toString(), ClipboardType.text,
+          sourceAppId: sourceAppId);
       return true;
     }
     return false;
   }
 
   /// Processes image content from clipboard
-  Future<bool> _processImageContent(ClipboardReader reader) async {
+  Future<bool> _processImageContent(
+      ClipboardReader reader, String? sourceAppId) async {
     if (!reader.canProvide(Formats.png)) return false;
 
     try {
@@ -105,7 +115,8 @@ class SuperClipboard {
           final bytes = await stream.toList();
           final imageData = bytes.expand((x) => x).toList();
           _handleContentChange('', ClipboardType.image,
-              bytes: Uint8List.fromList(imageData));
+              bytes: Uint8List.fromList(imageData),
+              sourceAppId: sourceAppId);
           completer.complete(true);
         } catch (e) {
           debugPrint('Error processing image: $e');
@@ -122,8 +133,8 @@ class SuperClipboard {
 
   /// Handles content changes and notifies listeners
   void _handleContentChange(String content, ClipboardType? type,
-      {Uint8List? bytes}) {
-    final contentModel = _createContentModel(content, type, bytes);
+      {Uint8List? bytes, String? sourceAppId}) {
+    final contentModel = _createContentModel(content, type, bytes, sourceAppId);
 
     if (contentModel != _lastContent) {
       _lastContent = contentModel;
@@ -133,11 +144,12 @@ class SuperClipboard {
 
   /// Creates a content model based on the clipboard type
   ClipboardItemModel _createContentModel(
-      String content, ClipboardType? type, Uint8List? bytes) {
+      String content, ClipboardType? type, Uint8List? bytes, String? sourceAppId) {
     return ClipboardItemModel(
       ptype: type,
       pvalue: content,
       bytes: type == ClipboardType.text ? null : bytes,
+      sourceAppId: sourceAppId,
     );
   }
 

@@ -13,6 +13,10 @@ class SharedPreferenceHelper {
 
   // SharedPreferences 实例
   static SharedPreferences? _preferences;
+  
+  // 初始化锁
+  static bool _isInitializing = false;
+  static Future<SharedPreferenceHelper>? _initFuture;
 
   /// 存储键名常量
   static const String _keyPrefix = 'Pboard_';
@@ -39,14 +43,42 @@ class SharedPreferenceHelper {
 
   /// 获取单例实例
   static Future<SharedPreferenceHelper> get instance async {
+    // 如果已初始化，直接返回
+    if (_instance != null && _preferences != null) {
+      return _instance!;
+    }
+    
+    // 如果正在初始化，等待完成
+    if (_isInitializing && _initFuture != null) {
+      return _initFuture!;
+    }
+    
+    // 开始初始化
+    _isInitializing = true;
+    _initFuture = _initialize();
+    
+    try {
+      final result = await _initFuture!;
+      return result;
+    } finally {
+      _isInitializing = false;
+      _initFuture = null;
+    }
+  }
+  
+  /// 初始化方法
+  static Future<SharedPreferenceHelper> _initialize() async {
     _instance ??= SharedPreferenceHelper._();
     _preferences ??= await SharedPreferences.getInstance();
+    
+    // 设置默认值
     if (_preferences?.getString(shortcutKey) == null) {
-      _instance!.setShortcutKey(defaultShortcut);
+      await _instance!.setShortcutKey(defaultShortcut);
     }
     if (_preferences?.getInt(maxItemStoreKey) == null) {
-      _instance!.setMaxItemStore(defaultMaxItems);
+      await _instance!.setMaxItemStore(defaultMaxItems);
     }
+    
     return _instance!;
   }
 

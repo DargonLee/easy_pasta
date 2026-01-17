@@ -33,7 +33,7 @@ extension GridDensityX on GridDensity {
           minCrossAxisExtent: 220.0,
           aspectRatio: 1.28,
           cardPadding: AppSpacing.sm,
-          maxTextLines: 4,
+          maxTextLines: 9,
           imageRadius: AppRadius.sm,
         );
       case GridDensity.comfortable:
@@ -43,7 +43,7 @@ extension GridDensityX on GridDensity {
           minCrossAxisExtent: 240.0,
           aspectRatio: 1.16,
           cardPadding: AppSpacing.cardPadding,
-          maxTextLines: 5,
+          maxTextLines: 11,
           imageRadius: AppRadius.md,
         );
       case GridDensity.spacious:
@@ -53,7 +53,7 @@ extension GridDensityX on GridDensity {
           minCrossAxisExtent: 260.0,
           aspectRatio: 1.05,
           cardPadding: AppSpacing.cardPaddingLarge,
-          maxTextLines: 6,
+          maxTextLines: 13,
           imageRadius: AppRadius.lg,
         );
     }

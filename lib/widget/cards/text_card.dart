@@ -15,7 +15,7 @@ class TextContent extends StatelessWidget {
   final TextStyle? style;
   final TextAlign textAlign;
   final bool selectable;
-  final int maxLines;
+  final int? maxLines;
 
   const TextContent({
     super.key,
@@ -24,7 +24,7 @@ class TextContent extends StatelessWidget {
     this.style,
     this.textAlign = TextAlign.left,
     this.selectable = false,
-    this.maxLines = 6,
+    this.maxLines,
   });
 
   @override
@@ -50,7 +50,8 @@ class TextContent extends StatelessWidget {
       );
 
   Widget _buildUrlText(String urlText, TextStyle baseStyle, bool isDark) {
-    final urlLines = maxLines < 3 ? maxLines : 3;
+    final effectiveLines = maxLines ?? 3;
+    final urlLines = effectiveLines < 3 ? effectiveLines : 3;
     return InkWell(
       onTap: () => _launchURL(urlText),
       borderRadius: BorderRadius.circular(AppRadius.xs),
@@ -73,22 +74,19 @@ class TextContent extends StatelessWidget {
   }
 
   Widget _buildNormalText(String displayText, TextStyle style) {
-    // 智能截断，保持完整单词
-    final truncatedText = ContentProcessor.truncateText(displayText, 300);
-    
     return selectable
         ? SelectableText(
-            truncatedText,
+            displayText,
             textAlign: textAlign,
             style: style,
             maxLines: maxLines,
           )
         : Text(
-            truncatedText,
+            displayText,
             textAlign: textAlign,
             softWrap: true,
             maxLines: maxLines,
-            overflow: TextOverflow.ellipsis,
+            overflow: TextOverflow.fade,
             style: style,
           );
   }

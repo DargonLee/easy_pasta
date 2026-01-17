@@ -7,12 +7,12 @@ import 'package:easy_pasta/core/content_processor.dart';
 /// 使用纯文本显示，避免复杂的HTML渲染问题
 class HtmlContent extends StatelessWidget {
   final String htmlData;
-  final int maxLines;
+  final int? maxLines;
 
   const HtmlContent({
     super.key,
     required this.htmlData,
-    this.maxLines = 6,
+    this.maxLines,
   });
 
   @override
@@ -27,15 +27,12 @@ class HtmlContent extends StatelessWidget {
       return _buildEmptyState(isDark);
     }
     
-    // 截断文本以适应卡片显示
-    final displayText = ContentProcessor.truncateText(plainText, 300);
-    
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       child: Text(
-        displayText,
+        plainText,
         maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
+        overflow: TextOverflow.fade,
         style: (isDark 
             ? AppTypography.darkBody 
             : AppTypography.lightBody

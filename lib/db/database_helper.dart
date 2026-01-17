@@ -21,7 +21,7 @@ class DatabaseException implements Exception {
 class DatabaseConfig {
   static const String dbName = 'easy_pasta.db';
   static const String tableName = 'clipboard_items';
-  static const int version = 2;
+  static const int version = 3;
 
   // Table columns
   static const String columnId = 'id';
@@ -30,6 +30,7 @@ class DatabaseConfig {
   static const String columnValue = 'value';
   static const String columnIsFavorite = 'isFavorite';
   static const String columnBytes = 'bytes';
+  static const String columnSourceAppId = 'sourceAppId';
 }
 
 /// Abstract interface for database operations
@@ -53,23 +54,40 @@ class DatabaseHelper implements IDatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._();
 
   Database? _db;
+  bool _isInitializing = false;
 
   /// Returns database instance, initializing if necessary
   Future<Database> get database async {
     if (_db != null) return _db!;
+    
+    // 如果正在初始化，等待完成
+    while (_isInitializing) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    
+    // 再次检查，可能已初始化完成
+    if (_db != null) return _db!;
+    
     _db ??= await _initDatabase();
     return _db!;
   }
 
   /// Initializes the database
   Future<Database> _initDatabase() async {
+    if (_isInitializing) {
+      developer.log('数据库正在初始化中...');
+      throw DatabaseException('数据库正在初始化中');
+    }
+    
+    _isInitializing = true;
+    
     try {
       sqfliteFfiInit();
       final path = await _getDatabasePath();
       developer.log('db path: $path');
       final databaseFactory = databaseFactoryFfi;
 
-      return await databaseFactory.openDatabase(
+      final db = await databaseFactory.openDatabase(
         path,
         options: OpenDatabaseOptions(
           version: DatabaseConfig.version,
@@ -77,7 +95,11 @@ class DatabaseHelper implements IDatabaseHelper {
           onUpgrade: _onUpgrade,
         ),
       );
+      
+      _isInitializing = false;
+      return db;
     } catch (e) {
+      _isInitializing = false;
       throw DatabaseException('Failed to initialize database', e);
     }
   }
@@ -103,7 +125,8 @@ class DatabaseHelper implements IDatabaseHelper {
           ${DatabaseConfig.columnType} TEXT NOT NULL,
           ${DatabaseConfig.columnValue} TEXT NOT NULL,
           ${DatabaseConfig.columnIsFavorite} INTEGER DEFAULT 0,
-          ${DatabaseConfig.columnBytes} BLOB
+          ${DatabaseConfig.columnBytes} BLOB,
+          ${DatabaseConfig.columnSourceAppId} TEXT
         )
       ''');
 
@@ -126,6 +149,10 @@ class DatabaseHelper implements IDatabaseHelper {
           'CREATE INDEX IF NOT EXISTS idx_favorite ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnIsFavorite})');
       await db.execute(
           'CREATE INDEX IF NOT EXISTS idx_favorite_time ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnIsFavorite}, ${DatabaseConfig.columnTime})');
+    }
+    if (oldVersion < 3) {
+      await db.execute(
+          'ALTER TABLE ${DatabaseConfig.tableName} ADD COLUMN ${DatabaseConfig.columnSourceAppId} TEXT');
     }
   }
 

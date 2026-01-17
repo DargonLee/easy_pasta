@@ -9,7 +9,9 @@ import 'package:easy_pasta/widget/cards/footer_card.dart';
 import 'package:easy_pasta/widget/cards/html_card.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
+import 'package:easy_pasta/model/app_typography.dart';
 import 'package:easy_pasta/model/grid_density.dart';
+import 'package:easy_pasta/widget/source_app_badge.dart';
 
 class NewPboardItemCard extends StatefulWidget {
   final ClipboardItemModel model;
@@ -60,6 +62,14 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
     final isHovered = widget.enableHover && _isHovered;
     final isElevated = isHovered || isSelected;
     final showFocus = widget.showFocus;
+    final sourceAppId = widget.model.sourceAppId;
+    final showSourceBadge =
+        sourceAppId != null && sourceAppId.trim().isNotEmpty;
+    final badgeSize = widget.density == GridDensity.compact
+        ? 16.0
+        : widget.density == GridDensity.spacious
+            ? 20.0
+            : 18.0;
     final borderColor = isSelected
         ? AppColors.primary
         : (isDark ? AppColors.darkFrostedBorder : AppColors.lightFrostedBorder);
@@ -114,15 +124,32 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
                 },
                 child: Padding(
                   padding: EdgeInsets.all(spec.cardPadding),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                  child: Stack(
                     children: [
-                      Expanded(child: _buildContent(context)),
-                      const SizedBox(height: AppSpacing.xs),
-                      _buildFooter(
-                        context,
-                        showActions: isElevated || showFocus,
+                      Positioned.fill(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(child: _buildContent(context)),
+                            const SizedBox(height: AppSpacing.xs),
+                            _buildFooter(
+                              context,
+                              showActions: isElevated || showFocus,
+                            ),
+                          ],
+                        ),
                       ),
+                      if (showSourceBadge)
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: IgnorePointer(
+                            child: SourceAppBadge(
+                              bundleId: sourceAppId!,
+                              size: badgeSize,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -137,14 +164,40 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
   Widget _buildContent(BuildContext context) {
     final density = widget.density;
     final contentPadding = density == GridDensity.compact ? 2.0 : 4.0;
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: contentPadding),
-      child: _buildContentByType(context),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableHeight =
+            (constraints.maxHeight - (contentPadding * 2)).clamp(0.0, 10000.0);
+        return Container(
+          padding: EdgeInsets.symmetric(vertical: contentPadding),
+          child: _buildContentByType(
+            context,
+            availableHeight: availableHeight,
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildContentByType(BuildContext context) {
+  int _calculateMaxLines(TextStyle style, double height) {
+    final fontSize = style.fontSize ?? 13;
+    final lineHeight = fontSize * (style.height ?? 1.0);
+    if (lineHeight <= 0) return 1;
+    final lines = (height / lineHeight).floor();
+    return lines < 1 ? 1 : lines;
+  }
+
+  Widget _buildContentByType(BuildContext context,
+      {required double availableHeight}) {
     final spec = widget.density.spec;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseStyle =
+        isDark ? AppTypography.darkBody : AppTypography.lightBody;
+    final textLines = _calculateMaxLines(baseStyle, availableHeight);
+    final htmlLines = _calculateMaxLines(
+      baseStyle.copyWith(height: 1.5),
+      availableHeight,
+    );
     switch (widget.model.ptype) {
       case ClipboardType.image:
         return ImageContent(
@@ -159,17 +212,19 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
       case ClipboardType.html:
         return HtmlContent(
           htmlData: widget.model.bytesToString(widget.model.bytes ?? Uint8List(0)),
-          maxLines: spec.maxTextLines,
+          maxLines: htmlLines,
         );
       case ClipboardType.unknown:
         return TextContent(
           text: 'Unknown',
-          maxLines: spec.maxTextLines,
+          style: baseStyle,
+          maxLines: textLines,
         );
       default:
         return TextContent(
           text: widget.model.pvalue,
-          maxLines: spec.maxTextLines,
+          style: baseStyle,
+          maxLines: textLines,
         );
     }
   }
