@@ -44,19 +44,24 @@ class PasteboardGridView extends StatefulWidget {
 class _PasteboardGridViewState extends State<PasteboardGridView>
     with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey<AnimatedGridState> _gridKey =
+      GlobalKey<AnimatedGridState>();
+  late final _ListModel<ClipboardItemModel> _list;
   ClipboardItemModel? _hoveredItem;
   final FocusNode _focusNode = FocusNode();
   bool _isInitialLoad = true;
   bool _hasFocus = false;
   bool _isScrolling = false;
   Timer? _scrollEndTimer;
-  
-  // 删除动画状态
-  final Map<String, _DeleteAnimationController> _deleteAnimations = {};
 
   @override
   void initState() {
     super.initState();
+    _list = _ListModel<ClipboardItemModel>(
+      listKey: _gridKey,
+      initialItems: widget.pboards,
+      removedItemBuilder: _buildRemovedItem,
+    );
     _focusNode.addListener(() {
       if (!mounted) return;
       setState(() => _hasFocus = _focusNode.hasFocus);
@@ -77,12 +82,15 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     _scrollController.dispose();
     _scrollEndTimer?.cancel();
     _focusNode.dispose();
-    // 清理删除动画控制器
-    for (final controller in _deleteAnimations.values) {
-      controller.dispose();
-    }
-    _deleteAnimations.clear();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant PasteboardGridView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.pboards != widget.pboards) {
+      _syncList(widget.pboards);
+    }
   }
 
   void _handleScroll() {
@@ -109,7 +117,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   ClipboardItemModel? _getActiveItem() {
     if (_hoveredItem != null) return _hoveredItem;
     if (widget.selectedId.isEmpty) return null;
-    for (final item in widget.pboards) {
+    for (final item in _list.items) {
       if (item.id == widget.selectedId) {
         return item;
       }
@@ -139,7 +147,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
 
     if (logicalKey == LogicalKeyboardKey.delete ||
         logicalKey == LogicalKeyboardKey.backspace) {
-      widget.onDelete(activeItem);
+      _handleDelete(activeItem);
       return;
     }
 
@@ -167,11 +175,31 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   /// 计算网格的纵横比（宽度:高度）
   double _calculateAspectRatio() => widget.density.spec.aspectRatio;
 
+  void _syncList(List<ClipboardItemModel> newItems) {
+    final newIds = newItems.map((item) => item.id).toSet();
+
+    for (int i = _list.length - 1; i >= 0; i--) {
+      if (!newIds.contains(_list[i].id)) {
+        _list.removeAt(i, duration: AppDurations.normal);
+      }
+    }
+
+    for (int i = 0; i < newItems.length; i++) {
+      final item = newItems[i];
+      final existingIndex = _list.indexWhereId(item.id);
+      if (existingIndex == -1) {
+        _list.insert(i, item, duration: AppDurations.fast);
+      } else {
+        _list.replaceAt(existingIndex, item);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    if (widget.pboards.isEmpty) {
+    if (widget.pboards.isEmpty && _list.length == 0) {
       return EmptyStateView(category: widget.currentCategory);
     }
 
@@ -188,14 +216,12 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
           builder: (context, constraints) {
             final spec = widget.density.spec;
             final maxColumns = _calculateMaxColumns(constraints.maxWidth);
-            final totalSpacing =
-                (maxColumns - 1) * spec.gridSpacing + (spec.gridPadding * 2);
             final aspectRatio = _calculateAspectRatio();
 
             return Padding(
               padding: EdgeInsets.symmetric(horizontal: spec.gridPadding),
-              child: GridView.builder(
-                key: const PageStorageKey<String>('pasteboard_grid'),
+              child: AnimatedGrid(
+                key: _gridKey,
                 controller: _scrollController,
                 physics: const BouncingScrollPhysics(
                   parent: AlwaysScrollableScrollPhysics(),
@@ -210,10 +236,9 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
                   crossAxisSpacing: spec.gridSpacing,
                   childAspectRatio: aspectRatio,
                 ),
-                cacheExtent: 1000,
-                itemCount: widget.pboards.length,
-                itemBuilder: (context, index) {
-                  return _buildGridItem(context, index);
+                initialItemCount: _list.length,
+                itemBuilder: (context, index, animation) {
+                  return _buildAnimatedItem(context, index, animation);
                 },
               ),
             );
@@ -223,20 +248,16 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     );
   }
 
-  /// 构建网格项
-  Widget _buildGridItem(BuildContext context, int index) {
-    final model = widget.pboards[index];
-    
-    // 检查是否正在删除
-    final deleteController = _deleteAnimations[model.id];
-    if (deleteController != null) {
-      return _AnimatedDeleteCard(
-        controller: deleteController,
-        child: _buildCardContent(model),
-      );
-    }
-    
-    // 初始加载动画
+  Widget _buildAnimatedItem(
+      BuildContext context, int index, Animation<double> animation) {
+    final model = _list[index];
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: AppCurves.standard,
+    );
+
+    final content = _buildCardContent(model);
+
     if (_isInitialLoad && index < 20) {
       final delay = Duration(milliseconds: index * 25);
       return TweenAnimationBuilder<double>(
@@ -252,11 +273,23 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
             ),
           );
         },
-        child: _buildCardContent(model),
+        child: FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.98, end: 1.0).animate(curved),
+            child: content,
+          ),
+        ),
       );
     }
 
-    return _buildCardContent(model);
+    return FadeTransition(
+      opacity: curved,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.98, end: 1.0).animate(curved),
+        child: content,
+      ),
+    );
   }
 
   /// 构建卡片内容
@@ -290,29 +323,34 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
         },
         onCopy: widget.onCopy,
         onFavorite: widget.onFavorite,
-        onDelete: _startDeleteAnimation,
+        onDelete: _handleDelete,
       ),
     );
   }
   
-  /// 开始删除动画
-  void _startDeleteAnimation(ClipboardItemModel item) {
-    if (_deleteAnimations.containsKey(item.id)) return;
-    
-    final controller = _DeleteAnimationController(
-      onComplete: () {
-        // 动画完成后执行实际删除
-        _deleteAnimations.remove(item.id);
-        widget.onDelete(item);
-      },
+  void _handleDelete(ClipboardItemModel item) {
+    final index = _list.indexWhereId(item.id);
+    if (index != -1) {
+      _list.removeAt(index, duration: AppDurations.normal);
+    }
+    widget.onDelete(item);
+  }
+
+  Widget _buildRemovedItem(
+      ClipboardItemModel item, BuildContext context, Animation<double> animation) {
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: AppCurves.emphasized,
     );
-    
-    setState(() {
-      _deleteAnimations[item.id] = controller;
-    });
-    
-    // 启动动画
-    controller.start();
+    return FadeTransition(
+      opacity: curved,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.9, end: 1.0).animate(curved),
+        child: IgnorePointer(
+          child: _buildCardContent(item),
+        ),
+      ),
+    );
   }
 
   /// 更新鼠标悬停的项目
@@ -331,70 +369,56 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   bool get wantKeepAlive => true;
 }
 
-/// 删除动画控制器
-class _DeleteAnimationController {
-  final VoidCallback onComplete;
-  final _notifier = ValueNotifier<double>(1.0);
-  Timer? _timer;
-  
-  _DeleteAnimationController({required this.onComplete});
-  
-  ValueNotifier<double> get animation => _notifier;
-  
-  void start() {
-    const duration = Duration(milliseconds: 200);
-    const frames = 20;
-    final interval = duration.inMilliseconds ~/ frames;
-    int currentFrame = 0;
-    
-    _timer = Timer.periodic(Duration(milliseconds: interval), (timer) {
-      currentFrame++;
-      // 使用 easeOut 曲线
-      final t = currentFrame / frames;
-      final value = 1.0 - _easeOutCubic(t);
-      _notifier.value = value.clamp(0.0, 1.0);
-      
-      if (currentFrame >= frames) {
-        timer.cancel();
-        onComplete();
-      }
-    });
-  }
-  
-  // Cubic ease-out 曲线
-  double _easeOutCubic(double t) {
-    return 1 - ((1 - t) * (1 - t) * (1 - t));
-  }
-  
-  void dispose() {
-    _timer?.cancel();
-    _notifier.dispose();
-  }
-}
+typedef _RemovedItemBuilder<T> = Widget Function(
+    T item, BuildContext context, Animation<double> animation);
 
-/// 删除动画卡片
-class _AnimatedDeleteCard extends StatelessWidget {
-  final _DeleteAnimationController controller;
-  final Widget child;
-  
-  const _AnimatedDeleteCard({
-    required this.controller,
-    required this.child,
-  });
-  
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<double>(
-      valueListenable: controller.animation,
-      builder: (context, value, _) {
-        return Opacity(
-          opacity: value,
-          child: Transform.scale(
-            scale: 0.8 + (0.2 * value), // 1.0 -> 0.8
-            child: child,
-          ),
-        );
+class _ListModel<T> {
+  _ListModel({
+    required this.listKey,
+    required this.removedItemBuilder,
+    Iterable<T>? initialItems,
+  }) : _items = List<T>.from(initialItems ?? <T>[]);
+
+  final GlobalKey<AnimatedGridState> listKey;
+  final _RemovedItemBuilder<T> removedItemBuilder;
+  final List<T> _items;
+
+  AnimatedGridState? get _animatedGrid => listKey.currentState;
+
+  int get length => _items.length;
+  List<T> get items => _items;
+
+  T operator [](int index) => _items[index];
+
+  int indexWhereId(String id) {
+    for (int i = 0; i < _items.length; i++) {
+      final item = _items[i];
+      if (item is ClipboardItemModel && item.id == id) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  void replaceAt(int index, T item) {
+    if (index < 0 || index >= _items.length) return;
+    _items[index] = item;
+  }
+
+  void insert(int index, T item, {required Duration duration}) {
+    _items.insert(index, item);
+    _animatedGrid?.insertItem(index, duration: duration);
+  }
+
+  T removeAt(int index, {required Duration duration}) {
+    final removedItem = _items.removeAt(index);
+    _animatedGrid?.removeItem(
+      index,
+      (BuildContext context, Animation<double> animation) {
+        return removedItemBuilder(removedItem, context, animation);
       },
+      duration: duration,
     );
+    return removedItem;
   }
 }

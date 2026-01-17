@@ -144,7 +144,7 @@ class _MyHomePageState extends State<MyHomePage>
                     provider,
                     // 使用分类作为 key，确保切换时触发动画
                     key: ValueKey(
-                      '${_selectedType.toString()}_${provider.items.length}_$_density',
+                      '${_selectedType.toString()}_$_density',
                     ),
                   ),
                 );
