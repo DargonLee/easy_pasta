@@ -1,19 +1,8 @@
 # EasyPasta
 
-<p align="center">
-  <img src="README.assets/20250106143024.jpg" alt="EasyPasta Screenshot" width="800" style="display: block; margin: 20px auto"/>
-</p>
-<p align="center">
-  <img src="README.assets/20250106143037.jpg" alt="EasyPasta Screenshot" width="800" style="display: inline-block; margin: 10px"/>
-</p>
-
-<p align="center">
-  <img src="README.assets/20250107164712.jpg" alt="EasyPasta Screenshot" width="800" style="display: inline-block; margin: 10px"/>
-</p>
-
-<p align="center">
-  <img src="README.assets/20250107184507.jpg" alt="EasyPasta Screenshot" width="800" style="display: inline-block; margin: 10px"/>
-</p>
+<div align="center">
+  <img src="README.assets/HomePage.png" alt="EasyPasta 主界面" width="800"/>
+</div>
 
 ## 📝 概述
 
@@ -26,15 +15,21 @@ EasyPasta 是一款强大的跨平台剪贴板管理工具，专为提升您的�
 
 ## 📦 下载
 
-[macOS](https://github.com/DargonLee/easy_pasta/releases/download/v2.0.0/EasyPasta-2.0.0.dmg)
+### macOS
 
-Windows (暂未发布，欢迎贡献编译版本)
+[![下载 macOS](https://img.shields.io/badge/下载-macOS-blue?style=for-the-badge&logo=apple)](https://github.com/DargonLee/easy_pasta/releases/latest)
+
+### Windows
+
+暂未发布，欢迎贡献编译版本
 
 ```shell
 scripts\build.bat
 ```
 
-Linux (暂未发布，欢迎贡献编译版本)
+### Linux
+
+暂未发布，欢迎贡献编译版本
 
 ```shell
 ./scripts/build.sh
@@ -85,9 +80,9 @@ sudo dpkg -i easy_pasta_linux_amd64.deb
 
    - 启动后，状态栏会显示 EasyPasta 图标
 
-   <p align="center">
-     <img src="README.assets/20250106143713.jpg" alt="Status Bar Icon" width="200"/>
-   </p>
+   <div align="center">
+     <img src="README.assets/20250106143713.jpg" alt="状态栏图标" width="200"/>
+   </div>
 
 2. **访问剪贴板历史**
 
@@ -128,18 +123,20 @@ sudo dpkg -i easy_pasta_linux_amd64.deb
 
 本项目基于 MIT 许可证开源 - 查看 [LICENSE](LICENSE) 文件了解更多详情
 
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
 ## ☕️ 支持项目
 
 如果您觉得这个项目对您有帮助，欢迎请我喝杯咖啡 ：）
 
-<div>
-  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" height="50" >
+<div align="center">
+  <img src="README.assets/IMG_0060.jpg" alt="支付二维码" width="200"/>
 </div>
 
-<div>
-  <img src="README.assets/IMG_0060.jpg" width="200">
-</div>
+---
 
 <p align="center">
-  Made with ❤️ by harlans
+  Made with ❤️ by <a href="https://github.com/DargonLee">harlans</a>
 </p>

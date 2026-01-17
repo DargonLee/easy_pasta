@@ -20,6 +20,7 @@ class NewPboardItemCard extends StatefulWidget {
   final Function(ClipboardItemModel) onFavorite;
   final Function(ClipboardItemModel) onDelete;
   final GridDensity density;
+  final bool showFocus;
   
   const NewPboardItemCard({
     Key? key,
@@ -31,6 +32,7 @@ class NewPboardItemCard extends StatefulWidget {
     required this.onFavorite,
     required this.onDelete,
     required this.density,
+    this.showFocus = false,
   }) : super(key: key);
 
   @override
@@ -46,9 +48,24 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final spec = widget.density.spec;
     final isElevated = _isHovered || isSelected;
+    final showFocus = widget.showFocus;
     final borderColor = isSelected
         ? AppColors.primary
         : (isDark ? AppColors.darkFrostedBorder : AppColors.lightFrostedBorder);
+    final focusRingColor =
+        AppColors.primary.withOpacity(isDark ? 0.4 : 0.25);
+    final baseShadows = isDark
+        ? (isElevated ? AppShadows.darkSm : AppShadows.none)
+        : (isElevated ? AppShadows.md : AppShadows.sm);
+    final shadows = <BoxShadow>[
+      ...baseShadows,
+      if (showFocus)
+        BoxShadow(
+          color: focusRingColor,
+          blurRadius: 0,
+          spreadRadius: 2,
+        ),
+    ];
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -70,9 +87,7 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
                 color: borderColor,
                 width: isSelected ? 1.5 : 1,
               ),
-              boxShadow: isDark
-                  ? (isElevated ? AppShadows.darkSm : AppShadows.none)
-                  : (isElevated ? AppShadows.md : AppShadows.sm),
+              boxShadow: shadows,
             ),
             child: Material(
               color: Colors.transparent,
@@ -95,7 +110,7 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
                       const SizedBox(height: AppSpacing.xs),
                       _buildFooter(
                         context,
-                        showActions: isElevated,
+                        showActions: isElevated || showFocus,
                       ),
                     ],
                   ),

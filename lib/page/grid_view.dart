@@ -44,10 +44,15 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   ClipboardItemModel? _hoveredItem;
   final FocusNode _focusNode = FocusNode();
   bool _isInitialLoad = true;
+  bool _hasFocus = false;
 
   @override
   void initState() {
     super.initState();
+    _focusNode.addListener(() {
+      if (!mounted) return;
+      setState(() => _hasFocus = _focusNode.hasFocus);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(AppDurations.fast, () {
         if (mounted) {
@@ -66,6 +71,53 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
 
   void _showPreviewDialog(BuildContext context, ClipboardItemModel model) {
     PreviewDialog.show(context, model);
+  }
+
+  ClipboardItemModel? _getActiveItem() {
+    if (_hoveredItem != null) return _hoveredItem;
+    if (widget.selectedId.isEmpty) return null;
+    for (final item in widget.pboards) {
+      if (item.id == widget.selectedId) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is! KeyDownEvent) return;
+    final activeItem = _getActiveItem();
+    if (activeItem == null) return;
+
+    final logicalKey = event.logicalKey;
+    final keyboard = HardwareKeyboard.instance;
+    final isCommand = keyboard.isMetaPressed || keyboard.isControlPressed;
+
+    if (logicalKey == LogicalKeyboardKey.space) {
+      _showPreviewDialog(context, activeItem);
+      return;
+    }
+
+    if (logicalKey == LogicalKeyboardKey.enter ||
+        logicalKey == LogicalKeyboardKey.numpadEnter) {
+      widget.onItemDoubleTap(activeItem);
+      return;
+    }
+
+    if (logicalKey == LogicalKeyboardKey.delete ||
+        logicalKey == LogicalKeyboardKey.backspace) {
+      widget.onDelete(activeItem);
+      return;
+    }
+
+    if (logicalKey == LogicalKeyboardKey.keyC && isCommand) {
+      widget.onCopy(activeItem);
+      return;
+    }
+
+    if (logicalKey == LogicalKeyboardKey.keyF) {
+      widget.onFavorite(activeItem);
+    }
   }
 
   /// 计算网格列数
@@ -92,13 +144,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
 
     return KeyboardListener(
       focusNode: _focusNode,
-      onKeyEvent: (event) {
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.space &&
-            _hoveredItem != null) {
-          _showPreviewDialog(context, _hoveredItem!);
-        }
-      },
+      onKeyEvent: _handleKeyEvent,
       child: LayoutBuilder(
         builder: (context, constraints) {
           final spec = widget.density.spec;
@@ -177,8 +223,15 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
         model: model,
         selectedId: widget.selectedId,
         density: widget.density,
-        onTap: widget.onItemTap,
-        onDoubleTap: widget.onItemDoubleTap,
+        showFocus: _hasFocus && widget.selectedId == model.id,
+        onTap: (item) {
+          _focusNode.requestFocus();
+          widget.onItemTap(item);
+        },
+        onDoubleTap: (item) {
+          _focusNode.requestFocus();
+          widget.onItemDoubleTap(item);
+        },
         onCopy: widget.onCopy,
         onFavorite: widget.onFavorite,
         onDelete: widget.onDelete,

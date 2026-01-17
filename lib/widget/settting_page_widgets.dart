@@ -26,6 +26,8 @@ class HotkeyTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final captionStyle =
+        isDark ? AppTypography.darkCaption : AppTypography.lightCaption;
     
     return Material(
       color: Colors.transparent,
@@ -145,6 +147,8 @@ class ThemeTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final captionStyle =
+        isDark ? AppTypography.darkCaption : AppTypography.lightCaption;
     
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -202,7 +206,7 @@ class ThemeTile extends StatelessWidget {
                 ),
                 child: Text(
                   '自动',
-                  style: AppTypography.lightCaption,
+                  style: captionStyle,
                 ),
               ),
               1: Padding(
@@ -212,7 +216,7 @@ class ThemeTile extends StatelessWidget {
                 ),
                 child: Text(
                   '浅色',
-                  style: AppTypography.lightCaption,
+                  style: captionStyle,
                 ),
               ),
               2: Padding(
@@ -222,7 +226,7 @@ class ThemeTile extends StatelessWidget {
                 ),
                 child: Text(
                   '深色',
-                  style: AppTypography.lightCaption,
+                  style: captionStyle,
                 ),
               ),
             },
@@ -266,6 +270,28 @@ class AutoLaunchTile extends StatelessWidget {
   final ValueChanged<bool> onChanged;
 
   const AutoLaunchTile({
+    super.key,
+    required this.item,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ToggleSettingTile(
+      item: item,
+      value: value,
+      onChanged: onChanged,
+    );
+  }
+}
+
+class ToggleSettingTile extends StatelessWidget {
+  final SettingItem item;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const ToggleSettingTile({
     super.key,
     required this.item,
     required this.value,

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
@@ -5,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:easy_pasta/model/settings_constants.dart';
 import 'package:easy_pasta/model/settings_model.dart';
 import 'package:easy_pasta/providers/theme_provider.dart';
-import 'package:easy_pasta/widget/setting_tiles.dart' hide ThemeTile, HotkeyTile;
 import 'package:easy_pasta/core/settings_service.dart';
 import 'package:easy_pasta/page/confirm_dialog_view.dart';
 import 'package:easy_pasta/widget/settting_page_widgets.dart';
@@ -89,61 +90,57 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
-      backgroundColor: isDark 
-          ? AppColors.darkBackground 
-          : AppColors.lightSecondaryBackground,
-      appBar: AppBar(
-        title: Text(
-          '设置',
-          style: isDark 
-              ? AppTypography.darkHeadline 
-              : AppTypography.lightHeadline,
-        ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: isDark 
-            ? AppColors.darkBackground 
-            : AppColors.lightBackground,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Navigator.pop(context);
-          },
-        ),
-      ),
-      body: AnimationHelper.fadeIn(
-        duration: AppDurations.normal,
-        child: ListView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
-          children: [
-            _buildSection(
-              context: context,
-              title: SettingsConstants.basicSettingsTitle,
-              items: _basicSettings,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            _buildSection(
-              context: context,
-              title: SettingsConstants.aboutTitle,
-              items: [
-                const SettingItem(
-                  type: SettingType.about,
-                  title: SettingsConstants.versionInfoTitle,
-                  subtitle: SettingsConstants.versionInfoSubtitle,
-                  icon: Icons.info_outline,
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        children: [
+          const _SettingsBackground(),
+          Column(
+            children: [
+              _SettingsHeader(
+                title: '设置',
+                onBack: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.pop(context);
+                },
+              ),
+              Expanded(
+                child: AnimationHelper.fadeIn(
+                  duration: AppDurations.normal,
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.xxxl,
+                    ),
+                    children: [
+                      _buildSection(
+                        context: context,
+                        title: SettingsConstants.basicSettingsTitle,
+                        items: _basicSettings,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _buildSection(
+                        context: context,
+                        title: SettingsConstants.aboutTitle,
+                        items: [
+                          const SettingItem(
+                            type: SettingType.about,
+                            title: SettingsConstants.versionInfoTitle,
+                            subtitle: SettingsConstants.versionInfoSubtitle,
+                            icon: Icons.info_outline,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xxxl),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xxxl),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -182,15 +179,16 @@ class _SettingsPageState extends State<SettingsPage> {
         // 设置项卡片
         Container(
           decoration: BoxDecoration(
-            color: isDark 
-                ? AppColors.darkCardBackground 
-                : AppColors.lightCardBackground,
+            gradient: isDark
+                ? AppGradients.darkCardSheen
+                : AppGradients.lightCardSheen,
             borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(
-              color: isDark 
-                  ? AppColors.darkBorder.withOpacity(0.3) 
-                  : AppColors.lightBorder.withOpacity(0.5),
+              color: isDark
+                  ? AppColors.darkFrostedBorder
+                  : AppColors.lightFrostedBorder,
             ),
+            boxShadow: isDark ? AppShadows.darkSm : AppShadows.sm,
           ),
           child: Column(
             children: [
@@ -250,18 +248,13 @@ class _SettingsPageState extends State<SettingsPage> {
           },
         );
       case SettingType.bonjour:  // Handle the new Bonjour setting type
-        return SwitchListTile(
-          title: Text(item.title),
-          subtitle: Text(item.subtitle),
+        return ToggleSettingTile(
+          item: item,
           value: _bonjourEnabled,
           onChanged: (bool value) async {
-            setState(() {
-              _bonjourEnabled = value;
-            });
+            setState(() => _bonjourEnabled = value);
             // Here you could add logic to start or stop Bonjour service
-            // For example: _startBonjourService(value);
           },
-          secondary: Icon(item.icon),
         );
       case SettingType.maxStorage:
         return MaxStorageTile(item: item);
@@ -294,5 +287,200 @@ class _SettingsPageState extends State<SettingsPage> {
         Navigator.pop(context);
       }
     }
+  }
+}
+
+class _SettingsHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback onBack;
+
+  const _SettingsHeader({
+    required this.title,
+    required this.onBack,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor =
+        isDark ? AppColors.darkFrostedSurface : AppColors.lightFrostedSurface;
+    final borderColor =
+        isDark ? AppColors.darkFrostedBorder : AppColors.lightFrostedBorder;
+
+    return SafeArea(
+      bottom: false,
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(
+            sigmaX: AppBlur.frosted,
+            sigmaY: AppBlur.frosted,
+          ),
+          child: Container(
+            height: 64,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: surfaceColor,
+              border: Border(
+                bottom: BorderSide(
+                  color: borderColor,
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                _HeaderButton(
+                  icon: Icons.arrow_back,
+                  onTap: onBack,
+                ),
+                Expanded(
+                  child: Center(
+                    child: Text(
+                      title,
+                      style: isDark
+                          ? AppTypography.darkHeadline
+                          : AppTypography.lightHeadline,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 36),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderButton extends StatefulWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _HeaderButton({
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  State<_HeaderButton> createState() => _HeaderButtonState();
+}
+
+class _HeaderButtonState extends State<_HeaderButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark
+        ? AppColors.darkSecondaryBackground.withOpacity(0.7)
+        : AppColors.lightSecondaryBackground.withOpacity(0.7);
+    final hoverColor = isDark
+        ? AppColors.darkTertiaryBackground.withOpacity(0.7)
+        : AppColors.lightTertiaryBackground.withOpacity(0.7);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: AnimatedContainer(
+            duration: AppDurations.fast,
+            curve: AppCurves.standard,
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: _isHovered ? hoverColor : baseColor,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(
+                color: isDark
+                    ? AppColors.darkBorder.withOpacity(0.4)
+                    : AppColors.lightBorder.withOpacity(0.4),
+              ),
+            ),
+            child: Icon(
+              widget.icon,
+              size: 18,
+              color: isDark
+                  ? AppColors.darkTextPrimary
+                  : AppColors.lightTextPrimary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsBackground extends StatelessWidget {
+  const _SettingsBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Positioned.fill(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? AppGradients.darkPaperBackground
+              : AppGradients.lightPaperBackground,
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -140,
+              left: -80,
+              child: _SettingsGlow(
+                color: isDark
+                    ? AppColors.primary.withOpacity(0.12)
+                    : AppColors.primary.withOpacity(0.08),
+                radius: 220,
+              ),
+            ),
+            Positioned(
+              bottom: -160,
+              right: -90,
+              child: _SettingsGlow(
+                color: isDark
+                    ? AppColors.primaryLight.withOpacity(0.08)
+                    : AppColors.primaryLight.withOpacity(0.12),
+                radius: 260,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsGlow extends StatelessWidget {
+  final Color color;
+  final double radius;
+
+  const _SettingsGlow({
+    required this.color,
+    required this.radius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: radius,
+      height: radius,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            color,
+            color.withOpacity(0),
+          ],
+        ),
+      ),
+    );
   }
 }
