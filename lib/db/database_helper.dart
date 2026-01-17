@@ -21,7 +21,7 @@ class DatabaseException implements Exception {
 class DatabaseConfig {
   static const String dbName = 'easy_pasta.db';
   static const String tableName = 'clipboard_items';
-  static const int version = 1;
+  static const int version = 2;
 
   // Table columns
   static const String columnId = 'id';
@@ -112,12 +112,21 @@ class DatabaseHelper implements IDatabaseHelper {
           'CREATE INDEX IF NOT EXISTS idx_time ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnTime})');
       await txn.execute(
           'CREATE INDEX IF NOT EXISTS idx_type ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnType})');
+      await txn.execute(
+          'CREATE INDEX IF NOT EXISTS idx_favorite ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnIsFavorite})');
+      await txn.execute(
+          'CREATE INDEX IF NOT EXISTS idx_favorite_time ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnIsFavorite}, ${DatabaseConfig.columnTime})');
     });
   }
 
   /// Handles database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // Add upgrade logic here when needed
+    if (oldVersion < 2) {
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_favorite ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnIsFavorite})');
+      await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_favorite_time ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnIsFavorite}, ${DatabaseConfig.columnTime})');
+    }
   }
 
   /// Returns the maximum number of items to store
@@ -236,11 +245,11 @@ class DatabaseHelper implements IDatabaseHelper {
   @override
   Future<String?> insertPboardItem(ClipboardItemModel model) async {
     final db = await database;
+    final maxCount = await getMaxCount();
     return await db.transaction((txn) async {
       try {
         await txn.insert(DatabaseConfig.tableName, model.toMap());
         final count = await _getCountInTransaction(txn);
-        final maxCount = await getMaxCount();
 
         if (count > maxCount) {
           final itemId = await _deleteOldestNonFavoriteItemInTransaction(txn);
@@ -266,8 +275,10 @@ class DatabaseHelper implements IDatabaseHelper {
     try {
       final oldestItems = await txn.query(
         DatabaseConfig.tableName,
+        columns: [DatabaseConfig.columnId],
         where: '${DatabaseConfig.columnIsFavorite} = 0',
         orderBy: '${DatabaseConfig.columnTime} ASC',
+        limit: 1,
       );
 
       if (oldestItems.isNotEmpty) {
