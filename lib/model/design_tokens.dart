@@ -67,6 +67,81 @@ class AppColors {
   static const Color overlay = Color(0x66000000);
   static const Color shimmer = Color(0xFFE0E0E0);
   static const Color favorite = Color(0xFFFFCC00);
+
+  // ==================== 表面材质 - 纸感/磨砂 ====================
+  static const Color lightPaper = Color(0xFFF7F6F2);
+  static const Color lightPaperHighlight = Color(0xFFFFFFFF);
+  static const Color lightFrostedSurface = Color(0xCCFFFFFF);
+  static const Color lightFrostedBorder = Color(0x1A000000);
+
+  static const Color darkPaper = Color(0xFF0F0F12);
+  static const Color darkPaperHighlight = Color(0xFF17171B);
+  static const Color darkFrostedSurface = Color(0xCC1C1C1E);
+  static const Color darkFrostedBorder = Color(0x26FFFFFF);
+}
+
+/// 渐变与材质
+class AppGradients {
+  AppGradients._();
+
+  static const LinearGradient lightPaperBackground = LinearGradient(
+    colors: [
+      AppColors.lightPaper,
+      AppColors.lightPaperHighlight,
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient darkPaperBackground = LinearGradient(
+    colors: [
+      AppColors.darkPaper,
+      AppColors.darkPaperHighlight,
+    ],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient lightCardSheen = LinearGradient(
+    colors: [
+      Color(0xFFFFFFFF),
+      Color(0xFFF2F2F0),
+    ],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+
+  static const LinearGradient darkCardSheen = LinearGradient(
+    colors: [
+      Color(0xFF1D1D22),
+      Color(0xFF141418),
+    ],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+}
+
+/// 文件类型色板
+class AppFileColors {
+  AppFileColors._();
+
+  static const Color document = Color(0xFF3B6CB7);
+  static const Color spreadsheet = Color(0xFF2C8C68);
+  static const Color image = Color(0xFFB35C4B);
+  static const Color audio = Color(0xFFE08E4A);
+  static const Color video = Color(0xFFB24C4C);
+  static const Color archive = Color(0xFF8C6F5A);
+  static const Color code = Color(0xFF546E7A);
+  static const Color generic = Color(0xFF8FA1B3);
+  static const Color folder = Color(0xFF4B8BD6);
+}
+
+/// 模糊与透明度
+class AppBlur {
+  AppBlur._();
+
+  static const double frosted = 18.0;
+  static const double subtle = 10.0;
 }
 
 /// 间距系统 - 基于 4px 网格

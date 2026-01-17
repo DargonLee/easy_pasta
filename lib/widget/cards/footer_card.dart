@@ -11,6 +11,8 @@ class FooterContent extends StatelessWidget {
   final Function(ClipboardItemModel) onCopy;
   final Function(ClipboardItemModel) onFavorite;
   final Function(ClipboardItemModel) onDelete;
+  final bool showActions;
+  final bool compact;
 
   const FooterContent({
     Key? key,
@@ -18,11 +20,16 @@ class FooterContent extends StatelessWidget {
     required this.onCopy,
     required this.onFavorite,
     required this.onDelete,
+    this.showActions = false,
+    this.compact = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final typeIconSize = compact ? 12.0 : 14.0;
+    final actionIconSize = compact ? 12.0 : 14.0;
+    final spacing = compact ? AppSpacing.xs / 2 : AppSpacing.xs;
 
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.xs),
@@ -34,10 +41,10 @@ class FooterContent extends StatelessWidget {
               model.ptype ?? ClipboardType.unknown,
               pvalue: model.pvalue,
             ),
-            size: 14,
+            size: typeIconSize,
             color: AppColors.primary,
           ),
-          const SizedBox(width: AppSpacing.xs),
+          SizedBox(width: spacing),
           
           // 时间戳
           Text(
@@ -53,40 +60,60 @@ class FooterContent extends StatelessWidget {
           ),
           
           const Spacer(),
-          
-          // 复制按钮
-          _ActionButton(
-            icon: Icons.copy,
-            tooltip: '复制',
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              onCopy(model);
-            },
-          ),
-          
-          const SizedBox(width: AppSpacing.xs),
-          
-          // 收藏按钮
-          _ActionButton(
-            icon: model.isFavorite ? Icons.star : Icons.star_border,
-            tooltip: model.isFavorite ? '取消收藏' : '收藏',
-            color: model.isFavorite ? AppColors.favorite : null,
-            onPressed: () {
-              HapticFeedback.selectionClick();
-              onFavorite(model);
-            },
-          ),
-          
-          const SizedBox(width: AppSpacing.xs),
-          
-          // 删除按钮
-          _ActionButton(
-            icon: Icons.delete_outline,
-            tooltip: '删除',
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              onDelete(model);
-            },
+
+          AnimatedOpacity(
+            opacity: showActions ? 1 : 0,
+            duration: AppDurations.fast,
+            curve: AppCurves.standard,
+            child: IgnorePointer(
+              ignoring: !showActions,
+              child: AnimatedSlide(
+                duration: AppDurations.fast,
+                curve: AppCurves.standard,
+                offset: showActions ? Offset.zero : const Offset(0.1, 0),
+                child: Row(
+                  children: [
+                    // 复制按钮
+                    _ActionButton(
+                      icon: Icons.copy,
+                      tooltip: '复制',
+                      iconSize: actionIconSize,
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        onCopy(model);
+                      },
+                    ),
+
+                    SizedBox(width: spacing),
+
+                    // 收藏按钮
+                    _ActionButton(
+                      icon: model.isFavorite ? Icons.star : Icons.star_border,
+                      tooltip: model.isFavorite ? '取消收藏' : '收藏',
+                      iconSize: actionIconSize,
+                      color: model.isFavorite ? AppColors.favorite : null,
+                      onPressed: () {
+                        HapticFeedback.selectionClick();
+                        onFavorite(model);
+                      },
+                    ),
+
+                    SizedBox(width: spacing),
+
+                    // 删除按钮
+                    _ActionButton(
+                      icon: Icons.delete_outline,
+                      tooltip: '删除',
+                      iconSize: actionIconSize,
+                      onPressed: () {
+                        HapticFeedback.mediumImpact();
+                        onDelete(model);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -130,12 +157,14 @@ class _ActionButton extends StatefulWidget {
   final String tooltip;
   final VoidCallback onPressed;
   final Color? color;
+  final double iconSize;
 
   const _ActionButton({
     required this.icon,
     required this.tooltip,
     required this.onPressed,
     this.color,
+    this.iconSize = 14,
   });
 
   @override
@@ -172,7 +201,7 @@ class _ActionButtonState extends State<_ActionButton> {
             ),
             child: Icon(
               widget.icon,
-              size: 14,
+              size: widget.iconSize,
               color: _isHovered
                   ? (isDark
                       ? AppColors.darkTextPrimary

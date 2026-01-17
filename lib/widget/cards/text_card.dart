@@ -15,6 +15,7 @@ class TextContent extends StatelessWidget {
   final TextStyle? style;
   final TextAlign textAlign;
   final bool selectable;
+  final int maxLines;
 
   const TextContent({
     super.key,
@@ -23,6 +24,7 @@ class TextContent extends StatelessWidget {
     this.style,
     this.textAlign = TextAlign.left,
     this.selectable = false,
+    this.maxLines = 6,
   });
 
   @override
@@ -48,6 +50,7 @@ class TextContent extends StatelessWidget {
       );
 
   Widget _buildUrlText(String urlText, TextStyle baseStyle, bool isDark) {
+    final urlLines = maxLines < 3 ? maxLines : 3;
     return InkWell(
       onTap: () => _launchURL(urlText),
       borderRadius: BorderRadius.circular(AppRadius.xs),
@@ -57,7 +60,7 @@ class TextContent extends StatelessWidget {
           urlText.length > 500 ? '${urlText.substring(0, 497)}...' : urlText,
           textAlign: textAlign,
           softWrap: true,
-          maxLines: 3,
+          maxLines: urlLines,
           overflow: TextOverflow.ellipsis,
           style: baseStyle.copyWith(
             color: AppColors.primary,
@@ -78,13 +81,13 @@ class TextContent extends StatelessWidget {
             truncatedText,
             textAlign: textAlign,
             style: style,
-            maxLines: 6,
+            maxLines: maxLines,
           )
         : Text(
             truncatedText,
             textAlign: textAlign,
             softWrap: true,
-            maxLines: 6,
+            maxLines: maxLines,
             overflow: TextOverflow.ellipsis,
             style: style,
           );

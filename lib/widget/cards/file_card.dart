@@ -214,10 +214,10 @@ class FileContent extends StatelessWidget {
 
   Color _getIconColorForPath(String path) {
     if (ContentProcessor.isDirectory(path)) {
-      return Colors.blue[600]!;
+      return AppFileColors.folder;
     }
     final extension = ContentProcessor.getFileExtension(path);
-    return _fileColorMap[extension] ?? Colors.grey[600]!;
+    return _fileColorMap[extension] ?? AppFileColors.generic;
   }
 
   // File type to icon mapping
@@ -284,46 +284,55 @@ class FileContent extends StatelessWidget {
   // File type to color mapping
   static final Map<String, Color> _fileColorMap = {
     // Documents - Blue shades
-    'pdf': Colors.red[400]!,
-    'doc': Colors.blue[600]!,
-    'docx': Colors.blue[600]!,
-    'txt': Colors.blue[400]!,
-    'rtf': Colors.blue[400]!,
+    'pdf': AppFileColors.video,
+    'doc': AppFileColors.document,
+    'docx': AppFileColors.document,
+    'txt': AppFileColors.document,
+    'rtf': AppFileColors.document,
 
     // Spreadsheets - Green shades
-    'xls': Colors.green[600]!,
-    'xlsx': Colors.green[600]!,
-    'csv': Colors.green[400]!,
+    'xls': AppFileColors.spreadsheet,
+    'xlsx': AppFileColors.spreadsheet,
+    'csv': AppFileColors.spreadsheet,
 
     // Images - Purple shades
-    'jpg': Colors.purple[400]!,
-    'jpeg': Colors.purple[400]!,
-    'png': Colors.purple[400]!,
-    'gif': Colors.purple[500]!,
-    'svg': Colors.purple[600]!,
+    'jpg': AppFileColors.image,
+    'jpeg': AppFileColors.image,
+    'png': AppFileColors.image,
+    'gif': AppFileColors.image,
+    'svg': AppFileColors.image,
+    'webp': AppFileColors.image,
+    'bmp': AppFileColors.image,
 
     // Audio - Orange shades
-    'mp3': Colors.orange[400]!,
-    'wav': Colors.orange[400]!,
-    'aac': Colors.orange[400]!,
-    'm4a': Colors.orange[400]!,
+    'mp3': AppFileColors.audio,
+    'wav': AppFileColors.audio,
+    'aac': AppFileColors.audio,
+    'm4a': AppFileColors.audio,
+    'ogg': AppFileColors.audio,
 
     // Video - Red shades
-    'mp4': Colors.red[400]!,
-    'mov': Colors.red[400]!,
-    'avi': Colors.red[400]!,
-    'mkv': Colors.red[400]!,
+    'mp4': AppFileColors.video,
+    'mov': AppFileColors.video,
+    'avi': AppFileColors.video,
+    'mkv': AppFileColors.video,
+    'wmv': AppFileColors.video,
 
     // Archives - Brown shades
-    'zip': Colors.brown[400]!,
-    'rar': Colors.brown[400]!,
-    '7z': Colors.brown[400]!,
+    'zip': AppFileColors.archive,
+    'rar': AppFileColors.archive,
+    '7z': AppFileColors.archive,
+    'tar': AppFileColors.archive,
+    'gz': AppFileColors.archive,
 
     // Code - Grey shades
-    'html': Colors.blueGrey[400]!,
-    'css': Colors.blueGrey[400]!,
-    'js': Colors.blueGrey[400]!,
-    'py': Colors.blueGrey[400]!,
-    'java': Colors.blueGrey[400]!,
+    'html': AppFileColors.code,
+    'css': AppFileColors.code,
+    'js': AppFileColors.code,
+    'json': AppFileColors.code,
+    'xml': AppFileColors.code,
+    'py': AppFileColors.code,
+    'java': AppFileColors.code,
+    'cpp': AppFileColors.code,
   };
 }

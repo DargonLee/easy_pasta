@@ -9,6 +9,7 @@ import 'package:easy_pasta/core/super_clipboard.dart';
 import 'package:easy_pasta/core/window_service.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
+import 'package:easy_pasta/model/grid_density.dart';
 import 'package:easy_pasta/widget/search_empty_state.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -27,6 +28,7 @@ class _MyHomePageState extends State<MyHomePage>
 
   NSPboardSortType _selectedType = NSPboardSortType.all;
   String _selectedId = '';
+  GridDensity _density = GridDensity.comfortable;
 
   @override
   void initState() {
@@ -69,6 +71,10 @@ class _MyHomePageState extends State<MyHomePage>
     _pboardProvider.filterByType(type);
   }
 
+  void _handleDensityChanged(GridDensity density) {
+    setState(() => _density = density);
+  }
+
   void _handleItemTap(ClipboardItemModel model) {
     if (!mounted) return;
     setState(() => _selectedId = model.id);
@@ -85,6 +91,7 @@ class _MyHomePageState extends State<MyHomePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: CustomAppBar(
         onSearch: _handleSearch,
         searchController: _searchController,
@@ -92,44 +99,59 @@ class _MyHomePageState extends State<MyHomePage>
         onTypeChanged: _handleTypeChanged,
         selectedType: _selectedType,
         onSettingsTap: () => _navigateToSettings(),
+        density: _density,
+        onDensityChanged: _handleDensityChanged,
       ),
-      body: Consumer<PboardProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-      
-          // 使用 AnimatedSwitcher 实现切换动画
-          return AnimatedSwitcher(
-            duration: AppDurations.normal,
-            switchInCurve: AppCurves.standard,
-            switchOutCurve: AppCurves.standard,
-            transitionBuilder: (Widget child, Animation<double> animation) {
-              // 渐变 + 缩放 + 微妙位移动画
-              return FadeTransition(
-                opacity: animation,
-                child: ScaleTransition(
-                  scale: Tween<double>(
-                    begin: 0.95,
-                    end: 1.0,
-                  ).animate(animation),
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0.0, 0.02),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
-                  ),
-                ),
-              );
-            },
-            child: _buildContent(
-              provider,
-              // 使用分类作为 key，确保切换时触发动画
-              key: ValueKey('${_selectedType.toString()}_${provider.items.length}'),
+      body: Stack(
+        children: [
+          const _HomeBackground(),
+          Padding(
+            padding: const EdgeInsets.only(
+              top: CustomAppBar.height + AppSpacing.sm,
             ),
-          );
-        },
+            child: Consumer<PboardProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                // 使用 AnimatedSwitcher 实现切换动画
+                return AnimatedSwitcher(
+                  duration: AppDurations.normal,
+                  switchInCurve: AppCurves.standard,
+                  switchOutCurve: AppCurves.standard,
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                    // 渐变 + 缩放 + 微妙位移动画
+                    return FadeTransition(
+                      opacity: animation,
+                      child: ScaleTransition(
+                        scale: Tween<double>(
+                          begin: 0.97,
+                          end: 1.0,
+                        ).animate(animation),
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0.0, 0.015),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      ),
+                    );
+                  },
+                  child: _buildContent(
+                    provider,
+                    // 使用分类作为 key，确保切换时触发动画
+                    key: ValueKey(
+                      '${_selectedType.toString()}_${provider.items.length}_$_density',
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -160,6 +182,7 @@ class _MyHomePageState extends State<MyHomePage>
       onCopy: _setPasteboardItem,
       onFavorite: _handleFavorite,
       onDelete: _handleDelete,
+      density: _density,
     );
   }
 
@@ -190,4 +213,74 @@ class _MyHomePageState extends State<MyHomePage>
 
   @override
   void onWindowBlur() => WindowService().closeWindow();
+}
+
+class _HomeBackground extends StatelessWidget {
+  const _HomeBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Positioned.fill(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? AppGradients.darkPaperBackground
+              : AppGradients.lightPaperBackground,
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -120,
+              right: -80,
+              child: _Glow(
+                color: isDark
+                    ? AppColors.primary.withOpacity(0.12)
+                    : AppColors.primary.withOpacity(0.08),
+                radius: 220,
+              ),
+            ),
+            Positioned(
+              bottom: -140,
+              left: -100,
+              child: _Glow(
+                color: isDark
+                    ? AppColors.primaryLight.withOpacity(0.08)
+                    : AppColors.primaryLight.withOpacity(0.12),
+                radius: 260,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Glow extends StatelessWidget {
+  final Color color;
+  final double radius;
+
+  const _Glow({
+    required this.color,
+    required this.radius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: radius,
+      height: radius,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            color,
+            color.withOpacity(0),
+          ],
+        ),
+      ),
+    );
+  }
 }

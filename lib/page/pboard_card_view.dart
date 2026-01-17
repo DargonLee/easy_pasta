@@ -9,6 +9,7 @@ import 'package:easy_pasta/widget/cards/footer_card.dart';
 import 'package:easy_pasta/widget/cards/html_card.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
+import 'package:easy_pasta/model/grid_density.dart';
 
 class NewPboardItemCard extends StatefulWidget {
   final ClipboardItemModel model;
@@ -18,6 +19,7 @@ class NewPboardItemCard extends StatefulWidget {
   final Function(ClipboardItemModel) onCopy;
   final Function(ClipboardItemModel) onFavorite;
   final Function(ClipboardItemModel) onDelete;
+  final GridDensity density;
   
   const NewPboardItemCard({
     Key? key,
@@ -28,6 +30,7 @@ class NewPboardItemCard extends StatefulWidget {
     required this.onCopy,
     required this.onFavorite,
     required this.onDelete,
+    required this.density,
   }) : super(key: key);
 
   @override
@@ -41,70 +44,61 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
   Widget build(BuildContext context) {
     final isSelected = widget.selectedId == widget.model.id;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+    final spec = widget.density.spec;
+    final isElevated = _isHovered || isSelected;
+    final borderColor = isSelected
+        ? AppColors.primary
+        : (isDark ? AppColors.darkFrostedBorder : AppColors.lightFrostedBorder);
+
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: RepaintBoundary(
-        child: AnimatedContainer(
+        child: AnimatedScale(
+          scale: isElevated ? 1.01 : 1.0,
           duration: AppDurations.fast,
           curve: AppCurves.standard,
-          margin: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xs,
-            vertical: AppSpacing.xs,
-          ),
-          decoration: BoxDecoration(
-            color: isDark 
-                ? AppColors.darkCardBackground 
-                : AppColors.lightCardBackground,
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: isSelected
-                ? Border.all(
-                    color: AppColors.primary,
-                    width: 2,
-                  )
-                : Border.all(
-                    color: isDark 
-                        ? AppColors.darkBorder.withOpacity(0.3)
-                        : AppColors.lightBorder.withOpacity(0.3),
-                    width: 1,
-                  ),
-            boxShadow: _isHovered || isSelected ? AppShadows.md : AppShadows.sm,
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
+          child: AnimatedContainer(
+            duration: AppDurations.fast,
+            curve: AppCurves.standard,
+            decoration: BoxDecoration(
+              gradient: isDark
+                  ? AppGradients.darkCardSheen
+                  : AppGradients.lightCardSheen,
               borderRadius: BorderRadius.circular(AppRadius.card),
-              onTap: () {
-                HapticFeedback.selectionClick();
-                widget.onTap(widget.model);
-              },
-              onDoubleTap: () {
-                HapticFeedback.mediumImpact();
-                widget.onDoubleTap(widget.model);
-              },
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.cardPadding),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Expanded(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              minHeight: 50,
-                              maxHeight: constraints.maxHeight - 28,
-                            ),
-                            child: _buildContent(context),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        _buildFooter(context),
-                      ],
-                    );
-                  },
+              border: Border.all(
+                color: borderColor,
+                width: isSelected ? 1.5 : 1,
+              ),
+              boxShadow: isDark
+                  ? (isElevated ? AppShadows.darkSm : AppShadows.none)
+                  : (isElevated ? AppShadows.md : AppShadows.sm),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  widget.onTap(widget.model);
+                },
+                onDoubleTap: () {
+                  HapticFeedback.mediumImpact();
+                  widget.onDoubleTap(widget.model);
+                },
+                child: Padding(
+                  padding: EdgeInsets.all(spec.cardPadding),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: _buildContent(context)),
+                      const SizedBox(height: AppSpacing.xs),
+                      _buildFooter(
+                        context,
+                        showActions: isElevated,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -115,17 +109,21 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
   }
 
   Widget _buildContent(BuildContext context) {
+    final density = widget.density;
+    final contentPadding = density == GridDensity.compact ? 2.0 : 4.0;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: contentPadding),
       child: _buildContentByType(context),
     );
   }
 
   Widget _buildContentByType(BuildContext context) {
+    final spec = widget.density.spec;
     switch (widget.model.ptype) {
       case ClipboardType.image:
         return ImageContent(
           imageBytes: widget.model.bytes ?? Uint8List(0),
+          borderRadius: spec.imageRadius,
         );
       case ClipboardType.file:
         return FileContent(
@@ -135,24 +133,29 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
       case ClipboardType.html:
         return HtmlContent(
           htmlData: widget.model.bytesToString(widget.model.bytes ?? Uint8List(0)),
+          maxLines: spec.maxTextLines,
         );
       case ClipboardType.unknown:
-        return const TextContent(
+        return TextContent(
           text: 'Unknown',
+          maxLines: spec.maxTextLines,
         );
       default:
         return TextContent(
           text: widget.model.pvalue,
+          maxLines: spec.maxTextLines,
         );
     }
   }
 
-  Widget _buildFooter(BuildContext context) {
+  Widget _buildFooter(BuildContext context, {required bool showActions}) {
     return FooterContent(
       model: widget.model,
       onCopy: widget.onCopy,
       onFavorite: widget.onFavorite,
       onDelete: widget.onDelete,
+      showActions: showActions,
+      compact: widget.density == GridDensity.compact,
     );
   }
 }
