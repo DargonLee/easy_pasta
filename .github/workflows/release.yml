@@ -14,7 +14,7 @@ on:
 
 jobs:
   build-macos:
-    name: Build macOS
+    name: Build and Release macOS
     runs-on: macos-latest
     
     steps:
@@ -39,99 +39,8 @@ jobs:
       - name: Create ZIP archive
         run: |
           cd build/macos/Build/Products/Release
-          zip -r EasyPasta-macOS-${{ github.event.inputs.version }}.zip EasyPasta.app
-          mv EasyPasta-macOS-${{ github.event.inputs.version }}.zip $GITHUB_WORKSPACE/
-      
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: EasyPasta-macOS
-          path: EasyPasta-macOS-${{ github.event.inputs.version }}.zip
-  
-  build-windows:
-    name: Build Windows
-    runs-on: windows-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.4'
-          channel: 'stable'
-      
-      - name: Flutter doctor
-        run: flutter doctor -v
-      
-      - name: Get dependencies
-        run: flutter pub get
-      
-      - name: Build Windows app
-        run: flutter build windows --release
-      
-      - name: Create ZIP archive
-        run: |
-          cd build/windows/x64/runner/Release
-          Compress-Archive -Path * -DestinationPath $env:GITHUB_WORKSPACE/EasyPasta-Windows-${{ github.event.inputs.version }}.zip
-        shell: powershell
-      
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: EasyPasta-Windows
-          path: EasyPasta-Windows-${{ github.event.inputs.version }}.zip
-  
-  build-linux:
-    name: Build Linux
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.24.4'
-          channel: 'stable'
-      
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
-      
-      - name: Flutter doctor
-        run: flutter doctor -v
-      
-      - name: Get dependencies
-        run: flutter pub get
-      
-      - name: Build Linux app
-        run: flutter build linux --release
-      
-      - name: Create TAR.GZ archive
-        run: |
-          cd build/linux/x64/release/bundle
-          tar -czf $GITHUB_WORKSPACE/EasyPasta-Linux-${{ github.event.inputs.version }}.tar.gz *
-      
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: EasyPasta-Linux
-          path: EasyPasta-Linux-${{ github.event.inputs.version }}.tar.gz
-  
-  create-release:
-    name: Create Release
-    needs: [build-macos, build-windows, build-linux]
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
+          zip -r EasyPasta-${{ github.event.inputs.version }}.zip EasyPasta.app
+          mv EasyPasta-${{ github.event.inputs.version }}.zip $GITHUB_WORKSPACE/
       
       - name: Create Release
         id: create_release
@@ -148,62 +57,35 @@ jobs:
             
             ### 📦 下载
             
-            - **macOS**: EasyPasta-macOS-${{ github.event.inputs.version }}.zip
-            - **Windows**: EasyPasta-Windows-${{ github.event.inputs.version }}.zip
-            - **Linux**: EasyPasta-Linux-${{ github.event.inputs.version }}.tar.gz
+            - **macOS**: EasyPasta-${{ github.event.inputs.version }}.zip
             
             ### 📝 安装说明
             
-            #### macOS
-            1. 下载 `EasyPasta-macOS-${{ github.event.inputs.version }}.zip`
+            1. 下载 `EasyPasta-${{ github.event.inputs.version }}.zip`
             2. 解压并将 `EasyPasta.app` 拖入 `Applications` 文件夹
             3. 首次打开可能需要在"系统偏好设置 > 安全性与隐私"中允许
+            4. 使用 `Cmd+Shift+V` 唤起剪贴板面板
             
-            #### Windows
-            1. 下载 `EasyPasta-Windows-${{ github.event.inputs.version }}.zip`
-            2. 解压到任意目录
-            3. 运行 `EasyPasta.exe`
+            ### ✨ 主要功能
             
-            #### Linux
-            1. 下载 `EasyPasta-Linux-${{ github.event.inputs.version }}.tar.gz`
-            2. 解压: `tar -xzf EasyPasta-Linux-${{ github.event.inputs.version }}.tar.gz`
-            3. 运行: `./easy_pasta`
+            - 📋 自动保存剪贴板历史
+            - 🔍 智能搜索与筛选
+            - 🎨 支持文本、图片、文件等多种格式
+            - ⭐ 收藏常用内容
+            - 🌓 完美的深浅模式支持
             
             ---
             
-            **最低系统要求**:
-            - macOS 10.15+
-            - Windows 10+
-            - Ubuntu 20.04+ / Debian 11+
+            **最低系统要求**: macOS 10.15+
           draft: false
           prerelease: false
       
-      - name: Upload macOS Release Asset
+      - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/EasyPasta-macOS/EasyPasta-macOS-${{ github.event.inputs.version }}.zip
-          asset_name: EasyPasta-macOS-${{ github.event.inputs.version }}.zip
+          asset_path: EasyPasta-${{ github.event.inputs.version }}.zip
+          asset_name: EasyPasta-${{ github.event.inputs.version }}.zip
           asset_content_type: application/zip
-      
-      - name: Upload Windows Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/EasyPasta-Windows/EasyPasta-Windows-${{ github.event.inputs.version }}.zip
-          asset_name: EasyPasta-Windows-${{ github.event.inputs.version }}.zip
-          asset_content_type: application/zip
-      
-      - name: Upload Linux Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/EasyPasta-Linux/EasyPasta-Linux-${{ github.event.inputs.version }}.tar.gz
-          asset_name: EasyPasta-Linux-${{ github.event.inputs.version }}.tar.gz
-          asset_content_type: application/gzip
