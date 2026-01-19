@@ -134,7 +134,7 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
                             const SizedBox(height: AppSpacing.xs),
                             _buildFooter(
                               context,
-                              showActions: isElevated || showFocus,
+                              showActions: true,
                             ),
                           ],
                         ),
