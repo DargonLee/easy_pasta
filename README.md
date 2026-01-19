@@ -55,25 +55,14 @@ scripts\build.bat
 
 ### macOS
 
-1. 下载最新的 DMG 安装包
-2. 打开 DMG 文件
-3. 将 EasyPasta 拖入 Applications 文件夹
-4. 从 Applications 文件夹启动 EasyPasta
-
-### Windows
-
-1. 下载最新的 Windows 安装包
-2. 运行安装程序
-3. 按照安装向导完成安装
-
-### Linux
-
-1. 下载最新的 .deb 包（Ubuntu/Debian）
-2. 运行以下命令安装：
-
-```bash
-sudo dpkg -i easy_pasta_linux_amd64.deb
-```
+1. 下载最新的 ZIP 安装包
+2. 解压 ZIP 文件
+3. 将 `EasyPasta.app` 拖入 `Applications` 文件夹
+4. 首次打开时，系统可能会提示"无法打开，因为无法验证开发者"，请按以下步骤操作：
+   - 打开 **系统设置** > **隐私与安全性**
+   - 在"安全性"选项卡下方，点击 **仍要打开**
+   - 或者右键点击 App 选择"打开"，然后在弹窗中点击"打开"
+5. 从 Applications 文件夹启动 EasyPasta
 
 ## 🎯 使用方法
 
