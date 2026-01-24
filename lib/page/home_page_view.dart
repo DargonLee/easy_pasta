@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
@@ -33,6 +36,7 @@ class _MyHomePageState extends State<MyHomePage>
   String _selectedId = '';
   TimeFilter _selectedTimeFilter = TimeFilter.all;
   GridDensity _density = GridDensity.comfortable;
+  Timer? _searchDebounce; // 搜索防抖定时器
 
   @override
   void initState() {
@@ -59,15 +63,21 @@ class _MyHomePageState extends State<MyHomePage>
   }
 
   void _handleClear() {
-    _pboardProvider.loadItems();
+    _searchDebounce?.cancel();
+    _pboardProvider.search(''); // 重置 Provider 内部搜索状态
+    _pboardProvider.loadItems(); // 重新加载完整列表
   }
 
   void _handleSearch(String value) {
-    if (value.isEmpty) {
-      _pboardProvider.loadItems();
-    } else {
-      _pboardProvider.search(value);
-    }
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 150), () {
+      if (value.isEmpty) {
+        _pboardProvider.search('');
+        _pboardProvider.loadItems();
+      } else {
+        _pboardProvider.search(value);
+      }
+    });
   }
 
   void _handleTypeChanged(NSPboardSortType type) {
@@ -229,6 +239,7 @@ class _MyHomePageState extends State<MyHomePage>
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     trayManager.removeListener(this);
     windowManager.removeListener(this);

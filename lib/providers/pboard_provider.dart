@@ -194,13 +194,28 @@ class PboardProvider extends ChangeNotifier {
       }
     }
 
-    // 应用搜索过滤
+    // 应用搜索过滤与权重排序
     if (hasSearch) {
-      filteredItems = filteredItems
-          .where((item) => item.pvalue
-              .toLowerCase()
-              .contains(_state.searchQuery.toLowerCase()))
-          .toList();
+      final query = _state.searchQuery.toLowerCase();
+      filteredItems = filteredItems.where((item) {
+        return item.pvalue.toLowerCase().contains(query);
+      }).toList();
+
+      // 精准/相关度排序:
+      // 1. 如果搜索项以搜索词开头, 权重最高 (Prefix match)
+      // 2. 否则按时间排序
+      filteredItems.sort((a, b) {
+        final aVal = a.pvalue.toLowerCase();
+        final bVal = b.pvalue.toLowerCase();
+        final aStarts = aVal.startsWith(query);
+        final bStarts = bVal.startsWith(query);
+
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+
+        // 如果都是前缀匹配或都不是，则保持时间倒序
+        return b.time.compareTo(a.time);
+      });
     }
 
     // 区分两种空状态：
