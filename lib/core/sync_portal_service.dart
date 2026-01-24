@@ -74,7 +74,33 @@ class SyncPortalService {
         if (_ip != null) break;
       }
 
-      _server = await io.serve(_router, InternetAddress.anyIPv4, _port);
+      // 自动探测可用端口
+      int retryCount = 0;
+      const int maxRetries = 100; // 尝试从 8899 到 8999
+
+      while (retryCount < maxRetries) {
+        try {
+          final currentPort = _port + retryCount;
+          _server =
+              await io.serve(_router, InternetAddress.anyIPv4, currentPort);
+          _port = currentPort; // 记录实际成功的端口
+          break;
+        } catch (e) {
+          if (e is SocketException &&
+              (e.osError?.errorCode == 48 || e.osError?.errorCode == 98)) {
+            // 端口已被占用 (macOS: 48, Linux/Android: 98)
+            retryCount++;
+            continue;
+          }
+          rethrow;
+        }
+      }
+
+      if (_server == null) {
+        throw Exception(
+            'Could not find an available port after $maxRetries attempts');
+      }
+
       isRunning.value = true;
       lastError.value = null;
       if (kDebugMode) {

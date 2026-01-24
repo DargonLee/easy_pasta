@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter/foundation.dart';
 
@@ -10,7 +11,6 @@ class BonjourManager {
 
   // 服务配置
   static const String _serviceType = '_easypasta._tcp';
-  static const String _serviceName = 'EasyPasta-Clipboard';
   static const int _defaultPort = 8888;
 
   BonsoirService? _service;
@@ -55,8 +55,11 @@ class BonjourManager {
     try {
       await stopService(); // 先停止现有服务
 
+      final String finalDeviceName =
+          deviceName ?? 'EasyPasta (${Platform.localHostname})';
+
       final Map<String, String> serviceAttributes = {
-        'device_name': deviceName ?? 'EasyPasta Device',
+        'device_name': finalDeviceName,
         'version': '1.0.0',
         'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
         'portal_url': attributes?['portal_url'] ?? '',
@@ -64,7 +67,7 @@ class BonjourManager {
       };
 
       _service = BonsoirService(
-        name: deviceName ?? _serviceName,
+        name: finalDeviceName,
         type: _serviceType,
         port: port,
         attributes: serviceAttributes,
