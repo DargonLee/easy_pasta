@@ -180,12 +180,6 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
                               ),
                             ),
                           ),
-                        if (widget.badgeIndex != null && widget.badgeIndex! < 9)
-                          Positioned(
-                            top: -2,
-                            left: -2,
-                            child: _ShortcutBadge(index: widget.badgeIndex!),
-                          ),
                       ],
                     ),
                   ),
@@ -316,8 +310,8 @@ class _ImagePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 优先加载缩略图以节省内存，如果正在预览或已缓存完整字节则加载完整字节
-    final imageData = model.thumbnail ?? model.bytes;
+    // 直接使用完整字节以显示高清图片
+    final imageData = model.bytes;
 
     if (imageData == null) {
       return Center(
@@ -333,44 +327,7 @@ class _ImagePreview extends StatelessWidget {
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      // 启用图片缓存优化
-      cacheWidth: 400,
-    );
-  }
-}
-
-class _ShortcutBadge extends StatelessWidget {
-  final int index;
-
-  const _ShortcutBadge({required this.index});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.9),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(AppRadius.card - 1),
-          bottomRight: Radius.circular(AppRadius.md),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 4,
-            offset: const Offset(1, 1),
-          ),
-        ],
-      ),
-      child: Text(
-        '${index + 1}',
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          height: 1,
-        ),
-      ),
+      // 移除缓存压缩以显示原始高清图片
     );
   }
 }

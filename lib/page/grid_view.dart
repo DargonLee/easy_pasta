@@ -56,9 +56,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   bool _isScrolling = false;
   Timer? _scrollEndTimer;
   double _lastWidth = 0;
-  final Map<String, GlobalKey> _cardKeys = {};
   bool _lastInteractionWasKeyboard = false; // 幽灵 Hover 锁
-  int _firstVisibleIndex = 0; // 当前视口第一条数据的全局索引
 
   @override
   void initState() {
@@ -67,14 +65,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
       if (!mounted) return;
       setState(() => _hasFocus = _focusNode.hasFocus);
     });
-    _scrollController.addListener(() {
-      _handleScroll();
-      _updateVisibleItems();
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _updateVisibleItems();
-    });
+    _scrollController.addListener(_handleScroll);
   }
 
   @override
@@ -172,51 +163,6 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
       _handleGridNavigation(logicalKey);
       return;
     }
-
-    if (isCommand &&
-        logicalKey.keyId >= LogicalKeyboardKey.digit1.keyId &&
-        logicalKey.keyId <= LogicalKeyboardKey.digit9.keyId) {
-      final relativeIndex = logicalKey.keyId - LogicalKeyboardKey.digit1.keyId;
-      final targetGlobalIndex = _firstVisibleIndex + relativeIndex;
-
-      if (targetGlobalIndex < widget.pboards.length) {
-        widget.onCopy(widget.pboards[targetGlobalIndex]);
-      }
-      return;
-    }
-  }
-
-  void _updateVisibleItems() {
-    if (!_scrollController.hasClients) return;
-
-    final gridBox = context.findRenderObject() as RenderBox?;
-    if (gridBox == null) return;
-
-    // 获取所有可见卡片中位置最靠前的一个
-    String? topId;
-    double minTop = double.infinity;
-
-    for (var entry in _cardKeys.entries) {
-      final context = entry.value.currentContext;
-      if (context == null) continue;
-
-      final rb = context.findRenderObject() as RenderBox?;
-      if (rb != null) {
-        final position = rb.localToGlobal(Offset.zero, ancestor: gridBox);
-        // 如果卡片在视口内（上方溢出不超过 1/2 高度，且在底部以上）
-        if (position.dy >= -100 && position.dy < minTop) {
-          minTop = position.dy;
-          topId = entry.key;
-        }
-      }
-    }
-
-    if (topId != null) {
-      final newFirst = widget.pboards.indexWhere((item) => item.id == topId);
-      if (newFirst != -1 && newFirst != _firstVisibleIndex) {
-        setState(() => _firstVisibleIndex = newFirst);
-      }
-    }
   }
 
   void _handleGridNavigation(LogicalKeyboardKey key) {
@@ -254,17 +200,23 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   }
 
   void _scrollToItem(String id) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final context = _cardKeys[id]?.currentContext;
-      if (context != null) {
-        Scrollable.ensureVisible(
-          context,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
-          alignment: 0.35,
-        );
-      }
-    });
+    // Find the item's position and scroll to it
+    final index = widget.pboards.indexWhere((item) => item.id == id);
+    if (index != -1 && _scrollController.hasClients) {
+      final spec = widget.density.spec;
+      // Estimate item height based on minCrossAxisExtent and aspectRatio
+      final estimatedItemHeight =
+          (spec.minCrossAxisExtent / spec.aspectRatio) + AppSpacing.md;
+      final columns = _calculateMaxColumns(_lastWidth);
+      final row = index ~/ columns;
+      final targetOffset = row * estimatedItemHeight;
+
+      _scrollController.animateTo(
+        targetOffset.clamp(0.0, _scrollController.position.maxScrollExtent),
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   int _calculateMaxColumns(double maxWidth) {
@@ -358,14 +310,6 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   }
 
   Widget _buildCardContent(ClipboardItemModel model) {
-    final key = _cardKeys.putIfAbsent(model.id, () => GlobalKey());
-    final globalIndex = widget.pboards.indexOf(model);
-
-    // [REFINED] 动态计算相对于当前第一个可见项的偏移
-    final relativeIndex = globalIndex - _firstVisibleIndex;
-    final badgeIndex =
-        (relativeIndex >= 0 && relativeIndex < 9) ? relativeIndex : null;
-
     return MouseRegion(
       onEnter: (_) {
         if (_isScrolling || _lastInteractionWasKeyboard) return;
@@ -376,19 +320,17 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
         if (_hoveredItem?.id != model.id) _updateHoveredItem(model, true);
       },
       onExit: (_) {
-        if (_lastInteractionWasKeyboard) return;
-        _updateHoveredItem(null, false);
+        if (_isScrolling || _lastInteractionWasKeyboard) return;
+        _updateHoveredItem(model, false);
       },
       child: NewPboardItemCard(
-        key: key,
         model: model,
         selectedId: widget.selectedId,
         highlight: widget.highlight,
         density: widget.density,
-        // 并行锁定：禁止 hover，且内部状态也会在 didUpdateWidget 中强制清空
         enableHover: !_isScrolling && !_lastInteractionWasKeyboard,
         showFocus: _hasFocus && widget.selectedId == model.id,
-        badgeIndex: badgeIndex,
+        badgeIndex: null, // No longer using shortcuts
         onTap: (item) {
           _focusNode.requestFocus();
           widget.onItemTap(item);
