@@ -24,7 +24,8 @@ class NewPboardItemCard extends StatefulWidget {
   final GridDensity density;
   final bool enableHover;
   final bool showFocus;
-  
+  final String? highlight;
+
   const NewPboardItemCard({
     Key? key,
     required this.model,
@@ -37,6 +38,7 @@ class NewPboardItemCard extends StatefulWidget {
     required this.density,
     this.enableHover = true,
     this.showFocus = false,
+    this.highlight,
   }) : super(key: key);
 
   @override
@@ -45,6 +47,15 @@ class NewPboardItemCard extends StatefulWidget {
 
 class _NewPboardItemCardState extends State<NewPboardItemCard> {
   bool _isHovered = false;
+  bool _showPulse = false; // 新增脉冲状态
+
+  void _triggerPulse() {
+    if (!mounted) return;
+    setState(() => _showPulse = true);
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted) setState(() => _showPulse = false);
+    });
+  }
 
   @override
   void didUpdateWidget(covariant NewPboardItemCard oldWidget) {
@@ -73,8 +84,7 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
     final borderColor = isSelected
         ? AppColors.primary
         : (isDark ? AppColors.darkFrostedBorder : AppColors.lightFrostedBorder);
-    final focusRingColor =
-        AppColors.primary.withOpacity(isDark ? 0.4 : 0.25);
+    final focusRingColor = AppColors.primary.withOpacity(isDark ? 0.4 : 0.25);
     final baseShadows = isDark
         ? (isElevated ? AppShadows.darkSm : AppShadows.none)
         : (isElevated ? AppShadows.md : AppShadows.sm);
@@ -89,8 +99,10 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
     ];
 
     return MouseRegion(
-      onEnter: widget.enableHover ? (_) => setState(() => _isHovered = true) : null,
-      onExit: widget.enableHover ? (_) => setState(() => _isHovered = false) : null,
+      onEnter:
+          widget.enableHover ? (_) => setState(() => _isHovered = true) : null,
+      onExit:
+          widget.enableHover ? (_) => setState(() => _isHovered = false) : null,
       child: RepaintBoundary(
         child: AnimatedScale(
           scale: isElevated ? 1.01 : 1.0,
@@ -120,38 +132,79 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
                 },
                 onDoubleTap: () {
                   HapticFeedback.mediumImpact();
+                  _triggerPulse();
                   widget.onDoubleTap(widget.model);
                 },
-                child: Padding(
-                  padding: EdgeInsets.all(spec.cardPadding),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Expanded(child: _buildContent(context)),
-                            const SizedBox(height: AppSpacing.xs),
-                            _buildFooter(
-                              context,
-                              showActions: true,
+                child: Stack(
+                  children: [
+                    // 背景脉冲阴影动画
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeOut,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppRadius.card),
+                        boxShadow: [
+                          if (_showPulse)
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.4),
+                              blurRadius: 12,
+                              spreadRadius: 4,
                             ),
-                          ],
-                        ),
+                        ],
                       ),
-                      if (showSourceBadge)
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: IgnorePointer(
-                            child: SourceAppBadge(
-                              bundleId: sourceAppId!,
-                              size: badgeSize,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(spec.cardPadding),
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(child: _buildContent(context)),
+                                const SizedBox(height: AppSpacing.xs),
+                                _buildFooter(
+                                  context,
+                                  showActions: true,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (showSourceBadge)
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: IgnorePointer(
+                                child: SourceAppBadge(
+                                  bundleId: sourceAppId!,
+                                  size: badgeSize,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    // 前景脉冲边框动画
+                    if (_showPulse)
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 400),
+                            opacity: _showPulse ? 0 : 1,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.card),
+                                border: Border.all(
+                                  color: AppColors.primary.withOpacity(0.5),
+                                  width: 2,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -191,8 +244,7 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
       {required double availableHeight}) {
     final spec = widget.density.spec;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseStyle =
-        isDark ? AppTypography.darkBody : AppTypography.lightBody;
+    final baseStyle = isDark ? AppTypography.darkBody : AppTypography.lightBody;
     final textLines = _calculateMaxLines(baseStyle, availableHeight);
     final htmlLines = _calculateMaxLines(
       baseStyle.copyWith(height: 1.5),
@@ -207,23 +259,27 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
       case ClipboardType.file:
         return FileContent(
           fileName: widget.model.pvalue,
-          fileUri: widget.model.bytesToString(widget.model.bytes ?? Uint8List(0)),
+          fileUri:
+              widget.model.bytesToString(widget.model.bytes ?? Uint8List(0)),
         );
       case ClipboardType.html:
         return HtmlContent(
-          htmlData: widget.model.bytesToString(widget.model.bytes ?? Uint8List(0)),
+          htmlData:
+              widget.model.bytesToString(widget.model.bytes ?? Uint8List(0)),
           maxLines: htmlLines,
         );
       case ClipboardType.unknown:
         return TextContent(
           text: 'Unknown',
           style: baseStyle,
+          highlight: widget.highlight,
           maxLines: textLines,
         );
       default:
         return TextContent(
           text: widget.model.pvalue,
           style: baseStyle,
+          highlight: widget.highlight,
           maxLines: textLines,
         );
     }
@@ -237,6 +293,7 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
       onDelete: widget.onDelete,
       showActions: showActions,
       compact: widget.density == GridDensity.compact,
+      onSuccess: _triggerPulse,
     );
   }
 }

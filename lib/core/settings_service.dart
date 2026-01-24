@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_pasta/db/database_helper.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/db/shared_preference_helper.dart';
@@ -15,6 +16,7 @@ class SettingsService {
   final _prefs = SharedPreferenceHelper.instance;
   final _startupService = StartupService();
   final _hotkeyService = HotkeyService();
+  final _db = DatabaseHelper.instance;
 
   Future<void> setHotKey(HotKey hotKey) async {
     await _hotkeyService.setHotkey(hotKey);
@@ -76,5 +78,13 @@ class SettingsService {
 
   Future<void> clearAllData(BuildContext context) async {
     context.read<PboardProvider>().clearAll();
+  }
+
+  Future<double> getDatabaseSize() async {
+    return _db.getDatabaseSize();
+  }
+
+  Future<void> optimizeDatabase() async {
+    return _db.optimizeDatabase();
   }
 }

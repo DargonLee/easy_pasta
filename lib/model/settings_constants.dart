@@ -36,10 +36,16 @@ class SettingsConstants {
 
   // 自动粘贴
   static const String autoPasteTitle = '双击自动填充';
-  static const String autoPasteSubtitle = '双击卡片后自动跳转并粘贴到前一个应用';
+  static const String autoPasteSubtitle = '双击卡片自动粘贴到输入框';
   static const String accessibilityRequiredTitle = '辅助功能权限说明';
   static const String accessibilityRequiredContent =
       '此功能需要“辅助功能 (Accessibility)”权限。请双击开关后，根据弹窗提示在“系统设置 -> 隐私与安全性 -> 辅助功能”中允许 EasyPasta 控制您的电脑。';
+
+  // 数据库管理
+  static const String dbSizeTitle = '物理占用';
+  static const String dbOptimizeTitle = '清理空间碎片';
+  static const String dbOptimizeSubtitle = '执行数据库整理 (VACUUM) 并释放剩余空间';
+  static const String dbOptimizeSuccess = '数据库已优化';
 
   // Dialog texts
   static const String clearConfirmTitle = '确认清除';

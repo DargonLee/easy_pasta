@@ -29,6 +29,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _bonjourEnabled = false;
   bool _autoPasteEnabled = false;
   bool _isAccessibilityTrusted = false;
+  double _dbSizeMb = 0.0;
   int _maxItems = 500;
   int _retentionDays = 7;
   HotKey? _hotKey;
@@ -106,6 +107,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _bonjourEnabled = await _settingsService.getBonjourEnabled();
     _autoPasteEnabled = await _settingsService.getAutoPaste();
     _isAccessibilityTrusted = await AutoPasteService().checkAccessibility();
+    _dbSizeMb = await _settingsService.getDatabaseSize();
     _maxItems = await _settingsService.getMaxItems();
     _retentionDays = await _settingsService.getRetentionDays();
     setState(() {});
@@ -142,6 +144,45 @@ class _SettingsPageState extends State<SettingsPage> {
                         context: context,
                         title: SettingsConstants.basicSettingsTitle,
                         items: _basicSettings,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _buildSection(
+                        context: context,
+                        title: '存储管理',
+                        items: [
+                          const SettingItem(
+                            type: SettingType.maxStorage,
+                            title: '最大存储量',
+                            subtitle: '达到上限后将自动清理最早的非收藏记录',
+                            icon: Icons.storage,
+                          ),
+                          const SettingItem(
+                            type: SettingType.dbSize,
+                            title: SettingsConstants.dbSizeTitle,
+                            subtitle: 'EasyPasta 数据库文件占用的总空间',
+                            icon: Icons.data_usage_rounded,
+                          ),
+                          const SettingItem(
+                            type: SettingType.dbOptimize,
+                            title: SettingsConstants.dbOptimizeTitle,
+                            subtitle: SettingsConstants.dbOptimizeSubtitle,
+                            icon: Icons.cleaning_services_rounded,
+                          ),
+                          const SettingItem(
+                            type: SettingType.retention,
+                            title: '保留时长',
+                            subtitle: '历史记录保留天数（收藏项除外）',
+                            icon: Icons.history,
+                          ),
+                          const SettingItem(
+                            type: SettingType.clearData,
+                            title: '清除所有记录',
+                            subtitle: '清空数据库中的所有本地剪贴板历史',
+                            icon: Icons.delete_forever,
+                            textColor: Colors.red,
+                            iconColor: Colors.red,
+                          ),
+                        ],
                       ),
                       const SizedBox(height: AppSpacing.xl),
                       _buildSection(
@@ -312,7 +353,33 @@ class _SettingsPageState extends State<SettingsPage> {
       case SettingType.clearData:
         return ClearDataTile(
           item: item,
-          onClear: () => _showClearConfirmDialog(),
+          onClear: _showClearConfirmDialog,
+        );
+      case SettingType.dbSize:
+        return BaseSettingTile(
+          item: item,
+          trailing: Text(
+            '${_dbSizeMb.toStringAsFixed(2)} MB',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+            ),
+          ),
+        );
+      case SettingType.dbOptimize:
+        return BaseSettingTile(
+          item: item,
+          onTap: () async {
+            await _settingsService.optimizeDatabase();
+            final newSize = await _settingsService.getDatabaseSize();
+            if (mounted) {
+              setState(() => _dbSizeMb = newSize);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text(SettingsConstants.dbOptimizeSuccess)),
+              );
+            }
+          },
         );
       case SettingType.exitApp:
         return ExitAppTile(item: item);

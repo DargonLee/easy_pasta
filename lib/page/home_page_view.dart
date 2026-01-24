@@ -190,6 +190,8 @@ class _MyHomePageState extends State<MyHomePage>
     return PasteboardGridView(
       key: key,
       pboards: provider.items,
+      groups: provider.groupedItems,
+      highlight: provider.searchQuery,
       currentCategory: _selectedType,
       selectedId: _selectedId,
       onItemTap: _handleItemTap,

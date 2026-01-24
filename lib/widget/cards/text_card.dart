@@ -16,6 +16,7 @@ class TextContent extends StatelessWidget {
   final TextAlign textAlign;
   final bool selectable;
   final int? maxLines;
+  final String? highlight;
 
   const TextContent({
     super.key,
@@ -25,18 +26,18 @@ class TextContent extends StatelessWidget {
     this.textAlign = TextAlign.left,
     this.selectable = false,
     this.maxLines,
+    this.highlight,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textStyle = style ?? (isDark 
-        ? AppTypography.darkBody 
-        : AppTypography.lightBody);
-    
+    final textStyle =
+        style ?? (isDark ? AppTypography.darkBody : AppTypography.lightBody);
+
     // 清理文本内容
     final cleanedText = ContentProcessor.cleanText(text);
-    
+
     // 检查是否为URL
     return _urlPattern.hasMatch(cleanedText)
         ? _buildUrlText(cleanedText, textStyle, isDark)
@@ -74,21 +75,59 @@ class TextContent extends StatelessWidget {
   }
 
   Widget _buildNormalText(String displayText, TextStyle style) {
-    return selectable
-        ? SelectableText(
-            displayText,
-            textAlign: textAlign,
-            style: style,
-            maxLines: maxLines,
-          )
-        : Text(
-            displayText,
-            textAlign: textAlign,
-            softWrap: true,
-            maxLines: maxLines,
-            overflow: TextOverflow.fade,
-            style: style,
-          );
+    if (highlight == null || highlight!.isEmpty) {
+      return selectable
+          ? SelectableText(
+              displayText,
+              textAlign: textAlign,
+              style: style,
+              maxLines: maxLines,
+            )
+          : Text(
+              displayText,
+              textAlign: textAlign,
+              softWrap: true,
+              maxLines: maxLines,
+              overflow: TextOverflow.fade,
+              style: style,
+            );
+    }
+
+    final lowerText = displayText.toLowerCase();
+    final lowerHighlight = highlight!.toLowerCase();
+    final spells = <TextSpan>[];
+    int start = 0;
+    int indexOfHighlight;
+
+    while (
+        (indexOfHighlight = lowerText.indexOf(lowerHighlight, start)) != -1) {
+      if (indexOfHighlight > start) {
+        spells.add(
+            TextSpan(text: displayText.substring(start, indexOfHighlight)));
+      }
+      spells.add(TextSpan(
+        text: displayText.substring(
+            indexOfHighlight, indexOfHighlight + highlight!.length),
+        style: style.copyWith(
+          color: AppColors.primary,
+          fontWeight: FontWeight.bold,
+          backgroundColor: AppColors.primary.withOpacity(0.1),
+        ),
+      ));
+      start = indexOfHighlight + highlight!.length;
+    }
+
+    if (start < displayText.length) {
+      spells.add(TextSpan(text: displayText.substring(start)));
+    }
+
+    return Text.rich(
+      TextSpan(children: spells, style: style),
+      textAlign: textAlign,
+      softWrap: true,
+      maxLines: maxLines,
+      overflow: TextOverflow.fade,
+    );
   }
 
   /// 打开URL

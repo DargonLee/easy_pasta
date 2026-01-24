@@ -6,7 +6,6 @@ import 'package:flutter/services.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
 import 'package:easy_pasta/model/grid_density.dart';
-import 'package:easy_pasta/model/time_filter.dart';
 import 'package:easy_pasta/page/pboard_card_view.dart';
 import 'package:easy_pasta/page/empty_view.dart';
 import 'package:intl/intl.dart';
@@ -27,6 +26,8 @@ class PasteboardGridView extends StatefulWidget {
   final Function(ClipboardItemModel) onDelete;
   final GridDensity density;
   final VoidCallback? onLoadMore;
+  final Map<String, List<ClipboardItemModel>> groups;
+  final String? highlight;
 
   const PasteboardGridView({
     Key? key,
@@ -40,6 +41,8 @@ class PasteboardGridView extends StatefulWidget {
     required this.onDelete,
     required this.density,
     this.onLoadMore,
+    required this.groups,
+    this.highlight,
   }) : super(key: key);
 
   @override
@@ -170,24 +173,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     return columns;
   }
 
-  /// 计算网格的纵横比（宽度:高度）
   double _calculateAspectRatio() => widget.density.spec.aspectRatio;
-
-  Map<String, List<ClipboardItemModel>> _groupItemsByDate(
-      List<ClipboardItemModel> items) {
-    final groups = <String, List<ClipboardItemModel>>{};
-    for (final item in items) {
-      try {
-        final date = DateTime.parse(item.time);
-        final header = TimeFilter.formatDateHeader(date);
-        groups.putIfAbsent(header, () => []).add(item);
-      } catch (e) {
-        // Fallback for invalid date strings
-        groups.putIfAbsent('未知时间', () => []).add(item);
-      }
-    }
-    return groups;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +183,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
       return EmptyStateView(category: widget.currentCategory);
     }
 
-    final groups = _groupItemsByDate(widget.pboards);
+    final groups = widget.groups;
 
     return KeyboardListener(
       focusNode: _focusNode,
@@ -288,6 +274,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
         key: ValueKey(model.id),
         model: model,
         selectedId: widget.selectedId,
+        highlight: widget.highlight,
         density: widget.density,
         enableHover: !_isScrolling,
         showFocus: _hasFocus && widget.selectedId == model.id,

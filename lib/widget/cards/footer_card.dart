@@ -13,6 +13,7 @@ class FooterContent extends StatelessWidget {
   final Function(ClipboardItemModel) onDelete;
   final bool showActions;
   final bool compact;
+  final VoidCallback? onSuccess; // 新增成功回调
 
   const FooterContent({
     Key? key,
@@ -22,6 +23,7 @@ class FooterContent extends StatelessWidget {
     required this.onDelete,
     this.showActions = false,
     this.compact = false,
+    this.onSuccess,
   }) : super(key: key);
 
   @override
@@ -45,20 +47,20 @@ class FooterContent extends StatelessWidget {
             color: AppColors.primary,
           ),
           SizedBox(width: spacing),
-          
+
           // 时间戳
           Text(
             _formatTimestamp(DateTime.parse(model.time)),
-            style: (isDark 
-                ? AppTypography.darkCaption 
-                : AppTypography.lightCaption
-            ).copyWith(
-              color: isDark 
-                  ? AppColors.darkTextSecondary 
+            style: (isDark
+                    ? AppTypography.darkCaption
+                    : AppTypography.lightCaption)
+                .copyWith(
+              color: isDark
+                  ? AppColors.darkTextSecondary
                   : AppColors.lightTextSecondary,
             ),
           ),
-          
+
           const Spacer(),
 
           AnimatedOpacity(
@@ -81,6 +83,7 @@ class FooterContent extends StatelessWidget {
                       onPressed: () {
                         HapticFeedback.lightImpact();
                         onCopy(model);
+                        onSuccess?.call();
                       },
                     ),
 

@@ -18,6 +18,7 @@ class PboardState {
   final int currentPage;
   final bool hasMore;
   final int pageSize;
+  final Map<String, List<ClipboardItemModel>> groupedItems; // 新增预计算分组
 
   const PboardState({
     required this.allItems,
@@ -31,6 +32,7 @@ class PboardState {
     this.hasMore = true,
     this.pageSize = 50,
     this.timeFilter = TimeFilter.all,
+    this.groupedItems = const {},
   });
 
   PboardState copyWith({
@@ -45,6 +47,7 @@ class PboardState {
     bool? hasMore,
     int? pageSize,
     TimeFilter? timeFilter,
+    Map<String, List<ClipboardItemModel>>? groupedItems,
   }) {
     return PboardState(
       allItems: allItems ?? this.allItems,
@@ -58,6 +61,7 @@ class PboardState {
       hasMore: hasMore ?? this.hasMore,
       pageSize: pageSize ?? this.pageSize,
       timeFilter: timeFilter ?? this.timeFilter,
+      groupedItems: groupedItems ?? this.groupedItems,
     );
   }
 
@@ -72,6 +76,7 @@ class PboardProvider extends ChangeNotifier {
   // Getters
   UnmodifiableListView<ClipboardItemModel> get items =>
       UnmodifiableListView(_state.filteredItems);
+  Map<String, List<ClipboardItemModel>> get groupedItems => _state.groupedItems;
   int get count => _state.filteredItems.length;
   NSPboardSortType get filterType => _state.filterType;
   bool get isLoading => _state.isLoading;
@@ -208,8 +213,24 @@ class PboardProvider extends ChangeNotifier {
 
     _updateState(_state.copyWith(
       filteredItems: filteredItems,
+      groupedItems: _performGrouping(filteredItems), // 触发预计算
       error: errorMessage,
     ));
+  }
+
+  Map<String, List<ClipboardItemModel>> _performGrouping(
+      List<ClipboardItemModel> items) {
+    final groups = <String, List<ClipboardItemModel>>{};
+    for (final item in items) {
+      try {
+        final date = DateTime.parse(item.time);
+        final header = TimeFilter.formatDateHeader(date);
+        groups.putIfAbsent(header, () => []).add(item);
+      } catch (e) {
+        groups.putIfAbsent('未知时间', () => []).add(item);
+      }
+    }
+    return groups;
   }
 
   Future<Result<void>> addItem(ClipboardItemModel model) async {

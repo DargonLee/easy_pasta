@@ -11,6 +11,8 @@ enum SettingType {
   bonjour,
   retention,
   autoPaste,
+  dbSize,
+  dbOptimize,
 }
 
 class SettingItem {

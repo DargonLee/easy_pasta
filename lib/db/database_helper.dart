@@ -53,6 +53,8 @@ abstract class IDatabaseHelper {
   Future<int> deleteAll();
   Future<int> getMaxCount();
   Future<int> getRetentionDays();
+  Future<double> getDatabaseSize(); // 获取物理文件大小(MB)
+  Future<void> optimizeDatabase(); // 执行合并与压缩
 }
 
 /// Implementation of database operations for clipboard management
@@ -484,6 +486,33 @@ class DatabaseHelper implements IDatabaseHelper {
       return await db.delete(DatabaseConfig.tableName);
     } catch (e) {
       throw DatabaseException('Failed to delete all items', e);
+    }
+  }
+
+  @override
+  Future<double> getDatabaseSize() async {
+    try {
+      final path = await _getDatabasePath();
+      final file = File(path);
+      if (await file.exists()) {
+        final bytes = await file.length();
+        return bytes / (1024 * 1024); // 转换为 MB
+      }
+      return 0.0;
+    } catch (e) {
+      developer.log('Get database size failed: $e');
+      return 0.0;
+    }
+  }
+
+  @override
+  Future<void> optimizeDatabase() async {
+    try {
+      final db = await database;
+      await db.execute('VACUUM');
+    } catch (e) {
+      developer.log('Optimize database failed: $e');
+      rethrow;
     }
   }
 

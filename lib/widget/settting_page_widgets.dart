@@ -297,7 +297,7 @@ class ToggleSettingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _BaseSettingTile(
+    return BaseSettingTile(
       item: item,
       onTap: onTap,
       trailing: CupertinoSwitch(
@@ -330,7 +330,7 @@ class AutoPasteTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return _BaseSettingTile(
+    return BaseSettingTile(
       item: item,
       subtitle: Row(
         children: [
@@ -390,7 +390,7 @@ class MaxStorageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _BaseSettingTile(
+    return BaseSettingTile(
       item: item,
       trailing: ModernCounter(
         defaultValue: value,
@@ -512,7 +512,7 @@ class ClearDataTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _BaseSettingTile(
+    return BaseSettingTile(
       item: item,
       onTap: () {
         HapticFeedback.mediumImpact();
@@ -532,7 +532,7 @@ class ExitAppTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _BaseSettingTile(
+    return BaseSettingTile(
       item: item,
       onTap: () {
         HapticFeedback.mediumImpact();
@@ -637,13 +637,13 @@ class AboutTile extends StatelessWidget {
 }
 
 /// 基础设置项组件
-class _BaseSettingTile extends StatelessWidget {
+class BaseSettingTile extends StatelessWidget {
   final SettingItem item;
   final Widget? trailing;
   final Widget? subtitle; // 新增自定义副标题支持
   final VoidCallback? onTap;
 
-  const _BaseSettingTile({
+  const BaseSettingTile({
     required this.item,
     this.trailing,
     this.subtitle,
