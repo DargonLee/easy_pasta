@@ -42,7 +42,7 @@ abstract class IDatabaseHelper {
   Future<List<Map<String, dynamic>>> getFavoritePboardItemList();
   Future<List<Map<String, dynamic>>> getPboardItemList();
   Future<List<Map<String, dynamic>>> getPboardItemListPaginated(
-      {int limit, int offset});
+      {int limit, int offset, DateTime? startTime, DateTime? endTime});
   Future<ClipboardItemModel?> checkDuplicate(ClipboardItemModel model);
   Future<void> setFavorite(ClipboardItemModel model);
   Future<void> cancelFavorite(ClipboardItemModel model);
@@ -234,15 +234,31 @@ class DatabaseHelper implements IDatabaseHelper {
   Future<List<Map<String, dynamic>>> getPboardItemListPaginated({
     int limit = 50,
     int offset = 0,
+    DateTime? startTime,
+    DateTime? endTime,
   }) async {
     try {
       final db = await database;
-      return await db.query(
-        DatabaseConfig.tableName,
-        orderBy: '${DatabaseConfig.columnTime} DESC',
-        limit: limit,
-        offset: offset,
+      String whereClause = '';
+      List<dynamic> whereArgs = [];
+
+      if (startTime != null && endTime != null) {
+        whereClause = ' WHERE ${DatabaseConfig.columnTime} BETWEEN ? AND ?';
+        whereArgs = [startTime.toString(), endTime.toString()];
+      } else if (startTime != null) {
+        whereClause = ' WHERE ${DatabaseConfig.columnTime} >= ?';
+        whereArgs = [startTime.toString()];
+      } else if (endTime != null) {
+        whereClause = ' WHERE ${DatabaseConfig.columnTime} < ?';
+        whereArgs = [endTime.toString()];
+      }
+
+      final List<Map<String, dynamic>> maps = await db.rawQuery(
+        'SELECT * FROM ${DatabaseConfig.tableName}$whereClause '
+        'ORDER BY ${DatabaseConfig.columnTime} DESC LIMIT ? OFFSET ?',
+        [...whereArgs, limit, offset],
       );
+      return maps;
     } catch (e) {
       throw DatabaseException('Failed to get paginated items', e);
     }

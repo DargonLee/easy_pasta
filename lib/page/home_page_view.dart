@@ -10,6 +10,7 @@ import 'package:easy_pasta/core/window_service.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/grid_density.dart';
+import 'package:easy_pasta/model/time_filter.dart';
 import 'package:easy_pasta/widget/search_empty_state.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
@@ -28,6 +29,7 @@ class _MyHomePageState extends State<MyHomePage>
 
   NSPboardSortType _selectedType = NSPboardSortType.all;
   String _selectedId = '';
+  TimeFilter _selectedTimeFilter = TimeFilter.all;
   GridDensity _density = GridDensity.comfortable;
 
   @override
@@ -71,6 +73,11 @@ class _MyHomePageState extends State<MyHomePage>
     _pboardProvider.filterByType(type);
   }
 
+  void _handleTimeFilterChanged(TimeFilter filter) {
+    setState(() => _selectedTimeFilter = filter);
+    _pboardProvider.filterByTime(filter);
+  }
+
   void _handleDensityChanged(GridDensity density) {
     setState(() => _density = density);
   }
@@ -102,6 +109,8 @@ class _MyHomePageState extends State<MyHomePage>
         onClear: _handleClear,
         onTypeChanged: _handleTypeChanged,
         selectedType: _selectedType,
+        selectedTimeFilter: _selectedTimeFilter,
+        onTimeFilterChanged: _handleTimeFilterChanged,
         onSettingsTap: () => _navigateToSettings(),
         density: _density,
         onDensityChanged: _handleDensityChanged,

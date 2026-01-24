@@ -6,6 +6,7 @@ import 'package:easy_pasta/model/pboard_sort_type.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
 import 'package:easy_pasta/model/grid_density.dart';
+import 'package:easy_pasta/model/time_filter.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   static const double height = 72;
@@ -15,6 +16,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback onClear;
   final ValueChanged<NSPboardSortType> onTypeChanged;
   final NSPboardSortType selectedType;
+  final TimeFilter selectedTimeFilter;
+  final ValueChanged<TimeFilter> onTimeFilterChanged;
   final VoidCallback onSettingsTap;
   final GridDensity density;
   final ValueChanged<GridDensity> onDensityChanged;
@@ -26,6 +29,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.onClear,
     required this.onTypeChanged,
     required this.selectedType,
+    required this.selectedTimeFilter,
+    required this.onTimeFilterChanged,
     required this.onSettingsTap,
     required this.density,
     required this.onDensityChanged,
@@ -37,12 +42,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark
-        ? AppColors.darkFrostedSurface
-        : AppColors.lightFrostedSurface;
-    final borderColor = isDark
-        ? AppColors.darkFrostedBorder
-        : AppColors.lightFrostedBorder;
+    final surfaceColor =
+        isDark ? AppColors.darkFrostedSurface : AppColors.lightFrostedSurface;
+    final borderColor =
+        isDark ? AppColors.darkFrostedBorder : AppColors.lightFrostedBorder;
 
     return ClipRRect(
       child: BackdropFilter(
@@ -78,9 +81,20 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 flex: 4,
-                child: _FilterBar(
-                  selectedType: selectedType,
-                  onTypeChanged: onTypeChanged,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _FilterBar(
+                        selectedType: selectedType,
+                        onTypeChanged: onTypeChanged,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    _TimeFilterButton(
+                      selectedFilter: selectedTimeFilter,
+                      onFilterChanged: onTimeFilterChanged,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -145,8 +159,7 @@ class _SearchFieldState extends State<_SearchField> {
         : (isDark
             ? AppColors.darkBorder.withOpacity(0.4)
             : AppColors.lightBorder.withOpacity(0.4));
-    final textStyle =
-        isDark ? AppTypography.darkBody : AppTypography.lightBody;
+    final textStyle = isDark ? AppTypography.darkBody : AppTypography.lightBody;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -216,6 +229,137 @@ class _SearchFieldState extends State<_SearchField> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _TimeFilterButton extends StatelessWidget {
+  final TimeFilter selectedFilter;
+  final ValueChanged<TimeFilter> onFilterChanged;
+
+  const _TimeFilterButton({
+    required this.selectedFilter,
+    required this.onFilterChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return PopupMenuButton<TimeFilter>(
+      initialValue: selectedFilter,
+      onSelected: onFilterChanged,
+      tooltip: '时间过滤',
+      offset: const Offset(0, 48),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        side: BorderSide(
+          color: isDark
+              ? AppColors.darkFrostedBorder
+              : AppColors.lightFrostedBorder,
+        ),
+      ),
+      color:
+          isDark ? AppColors.darkFrostedSurface : AppColors.lightFrostedSurface,
+      elevation: 8,
+      child: AnimatedContainer(
+        duration: AppDurations.fast,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        decoration: BoxDecoration(
+          color: selectedFilter != TimeFilter.all
+              ? AppColors.primary.withOpacity(isDark ? 0.2 : 0.1)
+              : (isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.black.withOpacity(0.05)),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: selectedFilter != TimeFilter.all
+                ? AppColors.primary.withOpacity(0.3)
+                : Colors.transparent,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              selectedFilter.icon,
+              size: 16,
+              color: selectedFilter != TimeFilter.all
+                  ? AppColors.primary
+                  : (isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              selectedFilter == TimeFilter.all ? '全部时间' : selectedFilter.label,
+              style: (isDark
+                      ? AppTypography.darkFootnote
+                      : AppTypography.lightFootnote)
+                  .copyWith(
+                color: selectedFilter != TimeFilter.all
+                    ? AppColors.primary
+                    : (isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary),
+                fontWeight:
+                    selectedFilter != TimeFilter.all ? FontWeight.w600 : null,
+              ),
+            ),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 16,
+              color: isDark
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
+            ),
+          ],
+        ),
+      ),
+      itemBuilder: (context) => TimeFilter.values.map((filter) {
+        final isSelected = selectedFilter == filter;
+        return PopupMenuItem<TimeFilter>(
+          value: filter,
+          child: Row(
+            children: [
+              Icon(
+                filter.icon,
+                size: 18,
+                color: isSelected
+                    ? AppColors.primary
+                    : (isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Text(
+                filter.label,
+                style:
+                    (isDark ? AppTypography.darkBody : AppTypography.lightBody)
+                        .copyWith(
+                  color: isSelected
+                      ? AppColors.primary
+                      : (isDark
+                          ? AppColors.darkTextPrimary
+                          : AppColors.lightTextPrimary),
+                  fontWeight: isSelected ? FontWeight.w600 : null,
+                ),
+              ),
+              if (isSelected) ...[
+                const Spacer(),
+                const Icon(
+                  Icons.check_rounded,
+                  size: 16,
+                  color: AppColors.primary,
+                ),
+              ],
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }
@@ -389,8 +533,7 @@ class _DensityOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final selectedColor =
-        isDark ? AppColors.primaryLight : AppColors.primary;
+    final selectedColor = isDark ? AppColors.primaryLight : AppColors.primary;
 
     return Tooltip(
       message: option.label,

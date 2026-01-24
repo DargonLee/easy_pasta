@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_pasta/db/database_helper.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
+import 'package:easy_pasta/model/time_filter.dart';
 
 @immutable
 class PboardState {
@@ -29,6 +30,7 @@ class PboardState {
     this.currentPage = 0,
     this.hasMore = true,
     this.pageSize = 50,
+    this.timeFilter = TimeFilter.all,
   });
 
   PboardState copyWith({
@@ -42,6 +44,7 @@ class PboardState {
     int? currentPage,
     bool? hasMore,
     int? pageSize,
+    TimeFilter? timeFilter,
   }) {
     return PboardState(
       allItems: allItems ?? this.allItems,
@@ -54,8 +57,11 @@ class PboardState {
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
       pageSize: pageSize ?? this.pageSize,
+      timeFilter: timeFilter ?? this.timeFilter,
     );
   }
+
+  final TimeFilter timeFilter;
 }
 
 class PboardProvider extends ChangeNotifier {
@@ -71,6 +77,7 @@ class PboardProvider extends ChangeNotifier {
   bool get isLoading => _state.isLoading;
   String? get error => _state.error;
   String get searchQuery => _state.searchQuery;
+  TimeFilter get timeFilter => _state.timeFilter;
 
   bool _isInitialized = false;
 
@@ -100,9 +107,12 @@ class PboardProvider extends ChangeNotifier {
       _updateState(_state.copyWith(maxItems: maxCount));
 
       // 使用分页加载初始数据
+      final range = _state.timeFilter.range;
       final result = await _db.getPboardItemListPaginated(
         limit: _state.pageSize,
         offset: 0,
+        startTime: range.start,
+        endTime: range.end,
       );
       final items =
           result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
@@ -256,16 +266,25 @@ class PboardProvider extends ChangeNotifier {
   Future<Result<void>> loadItems() async {
     return await _withLoading(() async {
       try {
-        final result = await _db.getPboardItemList();
+        final range = _state.timeFilter.range;
+        // Use pagination even for full load to keep it consistent
+        final result = await _db.getPboardItemListPaginated(
+          limit: _state.pageSize,
+          offset: 0,
+          startTime: range.start,
+          endTime: range.end,
+        );
         final items =
             result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
 
         _updateState(_state.copyWith(
           allItems: items,
           filteredItems: items,
-          filterType: NSPboardSortType.all,
-          searchQuery: '',
+          currentPage: 0,
+          hasMore: items.length >= _state.pageSize,
         ));
+
+        _applyFiltersAndSearch();
 
         return const Result.success(null);
       } catch (e) {
@@ -325,6 +344,18 @@ class PboardProvider extends ChangeNotifier {
     }
   }
 
+  /// 切换时间过滤
+  Future<void> filterByTime(TimeFilter filter) async {
+    if (_state.timeFilter == filter) return;
+
+    _updateState(_state.copyWith(
+      timeFilter: filter,
+      currentPage: 0,
+    ));
+
+    await loadItems();
+  }
+
   // 优化后的search方法 - 只在内存中操作
   Future<Result<void>> search(String query) async {
     query = query.trim();
@@ -366,10 +397,13 @@ class PboardProvider extends ChangeNotifier {
     try {
       final nextPage = _state.currentPage + 1;
       final offset = nextPage * _state.pageSize;
+      final range = _state.timeFilter.range;
 
       final result = await _db.getPboardItemListPaginated(
         limit: _state.pageSize,
         offset: offset,
+        startTime: range.start,
+        endTime: range.end,
       );
 
       if (result.isEmpty) {

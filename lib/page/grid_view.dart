@@ -6,10 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
 import 'package:easy_pasta/model/grid_density.dart';
+import 'package:easy_pasta/model/time_filter.dart';
 import 'package:easy_pasta/page/pboard_card_view.dart';
 import 'package:easy_pasta/page/empty_view.dart';
+import 'package:intl/intl.dart';
 import 'package:easy_pasta/widget/preview_dialog.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
+import 'package:easy_pasta/model/app_typography.dart';
 
 class PasteboardGridView extends StatefulWidget {
   static const int _kMaxColumns = 4;
@@ -46,8 +49,6 @@ class PasteboardGridView extends StatefulWidget {
 class _PasteboardGridViewState extends State<PasteboardGridView>
     with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
-  final GlobalKey<AnimatedGridState> _gridKey = GlobalKey<AnimatedGridState>();
-  late final _ListModel<ClipboardItemModel> _list;
   ClipboardItemModel? _hoveredItem;
   final FocusNode _focusNode = FocusNode();
   bool _isInitialLoad = true;
@@ -58,11 +59,6 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   @override
   void initState() {
     super.initState();
-    _list = _ListModel<ClipboardItemModel>(
-      listKey: _gridKey,
-      initialItems: widget.pboards,
-      removedItemBuilder: _buildRemovedItem,
-    );
     _focusNode.addListener(() {
       if (!mounted) return;
       setState(() => _hasFocus = _focusNode.hasFocus);
@@ -89,9 +85,6 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   @override
   void didUpdateWidget(covariant PasteboardGridView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.pboards != widget.pboards) {
-      _syncList(widget.pboards);
-    }
   }
 
   void _handleScroll() {
@@ -207,55 +200,94 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     }
   }
 
+  Map<String, List<ClipboardItemModel>> _groupItemsByDate(
+      List<ClipboardItemModel> items) {
+    final groups = <String, List<ClipboardItemModel>>{};
+    for (final item in items) {
+      final date = DateTime.parse(item.time);
+      final header = TimeFilter.formatDateHeader(date);
+      groups.putIfAbsent(header, () => []).add(item);
+    }
+    return groups;
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
 
-    if (widget.pboards.isEmpty && _list.length == 0) {
+    if (widget.pboards.isEmpty) {
       return EmptyStateView(category: widget.currentCategory);
     }
+
+    final groups = _groupItemsByDate(widget.pboards);
 
     return KeyboardListener(
       focusNode: _focusNode,
       onKeyEvent: _handleKeyEvent,
-      child: Listener(
-        onPointerSignal: (event) {
-          if (event is PointerScrollEvent) {
-            _handleScroll();
-          }
-        },
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final spec = widget.density.spec;
-            final maxColumns = _calculateMaxColumns(constraints.maxWidth);
-            final aspectRatio = _calculateAspectRatio();
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final spec = widget.density.spec;
+          final maxColumns = _calculateMaxColumns(constraints.maxWidth);
+          final aspectRatio = _calculateAspectRatio();
 
-            return Padding(
-              padding: EdgeInsets.symmetric(horizontal: spec.gridPadding),
-              child: AnimatedGrid(
-                key: _gridKey,
-                controller: _scrollController,
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
+          return CustomScrollView(
+            controller: _scrollController,
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            slivers: [
+              for (final entry in groups.entries) ...[
+                // Date Header
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      spec.gridPadding + AppSpacing.sm,
+                      AppSpacing.xl,
+                      spec.gridPadding,
+                      AppSpacing.md,
+                    ),
+                    child: Text(
+                      entry.key,
+                      style: (Theme.of(context).brightness == Brightness.dark
+                              ? AppTypography.darkHeadline
+                              : AppTypography.lightHeadline)
+                          .copyWith(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.darkTextPrimary.withOpacity(0.9)
+                            : AppColors.lightTextPrimary.withOpacity(0.9),
+                      ),
+                    ),
+                  ),
                 ),
-                padding: const EdgeInsets.only(
-                  top: AppSpacing.sm,
-                  bottom: AppSpacing.xl,
+                // Grid of items for this date
+                SliverPadding(
+                  padding: EdgeInsets.symmetric(horizontal: spec.gridPadding),
+                  sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: maxColumns,
+                      mainAxisSpacing: spec.gridSpacing,
+                      crossAxisSpacing: spec.gridSpacing,
+                      childAspectRatio: aspectRatio,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final model = entry.value[index];
+                        return _buildCardContent(model);
+                      },
+                      childCount: entry.value.length,
+                    ),
+                  ),
                 ),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: maxColumns,
-                  mainAxisSpacing: spec.gridSpacing,
-                  crossAxisSpacing: spec.gridSpacing,
-                  childAspectRatio: aspectRatio,
-                ),
-                initialItemCount: _list.length,
-                itemBuilder: (context, index, animation) {
-                  return _buildAnimatedItem(context, index, animation);
-                },
+              ],
+              // Extra padding at the bottom for loading more
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppSpacing.xxxl),
               ),
-            );
-          },
-        ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -341,69 +373,9 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     );
   }
 
-  void _handleDelete(ClipboardItemModel item) {
-    final index = _list.indexWhereId(item.id);
-    if (index != -1) {
-      _list.removeAt(index, duration: AppDurations.normal);
-    }
-    widget.onDelete(item);
-  }
-
-  Widget _buildRemovedItem(ClipboardItemModel item, BuildContext context,
-      Animation<double> animation) {
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: AppCurves.emphasized,
-    );
-    return FadeTransition(
-      opacity: curved,
-      child: ScaleTransition(
-        scale: Tween<double>(begin: 0.9, end: 1.0).animate(curved),
-        child: IgnorePointer(
-          child: _buildCardContent(item),
-        ),
-      ),
-    );
-  }
-
-  /// 更新鼠标悬停的项目
-  void _updateHoveredItem(ClipboardItemModel? model, bool isHovered) {
-    setState(() {
-      _hoveredItem = isHovered ? model : null;
-      if (isHovered) {
-        _focusNode.requestFocus();
-      } else {
-        _focusNode.unfocus();
-      }
-    });
-  }
-
   @override
   bool get wantKeepAlive => true;
 }
-
-typedef _RemovedItemBuilder<T> = Widget Function(
-    T item, BuildContext context, Animation<double> animation);
-
-class _ListModel<T> {
-  _ListModel({
-    required this.listKey,
-    required this.removedItemBuilder,
-    Iterable<T>? initialItems,
-  }) : _items = List<T>.from(initialItems ?? <T>[]);
-
-  final GlobalKey<AnimatedGridState> listKey;
-  final _RemovedItemBuilder<T> removedItemBuilder;
-  final List<T> _items;
-
-  AnimatedGridState? get _animatedGrid => listKey.currentState;
-
-  int get length => _items.length;
-  List<T> get items => _items;
-
-  T operator [](int index) => _items[index];
-
-  int indexWhereId(String id) {
     for (int i = 0; i < _items.length; i++) {
       final item = _items[i];
       if (item is ClipboardItemModel && item.id == id) {
