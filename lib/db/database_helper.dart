@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'dart:developer' as developer;
+import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
+import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:easy_pasta/db/shared_preference_helper.dart';
 
 /// Exception thrown when database operations fail
@@ -39,6 +41,9 @@ abstract class IDatabaseHelper {
   Future<List<Map<String, dynamic>>> getPboardItemListWithString(String query);
   Future<List<Map<String, dynamic>>> getFavoritePboardItemList();
   Future<List<Map<String, dynamic>>> getPboardItemList();
+  Future<List<Map<String, dynamic>>> getPboardItemListPaginated(
+      {int limit, int offset});
+  Future<ClipboardItemModel?> checkDuplicate(ClipboardItemModel model);
   Future<void> setFavorite(ClipboardItemModel model);
   Future<void> cancelFavorite(ClipboardItemModel model);
   Future<void> deletePboardItem(ClipboardItemModel model);
@@ -59,15 +64,15 @@ class DatabaseHelper implements IDatabaseHelper {
   /// Returns database instance, initializing if necessary
   Future<Database> get database async {
     if (_db != null) return _db!;
-    
+
     // 如果正在初始化，等待完成
     while (_isInitializing) {
       await Future.delayed(const Duration(milliseconds: 50));
     }
-    
+
     // 再次检查，可能已初始化完成
     if (_db != null) return _db!;
-    
+
     _db ??= await _initDatabase();
     return _db!;
   }
@@ -78,9 +83,9 @@ class DatabaseHelper implements IDatabaseHelper {
       developer.log('数据库正在初始化中...');
       throw DatabaseException('数据库正在初始化中');
     }
-    
+
     _isInitializing = true;
-    
+
     try {
       sqfliteFfiInit();
       final path = await _getDatabasePath();
@@ -95,7 +100,7 @@ class DatabaseHelper implements IDatabaseHelper {
           onUpgrade: _onUpgrade,
         ),
       );
-      
+
       _isInitializing = false;
       return db;
     } catch (e) {
@@ -222,6 +227,85 @@ class DatabaseHelper implements IDatabaseHelper {
       );
     } catch (e) {
       throw DatabaseException('Failed to get all items', e);
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getPboardItemListPaginated({
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    try {
+      final db = await database;
+      return await db.query(
+        DatabaseConfig.tableName,
+        orderBy: '${DatabaseConfig.columnTime} DESC',
+        limit: limit,
+        offset: offset,
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to get paginated items', e);
+    }
+  }
+
+  @override
+  Future<ClipboardItemModel?> checkDuplicate(ClipboardItemModel model) async {
+    try {
+      final db = await database;
+      List<Map<String, dynamic>> results;
+
+      // For text: check by trimmed lowercase value
+      if (model.ptype == ClipboardType.text) {
+        final normalizedValue = model.pvalue.trim().toLowerCase();
+        results = await db.query(
+          DatabaseConfig.tableName,
+          where:
+              'LOWER(TRIM(${DatabaseConfig.columnValue})) = ? AND ${DatabaseConfig.columnType} = ?',
+          whereArgs: [normalizedValue, model.ptype.toString()],
+          limit: 1,
+        );
+      }
+      // For images: check by bytes hash
+      else if (model.ptype == ClipboardType.image && model.bytes != null) {
+        final hash = sha256.convert(model.bytes!).toString();
+        results = await db.query(
+          DatabaseConfig.tableName,
+          where: '${DatabaseConfig.columnType} = ?',
+          whereArgs: [model.ptype.toString()],
+        );
+
+        // Check hash match in memory (more efficient than storing hash in DB)
+        for (final result in results) {
+          final existingBytes =
+              result[DatabaseConfig.columnBytes] as List<int>?;
+          if (existingBytes != null) {
+            final existingHash = sha256.convert(existingBytes).toString();
+            if (existingHash == hash) {
+              return ClipboardItemModel.fromMapObject(result);
+            }
+          }
+        }
+        return null;
+      }
+      // For files: check by value (file path)
+      else if (model.ptype == ClipboardType.file) {
+        results = await db.query(
+          DatabaseConfig.tableName,
+          where:
+              '${DatabaseConfig.columnValue} = ? AND ${DatabaseConfig.columnType} = ?',
+          whereArgs: [model.pvalue, model.ptype.toString()],
+          limit: 1,
+        );
+      } else {
+        return null;
+      }
+
+      if (results.isNotEmpty) {
+        return ClipboardItemModel.fromMapObject(results.first);
+      }
+      return null;
+    } catch (e) {
+      throw DatabaseException('Failed to check duplicate', e);
     }
   }
 

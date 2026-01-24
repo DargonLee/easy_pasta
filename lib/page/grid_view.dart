@@ -23,6 +23,7 @@ class PasteboardGridView extends StatefulWidget {
   final Function(ClipboardItemModel) onFavorite;
   final Function(ClipboardItemModel) onDelete;
   final GridDensity density;
+  final VoidCallback? onLoadMore;
 
   const PasteboardGridView({
     Key? key,
@@ -35,6 +36,7 @@ class PasteboardGridView extends StatefulWidget {
     required this.onFavorite,
     required this.onDelete,
     required this.density,
+    this.onLoadMore,
   }) : super(key: key);
 
   @override
@@ -44,8 +46,7 @@ class PasteboardGridView extends StatefulWidget {
 class _PasteboardGridViewState extends State<PasteboardGridView>
     with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
-  final GlobalKey<AnimatedGridState> _gridKey =
-      GlobalKey<AnimatedGridState>();
+  final GlobalKey<AnimatedGridState> _gridKey = GlobalKey<AnimatedGridState>();
   late final _ListModel<ClipboardItemModel> _list;
   ClipboardItemModel? _hoveredItem;
   final FocusNode _focusNode = FocusNode();
@@ -108,6 +109,17 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
       });
       RendererBinding.instance.mouseTracker.updateAllDevices();
     });
+
+    // 检测是否接近底部 (80% 阈值)
+    if (widget.onLoadMore != null && _scrollController.hasClients) {
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final currentScroll = _scrollController.position.pixels;
+      final threshold = maxScroll * 0.8;
+
+      if (currentScroll >= threshold) {
+        widget.onLoadMore!();
+      }
+    }
   }
 
   void _showPreviewDialog(BuildContext context, ClipboardItemModel model) {
@@ -258,7 +270,8 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
 
     final content = _buildCardContent(model);
 
-    if (_isInitialLoad && index < 20) {
+    // 减少初始动画数量从 20 到 10
+    if (_isInitialLoad && index < 10) {
       final delay = Duration(milliseconds: index * 25);
       return TweenAnimationBuilder<double>(
         tween: Tween(begin: 0.0, end: 1.0),
@@ -327,7 +340,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
       ),
     );
   }
-  
+
   void _handleDelete(ClipboardItemModel item) {
     final index = _list.indexWhereId(item.id);
     if (index != -1) {
@@ -336,8 +349,8 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     widget.onDelete(item);
   }
 
-  Widget _buildRemovedItem(
-      ClipboardItemModel item, BuildContext context, Animation<double> animation) {
+  Widget _buildRemovedItem(ClipboardItemModel item, BuildContext context,
+      Animation<double> animation) {
     final curved = CurvedAnimation(
       parent: animation,
       curve: AppCurves.emphasized,

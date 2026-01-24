@@ -88,6 +88,10 @@ class _MyHomePageState extends State<MyHomePage>
     _pboardProvider.delete(model);
   }
 
+  void _handleLoadMore() {
+    _pboardProvider.loadMore();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -183,6 +187,7 @@ class _MyHomePageState extends State<MyHomePage>
       onFavorite: _handleFavorite,
       onDelete: _handleDelete,
       density: _density,
+      onLoadMore: _handleLoadMore,
     );
   }
 

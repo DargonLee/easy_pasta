@@ -14,6 +14,9 @@ class PboardState {
   final String? error;
   final int maxItems;
   final String searchQuery;
+  final int currentPage;
+  final bool hasMore;
+  final int pageSize;
 
   const PboardState({
     required this.allItems,
@@ -23,6 +26,9 @@ class PboardState {
     this.error,
     required this.maxItems,
     this.searchQuery = '',
+    this.currentPage = 0,
+    this.hasMore = true,
+    this.pageSize = 50,
   });
 
   PboardState copyWith({
@@ -33,6 +39,9 @@ class PboardState {
     String? error,
     int? maxItems,
     String? searchQuery,
+    int? currentPage,
+    bool? hasMore,
+    int? pageSize,
   }) {
     return PboardState(
       allItems: allItems ?? this.allItems,
@@ -42,6 +51,9 @@ class PboardState {
       error: error,
       maxItems: maxItems ?? this.maxItems,
       searchQuery: searchQuery ?? this.searchQuery,
+      currentPage: currentPage ?? this.currentPage,
+      hasMore: hasMore ?? this.hasMore,
+      pageSize: pageSize ?? this.pageSize,
     );
   }
 }
@@ -82,13 +94,16 @@ class PboardProvider extends ChangeNotifier {
   Future<void> _initializeState() async {
     if (_isInitialized) return;
     _isInitialized = true;
-    
+
     try {
       final maxCount = await _db.getMaxCount();
       _updateState(_state.copyWith(maxItems: maxCount));
-      
-      // 直接加载，不通过 _withLoading
-      final result = await _db.getPboardItemList();
+
+      // 使用分页加载初始数据
+      final result = await _db.getPboardItemListPaginated(
+        limit: _state.pageSize,
+        offset: 0,
+      );
       final items =
           result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
 
@@ -97,6 +112,8 @@ class PboardProvider extends ChangeNotifier {
         filteredItems: items,
         filterType: NSPboardSortType.all,
         searchQuery: '',
+        currentPage: 0,
+        hasMore: items.length >= _state.pageSize,
       ));
     } catch (e) {
       developer.log('初始化失败: $e', error: e);
@@ -187,6 +204,32 @@ class PboardProvider extends ChangeNotifier {
 
   Future<Result<void>> addItem(ClipboardItemModel model) async {
     try {
+      // 检查重复
+      final duplicate = await _db.checkDuplicate(model);
+      if (duplicate != null) {
+        // 更新现有项的时间戳
+        final updatedModel =
+            duplicate.copyWith(time: DateTime.now().toString());
+        await _db.setFavorite(updatedModel); // 使用 setFavorite 来更新时间戳
+
+        // 更新内存中的数据
+        final newAllItems = _state.allItems.map((item) {
+          if (item.id == duplicate.id) {
+            return updatedModel;
+          }
+          return item;
+        }).toList();
+
+        // 重新排序,将更新的项移到最前面
+        newAllItems.removeWhere((item) => item.id == duplicate.id);
+        newAllItems.insert(0, updatedModel);
+
+        _updateState(_state.copyWith(allItems: newAllItems));
+        _applyFiltersAndSearch();
+
+        return const Result.success(null);
+      }
+
       // 更新内存中的数据
       final newAllItems = [model, ..._state.allItems];
       _updateState(_state.copyWith(
@@ -304,6 +347,8 @@ class PboardProvider extends ChangeNotifier {
         filteredItems: [],
         error: null,
         searchQuery: '',
+        currentPage: 0,
+        hasMore: false,
       ));
       return const Result.success(null);
     } catch (e) {
@@ -312,6 +357,45 @@ class PboardProvider extends ChangeNotifier {
     }
   }
 
+  // 加载更多数据(懒加载)
+  Future<Result<void>> loadMore() async {
+    if (!_state.hasMore || _state.isLoading) {
+      return const Result.success(null);
+    }
+
+    try {
+      final nextPage = _state.currentPage + 1;
+      final offset = nextPage * _state.pageSize;
+
+      final result = await _db.getPboardItemListPaginated(
+        limit: _state.pageSize,
+        offset: offset,
+      );
+
+      if (result.isEmpty) {
+        _updateState(_state.copyWith(hasMore: false));
+        return const Result.success(null);
+      }
+
+      final newItems =
+          result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
+
+      final updatedAllItems = [..._state.allItems, ...newItems];
+
+      _updateState(_state.copyWith(
+        allItems: updatedAllItems,
+        currentPage: nextPage,
+        hasMore: newItems.length >= _state.pageSize,
+      ));
+
+      _applyFiltersAndSearch();
+
+      return const Result.success(null);
+    } catch (e) {
+      _handleError('加载更多', e);
+      return Result.failure(e.toString());
+    }
+  }
 }
 
 class Result<T> {
