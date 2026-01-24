@@ -7,6 +7,7 @@ import 'package:easy_pasta/core/hotkey_service.dart';
 import 'package:easy_pasta/core/startup_service.dart';
 import 'package:easy_pasta/providers/theme_provider.dart';
 import 'package:easy_pasta/model/app_theme.dart';
+import 'package:easy_pasta/core/auto_paste_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -23,7 +24,7 @@ void main() async {
   TrayService();
   HotkeyService();
   StartupService();
-  
+
   runApp(const MyApp());
   // runApp(MyTextApp());
 }
@@ -50,6 +51,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider<PboardProvider>(create: (_) => PboardProvider()),
         ChangeNotifierProvider<ThemeProvider>(create: (_) => ThemeProvider()),
+        Provider<AutoPasteService>(create: (_) => AutoPasteService()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {

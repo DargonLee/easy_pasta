@@ -65,6 +65,15 @@ class SettingsService {
     return prefs.getRetentionDays();
   }
 
+  Future<void> setAutoPaste(bool value) async {
+    await _prefs.then((prefs) => prefs.setAutoPasteEnabled(value));
+  }
+
+  Future<bool> getAutoPaste() async {
+    final prefs = await _prefs;
+    return prefs.getAutoPasteEnabled();
+  }
+
   Future<void> clearAllData(BuildContext context) async {
     context.read<PboardProvider>().clearAll();
   }

@@ -88,7 +88,88 @@ class MainFlutterWindow: NSWindow {
             }
         }
 
+        let autoPasteChannel = FlutterMethodChannel(
+            name: "auto_paste", binaryMessenger: flutterViewController.engine.binaryMessenger
+        )
+        autoPasteChannel.setMethodCallHandler { [weak self] call, result in
+            switch call.method {
+            case "checkAccessibility":
+                let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false]
+                let isTrusted = AXIsProcessTrustedWithOptions(options as CFDictionary)
+                result(isTrusted)
+            case "requestAccessibility":
+                let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
+                AXIsProcessTrustedWithOptions(options as CFDictionary)
+                result(nil)
+            case "paste":
+                self?.performPaste(result: result)
+            default:
+                result(FlutterMethodNotImplemented)
+            }
+        }
+
         RegisterGeneratedPlugins(registry: flutterViewController)
+    }
+
+    private func performPaste(result: @escaping FlutterResult) {
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false]
+        let isTrusted = AXIsProcessTrustedWithOptions(options as CFDictionary)
+        print("[EasyPasta] performPaste called. Accessibility trusted: \(isTrusted)")
+        
+        if !isTrusted {
+            print("[EasyPasta] Error: Accessibility permission not granted.")
+            result(false)
+            return
+        }
+
+        // 1. 寻找目标应用: 优先级 lastExternalBundleId -> 当前最前应用(非EasyPasta)
+        var targetApp: NSRunningApplication?
+        
+        if let bundleId = lastExternalBundleId {
+            targetApp = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == bundleId })
+            print("[EasyPasta] Target app from lastExternalBundleId: \(bundleId), found: \(targetApp != nil)")
+        }
+        
+        if targetApp == nil {
+            // 兜底方案: 取除了自己之外最前面的应用
+            targetApp = NSWorkspace.shared.runningApplications.first { app in
+                app.isActive == false && app.bundleIdentifier != Bundle.main.bundleIdentifier && app.activationPolicy == .regular
+            }
+            print("[EasyPasta] Fallback target app: \(targetApp?.bundleIdentifier ?? "none")")
+        }
+
+        if let app = targetApp {
+            print("[EasyPasta] Activating app: \(app.bundleIdentifier ?? "unknown")")
+            app.activate(options: [.activateIgnoringOtherApps])
+        }
+
+        // 2. 延迟执行模拟按键, 给窗口切换留出一点点时间
+        // 增加一点时间, 确保目标应用已经完全激活并获得了键盘焦点
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            print("[EasyPasta] Posting key events (Cmd+V)")
+            let source = CGEventSource(stateID: .combinedSessionState)
+            
+            // Cmd Key Code: 0x37 (55), V Key Code: 0x09 (9)
+            guard let vKeyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) else {
+                print("[EasyPasta] Failed to create vKeyDown event")
+                result(false)
+                return
+            }
+            vKeyDown.flags = .maskCommand
+            
+            guard let vKeyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) else {
+                print("[EasyPasta] Failed to create vKeyUp event")
+                result(false)
+                return
+            }
+            vKeyUp.flags = .maskCommand
+            
+            vKeyDown.post(tap: .cghidEventTap)
+            vKeyUp.post(tap: .cghidEventTap)
+            
+            print("[EasyPasta] Key events posted successfully")
+            result(true)
+        }
     }
 
     deinit {

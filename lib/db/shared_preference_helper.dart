@@ -26,12 +26,14 @@ class SharedPreferenceHelper {
   static const String themeModeKey = '${_keyPrefix}ThemeModeKey';
   static const String bonjourEnabledKey = '${_keyPrefix}BonjourEnabledKey';
   static const String retentionDaysKey = '${_keyPrefix}RetentionDaysKey';
+  static const String autoPasteEnabledKey = '${_keyPrefix}AutoPasteEnabledKey';
 
   /// 默认值常量
   static const int defaultMaxItems = 500;
   static const bool defaultLoginInLaunch = false;
   static const bool defaultBonjourEnabled = false;
   static const int defaultRetentionDays = 7;
+  static const bool defaultAutoPasteEnabled = false;
 
   /// 平台特定的默认快捷键
   static String get defaultShortcut {
@@ -144,6 +146,16 @@ class SharedPreferenceHelper {
 
   int getRetentionDays() {
     return _preferences?.getInt(retentionDaysKey) ?? defaultRetentionDays;
+  }
+
+  /// 自动粘贴相关操作
+  Future<void> setAutoPasteEnabled(bool status) async {
+    await _preferences?.setBool(autoPasteEnabledKey, status);
+  }
+
+  bool getAutoPasteEnabled() {
+    return _preferences?.getBool(autoPasteEnabledKey) ??
+        defaultAutoPasteEnabled;
   }
 
   /// 批量操作方法

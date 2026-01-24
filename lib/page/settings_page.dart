@@ -14,6 +14,7 @@ import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
 import 'package:easy_pasta/core/animation_helper.dart';
 import 'package:easy_pasta/page/bonsoir_page.dart';
+import 'package:easy_pasta/core/auto_paste_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -26,6 +27,8 @@ class _SettingsPageState extends State<SettingsPage> {
   final _settingsService = SettingsService();
   bool _autoLaunch = false;
   bool _bonjourEnabled = false;
+  bool _autoPasteEnabled = false;
+  bool _isAccessibilityTrusted = false;
   int _maxItems = 500;
   int _retentionDays = 7;
   HotKey? _hotKey;
@@ -54,6 +57,12 @@ class _SettingsPageState extends State<SettingsPage> {
       title: SettingsConstants.maxStorageTitle,
       subtitle: SettingsConstants.maxStorageSubtitle,
       icon: Icons.storage,
+    ),
+    const SettingItem(
+      type: SettingType.autoPaste,
+      title: SettingsConstants.autoPasteTitle,
+      subtitle: SettingsConstants.autoPasteSubtitle,
+      icon: Icons.paste_rounded,
     ),
     const SettingItem(
       type: SettingType.retention,
@@ -95,6 +104,8 @@ class _SettingsPageState extends State<SettingsPage> {
     _hotKey = await _settingsService.getHotKey();
     _autoLaunch = await _settingsService.getAutoLaunch();
     _bonjourEnabled = await _settingsService.getBonjourEnabled();
+    _autoPasteEnabled = await _settingsService.getAutoPaste();
+    _isAccessibilityTrusted = await AutoPasteService().checkAccessibility();
     _maxItems = await _settingsService.getMaxItems();
     _retentionDays = await _settingsService.getRetentionDays();
     setState(() {});
@@ -291,6 +302,13 @@ class _SettingsPageState extends State<SettingsPage> {
             setState(() => _retentionDays = val);
           },
         );
+      case SettingType.autoPaste:
+        return AutoPasteTile(
+          item: item,
+          value: _autoPasteEnabled,
+          isPermissionOk: _isAccessibilityTrusted,
+          onChanged: (val) => _handleAutoPasteToggle(val),
+        );
       case SettingType.clearData:
         return ClearDataTile(
           item: item,
@@ -319,6 +337,42 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) {
         Navigator.pop(context);
       }
+    }
+  }
+
+  Future<void> _handleAutoPasteToggle(bool value) async {
+    final autoPasteService = context.read<AutoPasteService>();
+    bool hasPermission = _isAccessibilityTrusted;
+
+    if (value) {
+      // 开启时检查权限
+      hasPermission = await autoPasteService.checkAccessibility();
+      if (!hasPermission) {
+        // 无权限则展示提示并引导
+        if (mounted) {
+          final result = await showDialog<bool>(
+            context: context,
+            builder: (context) => const ConfirmDialog(
+              title: SettingsConstants.accessibilityRequiredTitle,
+              content: SettingsConstants.accessibilityRequiredContent,
+              confirmText: '去设置',
+              cancelText: '暂时不用',
+            ),
+          );
+          if (result == true) {
+            await autoPasteService.requestAccessibility();
+          }
+        }
+        return; // 未授权不更新状态
+      }
+    }
+
+    await _settingsService.setAutoPaste(value);
+    if (mounted) {
+      setState(() {
+        _autoPasteEnabled = value;
+        _isAccessibilityTrusted = hasPermission;
+      });
     }
   }
 }

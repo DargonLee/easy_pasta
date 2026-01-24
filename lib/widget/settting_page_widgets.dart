@@ -312,6 +312,70 @@ class ToggleSettingTile extends StatelessWidget {
   }
 }
 
+class AutoPasteTile extends StatelessWidget {
+  final SettingItem item;
+  final bool value;
+  final bool isPermissionOk;
+  final ValueChanged<bool> onChanged;
+
+  const AutoPasteTile({
+    super.key,
+    required this.item,
+    required this.value,
+    required this.isPermissionOk,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return _BaseSettingTile(
+      item: item,
+      subtitle: Row(
+        children: [
+          Text(
+            item.subtitle,
+            style: isDark
+                ? AppTypography.darkFootnote
+                : AppTypography.lightFootnote,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: (isPermissionOk ? Colors.green : Colors.orange)
+                  .withOpacity(0.1),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: (isPermissionOk ? Colors.green : Colors.orange)
+                    .withOpacity(0.3),
+                width: 0.5,
+              ),
+            ),
+            child: Text(
+              isPermissionOk ? '权限正常' : '权限未就绪',
+              style: TextStyle(
+                fontSize: 10,
+                color: isPermissionOk ? Colors.green : Colors.orange,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+      trailing: CupertinoSwitch(
+        value: value,
+        onChanged: (val) {
+          HapticFeedback.lightImpact();
+          onChanged(val);
+        },
+        activeColor: AppColors.primary,
+      ),
+    );
+  }
+}
+
 class MaxStorageTile extends StatelessWidget {
   final SettingItem item;
   final int value;
@@ -576,11 +640,13 @@ class AboutTile extends StatelessWidget {
 class _BaseSettingTile extends StatelessWidget {
   final SettingItem item;
   final Widget? trailing;
+  final Widget? subtitle; // 新增自定义副标题支持
   final VoidCallback? onTap;
 
   const _BaseSettingTile({
     required this.item,
     this.trailing,
+    this.subtitle,
     this.onTap,
   });
 
@@ -626,12 +692,13 @@ class _BaseSettingTile extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs / 2),
-                Text(
-                  item.subtitle,
-                  style: isDark
-                      ? AppTypography.darkFootnote
-                      : AppTypography.lightFootnote,
-                ),
+                subtitle ??
+                    Text(
+                      item.subtitle,
+                      style: isDark
+                          ? AppTypography.darkFootnote
+                          : AppTypography.lightFootnote,
+                    ),
               ],
             ),
           ),

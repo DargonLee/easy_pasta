@@ -8,6 +8,8 @@ import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/core/super_clipboard.dart';
 import 'package:easy_pasta/core/window_service.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
+import 'package:easy_pasta/core/settings_service.dart';
+import 'package:easy_pasta/core/auto_paste_service.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/grid_density.dart';
 import 'package:easy_pasta/model/time_filter.dart';
@@ -207,9 +209,20 @@ class _MyHomePageState extends State<MyHomePage>
     );
   }
 
-  void _setPasteboardItem(ClipboardItemModel model) {
-    _superClipboard.setPasteboardItem(model);
-    WindowService().closeWindow();
+  Future<void> _setPasteboardItem(ClipboardItemModel model) async {
+    await _superClipboard.setPasteboardItem(model);
+
+    final isAutoPasteEnabled = await SettingsService().getAutoPaste();
+    if (isAutoPasteEnabled) {
+      // 执行自动粘贴前先关闭窗口
+      await WindowService().closeWindow();
+      // 延迟一丁点执行 native 粘贴，确保窗口已经失去焦点且前代应用已被激活
+      Future.delayed(const Duration(milliseconds: 100), () {
+        AutoPasteService().paste();
+      });
+    } else {
+      WindowService().closeWindow();
+    }
   }
 
   @override

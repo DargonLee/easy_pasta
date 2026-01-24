@@ -10,6 +10,7 @@ enum SettingType {
   about,
   bonjour,
   retention,
+  autoPaste,
 }
 
 class SettingItem {

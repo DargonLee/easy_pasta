@@ -34,6 +34,13 @@ class SettingsConstants {
   static const String exitAppTitle = '退出应用';
   static const String exitAppSubtitle = '完全退出应用程序';
 
+  // 自动粘贴
+  static const String autoPasteTitle = '双击自动填充';
+  static const String autoPasteSubtitle = '双击卡片后自动跳转并粘贴到前一个应用';
+  static const String accessibilityRequiredTitle = '辅助功能权限说明';
+  static const String accessibilityRequiredContent =
+      '此功能需要“辅助功能 (Accessibility)”权限。请双击开关后，根据弹窗提示在“系统设置 -> 隐私与安全性 -> 辅助功能”中允许 EasyPasta 控制您的电脑。';
+
   // Dialog texts
   static const String clearConfirmTitle = '确认清除';
   static const String clearConfirmContent = '是否清除所有剪贴板记录？此操作不可恢复。';
