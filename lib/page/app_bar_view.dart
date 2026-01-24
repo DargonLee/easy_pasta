@@ -293,22 +293,6 @@ class _TimeFilterButton extends StatelessWidget {
                       ? AppColors.darkTextSecondary
                       : AppColors.lightTextSecondary),
             ),
-            const SizedBox(width: AppSpacing.xs),
-            Text(
-              selectedFilter == TimeFilter.all ? '全部时间' : selectedFilter.label,
-              style: (isDark
-                      ? AppTypography.darkFootnote
-                      : AppTypography.lightFootnote)
-                  .copyWith(
-                color: selectedFilter != TimeFilter.all
-                    ? AppColors.primary
-                    : (isDark
-                        ? AppColors.darkTextSecondary
-                        : AppColors.lightTextSecondary),
-                fontWeight:
-                    selectedFilter != TimeFilter.all ? FontWeight.w600 : null,
-              ),
-            ),
             Icon(
               Icons.keyboard_arrow_down_rounded,
               size: 16,
@@ -413,63 +397,42 @@ class _FilterChip extends StatelessWidget {
         ? AppColors.darkSecondaryBackground.withOpacity(0.7)
         : AppColors.lightSecondaryBackground.withOpacity(0.7);
 
-    return AnimatedContainer(
-      duration: AppDurations.fast,
-      curve: AppCurves.standard,
-      decoration: BoxDecoration(
-        color: isSelected ? AppColors.primary : unselectedColor,
-        borderRadius: BorderRadius.circular(AppRadius.full),
-        border: Border.all(
-          color: isSelected
-              ? AppColors.primary
-              : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
-          width: 1,
-        ),
-        boxShadow: isSelected ? AppShadows.sm : AppShadows.none,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            onSelected(option.type);
-          },
+    return Tooltip(
+      message: option.label,
+      waitDuration: const Duration(milliseconds: 500),
+      child: AnimatedContainer(
+        duration: AppDurations.fast,
+        curve: AppCurves.standard,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : unselectedColor,
           borderRadius: BorderRadius.circular(AppRadius.full),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  option.icon,
-                  size: 14,
-                  color: isSelected
-                      ? Colors.white
-                      : (isDark
-                          ? AppColors.darkTextPrimary
-                          : AppColors.lightTextPrimary),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Text(
-                  option.label,
-                  style: (isDark
-                          ? AppTypography.darkBody
-                          : AppTypography.lightBody)
-                      .copyWith(
-                    color: isSelected
-                        ? Colors.white
-                        : (isDark
-                            ? AppColors.darkTextPrimary
-                            : AppColors.lightTextPrimary),
-                    fontWeight: isSelected
-                        ? AppFontWeights.semiBold
-                        : AppFontWeights.regular,
-                  ),
-                ),
-              ],
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primary
+                : (isDark ? AppColors.darkBorder : AppColors.lightBorder),
+            width: 1,
+          ),
+          boxShadow: isSelected ? AppShadows.sm : AppShadows.none,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onSelected(option.type);
+            },
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              child: Icon(
+                option.icon,
+                size: 16,
+                color: isSelected
+                    ? Colors.white
+                    : (isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.lightTextPrimary),
+              ),
             ),
           ),
         ),

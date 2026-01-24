@@ -51,7 +51,6 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   final ScrollController _scrollController = ScrollController();
   ClipboardItemModel? _hoveredItem;
   final FocusNode _focusNode = FocusNode();
-  bool _isInitialLoad = true;
   bool _hasFocus = false;
   bool _isScrolling = false;
   Timer? _scrollEndTimer;
@@ -64,13 +63,6 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
       setState(() => _hasFocus = _focusNode.hasFocus);
     });
     _scrollController.addListener(_handleScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(AppDurations.fast, () {
-        if (mounted) {
-          setState(() => _isInitialLoad = false);
-        }
-      });
-    });
   }
 
   @override
@@ -89,10 +81,12 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
 
   void _handleScroll() {
     if (!_isScrolling || _hoveredItem != null) {
-      setState(() {
-        _isScrolling = true;
-        _hoveredItem = null;
-      });
+      if (mounted) {
+        setState(() {
+          _isScrolling = true;
+          _hoveredItem = null;
+        });
+      }
     }
     _scrollEndTimer?.cancel();
     _scrollEndTimer = Timer(const Duration(milliseconds: 120), () {
@@ -122,7 +116,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   ClipboardItemModel? _getActiveItem() {
     if (_hoveredItem != null) return _hoveredItem;
     if (widget.selectedId.isEmpty) return null;
-    for (final item in _list.items) {
+    for (final item in widget.pboards) {
       if (item.id == widget.selectedId) {
         return item;
       }
@@ -152,7 +146,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
 
     if (logicalKey == LogicalKeyboardKey.delete ||
         logicalKey == LogicalKeyboardKey.backspace) {
-      _handleDelete(activeItem);
+      widget.onDelete(activeItem);
       return;
     }
 
@@ -169,7 +163,6 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   /// 计算网格列数
   int _calculateMaxColumns(double maxWidth) {
     final spec = widget.density.spec;
-    // 减去左右内边距
     final effectiveWidth = maxWidth - (spec.gridPadding * 2);
     final columns = (effectiveWidth / spec.minCrossAxisExtent)
         .floor()
@@ -180,33 +173,18 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   /// 计算网格的纵横比（宽度:高度）
   double _calculateAspectRatio() => widget.density.spec.aspectRatio;
 
-  void _syncList(List<ClipboardItemModel> newItems) {
-    final newIds = newItems.map((item) => item.id).toSet();
-
-    for (int i = _list.length - 1; i >= 0; i--) {
-      if (!newIds.contains(_list[i].id)) {
-        _list.removeAt(i, duration: AppDurations.normal);
-      }
-    }
-
-    for (int i = 0; i < newItems.length; i++) {
-      final item = newItems[i];
-      final existingIndex = _list.indexWhereId(item.id);
-      if (existingIndex == -1) {
-        _list.insert(i, item, duration: AppDurations.fast);
-      } else {
-        _list.replaceAt(existingIndex, item);
-      }
-    }
-  }
-
   Map<String, List<ClipboardItemModel>> _groupItemsByDate(
       List<ClipboardItemModel> items) {
     final groups = <String, List<ClipboardItemModel>>{};
     for (final item in items) {
-      final date = DateTime.parse(item.time);
-      final header = TimeFilter.formatDateHeader(date);
-      groups.putIfAbsent(header, () => []).add(item);
+      try {
+        final date = DateTime.parse(item.time);
+        final header = TimeFilter.formatDateHeader(date);
+        groups.putIfAbsent(header, () => []).add(item);
+      } catch (e) {
+        // Fallback for invalid date strings
+        groups.putIfAbsent('未知时间', () => []).add(item);
+      }
     }
     return groups;
   }
@@ -292,51 +270,6 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     );
   }
 
-  Widget _buildAnimatedItem(
-      BuildContext context, int index, Animation<double> animation) {
-    final model = _list[index];
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: AppCurves.standard,
-    );
-
-    final content = _buildCardContent(model);
-
-    // 减少初始动画数量从 20 到 10
-    if (_isInitialLoad && index < 10) {
-      final delay = Duration(milliseconds: index * 25);
-      return TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.0, end: 1.0),
-        duration: AppDurations.normal + delay,
-        curve: AppCurves.standard,
-        builder: (context, value, child) {
-          return Opacity(
-            opacity: value,
-            child: Transform.translate(
-              offset: Offset(0, 16 * (1 - value)),
-              child: child,
-            ),
-          );
-        },
-        child: FadeTransition(
-          opacity: curved,
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 0.98, end: 1.0).animate(curved),
-            child: content,
-          ),
-        ),
-      );
-    }
-
-    return FadeTransition(
-      opacity: curved,
-      child: ScaleTransition(
-        scale: Tween<double>(begin: 0.98, end: 1.0).animate(curved),
-        child: content,
-      ),
-    );
-  }
-
   /// 构建卡片内容
   Widget _buildCardContent(ClipboardItemModel model) {
     return MouseRegion(
@@ -368,42 +301,22 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
         },
         onCopy: widget.onCopy,
         onFavorite: widget.onFavorite,
-        onDelete: _handleDelete,
+        onDelete: widget.onDelete,
       ),
     );
   }
 
+  /// 更新鼠标悬停的项目
+  void _updateHoveredItem(ClipboardItemModel? model, bool isHovered) {
+    if (!mounted) return;
+    setState(() {
+      _hoveredItem = isHovered ? model : null;
+      if (isHovered) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
   @override
   bool get wantKeepAlive => true;
-}
-    for (int i = 0; i < _items.length; i++) {
-      final item = _items[i];
-      if (item is ClipboardItemModel && item.id == id) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  void replaceAt(int index, T item) {
-    if (index < 0 || index >= _items.length) return;
-    _items[index] = item;
-  }
-
-  void insert(int index, T item, {required Duration duration}) {
-    _items.insert(index, item);
-    _animatedGrid?.insertItem(index, duration: duration);
-  }
-
-  T removeAt(int index, {required Duration duration}) {
-    final removedItem = _items.removeAt(index);
-    _animatedGrid?.removeItem(
-      index,
-      (BuildContext context, Animation<double> animation) {
-        return removedItemBuilder(removedItem, context, animation);
-      },
-      duration: duration,
-    );
-    return removedItem;
-  }
 }
