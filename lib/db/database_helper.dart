@@ -24,7 +24,7 @@ class DatabaseConfig {
   static const String dbName = 'easy_pasta.db';
   static const String tableName = 'clipboard_items';
   static const String ftsTableName = 'clipboard_items_fts'; // FTS5 虚拟表
-  static const int version = 5;
+  static const int version = 1;
 
   // Table columns
   static const String columnId = 'id';
@@ -95,6 +95,7 @@ class DatabaseHelper implements IDatabaseHelper {
     }
   }
 
+  @override
   Future<int> getRetentionDays() async {
     final prefs = await SharedPreferenceHelper.instance;
     return prefs.getRetentionDays();
@@ -141,7 +142,7 @@ class DatabaseHelper implements IDatabaseHelper {
   /// Creates database tables and indexes
   Future<void> _createDb(Database db, int version) async {
     await db.transaction((txn) async {
-      // Create main table
+      // Create main table with all columns including thumbnail
       await txn.execute('''
         CREATE TABLE IF NOT EXISTS ${DatabaseConfig.tableName}(
           ${DatabaseConfig.columnId} TEXT PRIMARY KEY,
@@ -164,40 +165,8 @@ class DatabaseHelper implements IDatabaseHelper {
           'CREATE INDEX IF NOT EXISTS idx_favorite ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnIsFavorite})');
       await txn.execute(
           'CREATE INDEX IF NOT EXISTS idx_favorite_time ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnIsFavorite}, ${DatabaseConfig.columnTime})');
-    });
-  }
 
-  /// Handles database upgrades
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      await db.execute(
-          'CREATE INDEX IF NOT EXISTS idx_favorite ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnIsFavorite})');
-      await db.execute(
-          'CREATE INDEX IF NOT EXISTS idx_favorite_time ON ${DatabaseConfig.tableName} (${DatabaseConfig.columnIsFavorite}, ${DatabaseConfig.columnTime})');
-    }
-    if (oldVersion < 3) {
-      await db.execute(
-          'ALTER TABLE ${DatabaseConfig.tableName} ADD COLUMN ${DatabaseConfig.columnSourceAppId} TEXT');
-    }
-    if (oldVersion < 4) {
-      await _upgradeToV4(db);
-    }
-    if (oldVersion < 5) {
-      await _upgradeToV5(db);
-    }
-  }
-
-  Future<void> _upgradeToV4(Database db) async {
-    await db.transaction((txn) async {
-      // 1. 添加缩略图列
-      try {
-        await txn.execute(
-            'ALTER TABLE ${DatabaseConfig.tableName} ADD COLUMN ${DatabaseConfig.columnThumbnail} BLOB');
-      } catch (e) {
-        debugPrint('Column thumbnail might already exist (v4 upgrade): $e');
-      }
-
-      // 2. 创建 FTS5 虚拟表
+      // Create FTS5 virtual table
       await txn.execute('''
         CREATE VIRTUAL TABLE IF NOT EXISTS ${DatabaseConfig.ftsTableName} USING fts5(
           ${DatabaseConfig.columnId} UNINDEXED, 
@@ -205,13 +174,7 @@ class DatabaseHelper implements IDatabaseHelper {
         )
       ''');
 
-      // 3. 初始同步存量数据到 FTS5
-      await txn.execute('''
-        INSERT INTO ${DatabaseConfig.ftsTableName}(${DatabaseConfig.columnId}, ${DatabaseConfig.columnValue})
-        SELECT ${DatabaseConfig.columnId}, ${DatabaseConfig.columnValue} FROM ${DatabaseConfig.tableName}
-      ''');
-
-      // 4. 创建触发器保持同步
+      // Create Triggers for FTS5 synchronization
       await txn.execute('''
         CREATE TRIGGER IF NOT EXISTS trg_pboard_insert AFTER INSERT ON ${DatabaseConfig.tableName}
         BEGIN
@@ -238,21 +201,13 @@ class DatabaseHelper implements IDatabaseHelper {
     });
   }
 
-  Future<void> _upgradeToV5(Database db) async {
-    debugPrint('🟡 Upgrading database to v5...');
-    await db.transaction((txn) async {
-      // Ensure thumbnail column exists
-      try {
-        await txn.execute(
-            'ALTER TABLE ${DatabaseConfig.tableName} ADD COLUMN ${DatabaseConfig.columnThumbnail} BLOB');
-        debugPrint('✅ Added missing thumbnail column in v5 upgrade');
-      } catch (e) {
-        debugPrint('Thumbnail column already exists (v5 checked): $e');
-      }
-    });
+  /// Handles database upgrades (No-op since we reset to v1)
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    debugPrint(
+        'Database upgrade from $oldVersion to $newVersion requested, but treated as fresh due to dev reset.');
   }
 
-  /// Returns the maximum number of items to store
+  @override
   Future<int> getMaxCount() async {
     try {
       final prefs = await SharedPreferenceHelper.instance;
@@ -283,12 +238,25 @@ class DatabaseHelper implements IDatabaseHelper {
       String query) async {
     try {
       final db = await database;
-      return await db.query(
-        DatabaseConfig.tableName,
-        where: 'LOWER(${DatabaseConfig.columnValue}) LIKE LOWER(?)',
-        whereArgs: ['%$query%'],
-        orderBy: '${DatabaseConfig.columnTime} DESC',
-      );
+      // 使用 FTS5 全文检索 (如果 FTS5 失败，回退到 LIKE)
+      try {
+        final results = await db.rawQuery('''
+          SELECT t.* 
+          FROM ${DatabaseConfig.tableName} t
+          JOIN ${DatabaseConfig.ftsTableName} f ON t.${DatabaseConfig.columnId} = f.${DatabaseConfig.columnId}
+          WHERE f.${DatabaseConfig.columnValue} MATCH ?
+          ORDER BY t.${DatabaseConfig.columnTime} DESC
+        ''', [query]);
+        return results;
+      } catch (e) {
+        debugPrint('FTS5 search failed, falling back to LIKE: $e');
+        return await db.query(
+          DatabaseConfig.tableName,
+          where: '${DatabaseConfig.columnValue} LIKE ?',
+          whereArgs: ['%$query%'],
+          orderBy: '${DatabaseConfig.columnTime} DESC',
+        );
+      }
     } catch (e) {
       throw DatabaseException('Failed to search items', e);
     }
@@ -314,42 +282,57 @@ class DatabaseHelper implements IDatabaseHelper {
       final db = await database;
       return await db.query(
         DatabaseConfig.tableName,
+        columns: [
+          DatabaseConfig.columnId,
+          DatabaseConfig.columnTime,
+          DatabaseConfig.columnType,
+          DatabaseConfig.columnValue,
+          DatabaseConfig.columnIsFavorite,
+          DatabaseConfig.columnThumbnail,
+          DatabaseConfig.columnSourceAppId,
+          // Exclude bytes for list view performance
+        ],
         orderBy: '${DatabaseConfig.columnTime} DESC',
       );
     } catch (e) {
-      throw DatabaseException('Failed to get all items', e);
+      throw DatabaseException('Failed to get items', e);
     }
   }
 
   @override
   Future<List<Map<String, dynamic>>> getPboardItemListPaginated({
-    int limit = 50,
+    int limit = 20,
     int offset = 0,
     DateTime? startTime,
     DateTime? endTime,
   }) async {
     try {
       final db = await database;
-      String whereClause = '';
-      List<dynamic> whereArgs = [];
+      String? whereClause;
+      List<dynamic>? whereArgs;
 
       if (startTime != null && endTime != null) {
-        whereClause = ' WHERE ${DatabaseConfig.columnTime} BETWEEN ? AND ?';
+        whereClause = '${DatabaseConfig.columnTime} BETWEEN ? AND ?';
         whereArgs = [startTime.toString(), endTime.toString()];
-      } else if (startTime != null) {
-        whereClause = ' WHERE ${DatabaseConfig.columnTime} >= ?';
-        whereArgs = [startTime.toString()];
-      } else if (endTime != null) {
-        whereClause = ' WHERE ${DatabaseConfig.columnTime} < ?';
-        whereArgs = [endTime.toString()];
       }
 
-      final List<Map<String, dynamic>> maps = await db.rawQuery(
-        'SELECT * FROM ${DatabaseConfig.tableName}$whereClause '
-        'ORDER BY ${DatabaseConfig.columnTime} DESC LIMIT ? OFFSET ?',
-        [...whereArgs, limit, offset],
+      return await db.query(
+        DatabaseConfig.tableName,
+        columns: [
+          DatabaseConfig.columnId,
+          DatabaseConfig.columnTime,
+          DatabaseConfig.columnType,
+          DatabaseConfig.columnValue,
+          DatabaseConfig.columnIsFavorite,
+          DatabaseConfig.columnThumbnail,
+          DatabaseConfig.columnSourceAppId,
+        ],
+        where: whereClause,
+        whereArgs: whereArgs,
+        orderBy: '${DatabaseConfig.columnTime} DESC',
+        limit: limit,
+        offset: offset,
       );
-      return maps;
     } catch (e) {
       throw DatabaseException('Failed to get paginated items', e);
     }
@@ -359,60 +342,21 @@ class DatabaseHelper implements IDatabaseHelper {
   Future<ClipboardItemModel?> checkDuplicate(ClipboardItemModel model) async {
     try {
       final db = await database;
-      List<Map<String, dynamic>> results;
-
-      // For text: check by trimmed lowercase value
-      if (model.ptype == ClipboardType.text) {
-        final normalizedValue = model.pvalue.trim().toLowerCase();
-        results = await db.query(
-          DatabaseConfig.tableName,
-          where:
-              'LOWER(TRIM(${DatabaseConfig.columnValue})) = ? AND ${DatabaseConfig.columnType} = ?',
-          whereArgs: [normalizedValue, model.ptype.toString()],
-          limit: 1,
-        );
-      }
-      // For images: check by bytes hash
-      else if (model.ptype == ClipboardType.image && model.bytes != null) {
-        final hash = sha256.convert(model.bytes!).toString();
-        results = await db.query(
-          DatabaseConfig.tableName,
-          where: '${DatabaseConfig.columnType} = ?',
-          whereArgs: [model.ptype.toString()],
-        );
-
-        // Check hash match in memory (more efficient than storing hash in DB)
-        for (final result in results) {
-          final existingBytes =
-              result[DatabaseConfig.columnBytes] as List<int>?;
-          if (existingBytes != null) {
-            final existingHash = sha256.convert(existingBytes).toString();
-            if (existingHash == hash) {
-              return ClipboardItemModel.fromMapObject(result);
-            }
-          }
-        }
-        return null;
-      }
-      // For files: check by value (file path)
-      else if (model.ptype == ClipboardType.file) {
-        results = await db.query(
-          DatabaseConfig.tableName,
-          where:
-              '${DatabaseConfig.columnValue} = ? AND ${DatabaseConfig.columnType} = ?',
-          whereArgs: [model.pvalue, model.ptype.toString()],
-          limit: 1,
-        );
-      } else {
-        return null;
-      }
+      final results = await db.query(
+        DatabaseConfig.tableName,
+        where:
+            '${DatabaseConfig.columnValue} = ? AND ${DatabaseConfig.columnType} = ?',
+        whereArgs: [model.pvalue, model.ptype.toString()],
+        limit: 1,
+        orderBy: '${DatabaseConfig.columnTime} DESC',
+      );
 
       if (results.isNotEmpty) {
         return ClipboardItemModel.fromMapObject(results.first);
       }
       return null;
     } catch (e) {
-      throw DatabaseException('Failed to check duplicate', e);
+      return null;
     }
   }
 
@@ -422,7 +366,7 @@ class DatabaseHelper implements IDatabaseHelper {
       final db = await database;
       await db.update(
         DatabaseConfig.tableName,
-        {DatabaseConfig.columnIsFavorite: model.isFavorite ? 1 : 0},
+        {DatabaseConfig.columnIsFavorite: 1},
         where: '${DatabaseConfig.columnId} = ?',
         whereArgs: [model.id],
       );
@@ -471,7 +415,6 @@ class DatabaseHelper implements IDatabaseHelper {
 
     return await db.transaction((txn) async {
       try {
-        // 1. 先执行时间清理: 删除超过 retentionDays 且非收藏的项
         if (retentionDays > 0) {
           final expirationDate =
               DateTime.now().subtract(Duration(days: retentionDays));
@@ -483,18 +426,33 @@ class DatabaseHelper implements IDatabaseHelper {
           );
         }
 
-        // 2. 插入新项
         debugPrint('🟡 Inserting item into database...');
         await txn.insert(DatabaseConfig.tableName, model.toMap());
         debugPrint('✅ Item inserted successfully');
 
-        // 3. 检查总量限制: 如果超过 maxCount, 删除最旧的非收藏项
-        final count = await _getCountInTransaction(txn);
+        final result = await txn
+            .rawQuery('SELECT COUNT(*) FROM ${DatabaseConfig.tableName}');
+        final count = result.isNotEmpty ? result.first.values.first as int : 0;
         debugPrint('🟡 Current item count: $count');
         if (count > maxCount) {
-          final itemId = await _deleteOldestNonFavoriteItemInTransaction(txn);
-          debugPrint('🟡 Deleted oldest item: $itemId');
-          return itemId;
+          final oldestItems = await txn.query(
+            DatabaseConfig.tableName,
+            columns: [DatabaseConfig.columnId],
+            where: '${DatabaseConfig.columnIsFavorite} = 0',
+            orderBy: '${DatabaseConfig.columnTime} ASC',
+            limit: 1,
+          );
+
+          if (oldestItems.isNotEmpty) {
+            final id = oldestItems.first[DatabaseConfig.columnId] as String;
+            await txn.delete(
+              DatabaseConfig.tableName,
+              where: '${DatabaseConfig.columnId} = ?',
+              whereArgs: [id],
+            );
+            debugPrint('🟡 Deleted oldest item: $id');
+            return id;
+          }
         }
         return null;
       } catch (e) {
@@ -524,45 +482,13 @@ class DatabaseHelper implements IDatabaseHelper {
     }
   }
 
-  Future<int> _getCountInTransaction(Transaction txn) async {
-    final result = await txn
-        .rawQuery('SELECT COUNT(*) as count FROM ${DatabaseConfig.tableName}');
-    return result.first['count'] as int;
-  }
-
-  Future<String?> _deleteOldestNonFavoriteItemInTransaction(
-      Transaction txn) async {
-    try {
-      final oldestItems = await txn.query(
-        DatabaseConfig.tableName,
-        columns: [DatabaseConfig.columnId],
-        where: '${DatabaseConfig.columnIsFavorite} = 0',
-        orderBy: '${DatabaseConfig.columnTime} ASC',
-        limit: 1,
-      );
-
-      if (oldestItems.isNotEmpty) {
-        final itemId = oldestItems.first[DatabaseConfig.columnId];
-        await txn.delete(
-          DatabaseConfig.tableName,
-          where: '${DatabaseConfig.columnId} = ?',
-          whereArgs: [itemId],
-        );
-        return itemId as String?;
-      }
-      return null;
-    } catch (e) {
-      throw DatabaseException('Failed to delete oldest non-favorite item', e);
-    }
-  }
-
   @override
   Future<int> getCount() async {
     try {
       final db = await database;
-      final result = await db.rawQuery(
-          'SELECT COUNT(*) as count FROM ${DatabaseConfig.tableName}');
-      return result.first['count'] as int;
+      final result =
+          await db.rawQuery('SELECT COUNT(*) FROM ${DatabaseConfig.tableName}');
+      return result.isNotEmpty ? result.first.values.first as int : 0;
     } catch (e) {
       throw DatabaseException('Failed to get count', e);
     }
@@ -585,7 +511,7 @@ class DatabaseHelper implements IDatabaseHelper {
       final file = File(path);
       if (await file.exists()) {
         final bytes = await file.length();
-        return bytes / (1024 * 1024); // 转换为 MB
+        return bytes / (1024 * 1024);
       }
       return 0.0;
     } catch (e) {
@@ -599,6 +525,7 @@ class DatabaseHelper implements IDatabaseHelper {
     try {
       final db = await database;
       await db.execute('VACUUM');
+      debugPrint('Database optimized');
     } catch (e) {
       debugPrint('Optimize database failed: $e');
       rethrow;
@@ -607,27 +534,24 @@ class DatabaseHelper implements IDatabaseHelper {
 
   /// Closes the database connection
   Future<void> close() async {
-    final db = _db;
-    if (db != null) {
-      await db.close();
+    if (_db != null && _db!.isOpen) {
+      await _db!.close();
       _db = null;
     }
   }
 
-  /// Deletes the database file
-  static Future<void> deleteDatabase() async {
+  /// Helper to delete the database file (for development reset)
+  Future<void> deleteDatabaseFile() async {
     try {
-      final instance = DatabaseHelper.instance;
-      await instance.close();
-
-      final directory = await getApplicationDocumentsDirectory();
-      final path = '${directory.path}/${DatabaseConfig.dbName}';
+      await close();
+      final path = await _getDatabasePath();
       final file = File(path);
       if (await file.exists()) {
         await file.delete();
+        debugPrint('✅ Database file deleted successfully');
       }
     } catch (e) {
-      debugPrint('Failed to delete database: $e');
+      debugPrint('❌ Failed to delete database: $e');
     }
   }
 }
