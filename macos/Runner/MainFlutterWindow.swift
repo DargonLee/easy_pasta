@@ -114,7 +114,6 @@ class MainFlutterWindow: NSWindow {
     private func performPaste(result: @escaping FlutterResult) {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false]
         let isTrusted = AXIsProcessTrustedWithOptions(options as CFDictionary)
-        print("[EasyPasta] performPaste called. Accessibility trusted: \(isTrusted)")
         
         if !isTrusted {
             result(false)
