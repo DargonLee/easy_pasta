@@ -25,11 +25,13 @@ class SharedPreferenceHelper {
   static const String maxItemStoreKey = '${_keyPrefix}MaxItemStoreKey';
   static const String themeModeKey = '${_keyPrefix}ThemeModeKey';
   static const String bonjourEnabledKey = '${_keyPrefix}BonjourEnabledKey';
+  static const String retentionDaysKey = '${_keyPrefix}RetentionDaysKey';
 
   /// 默认值常量
-  static const int defaultMaxItems = 50;
+  static const int defaultMaxItems = 500;
   static const bool defaultLoginInLaunch = false;
   static const bool defaultBonjourEnabled = false;
+  static const int defaultRetentionDays = 7;
 
   /// 平台特定的默认快捷键
   static String get defaultShortcut {
@@ -81,6 +83,9 @@ class SharedPreferenceHelper {
     if (_preferences?.getInt(maxItemStoreKey) == null) {
       await _instance!.setMaxItemStore(defaultMaxItems);
     }
+    if (_preferences?.getInt(retentionDaysKey) == null) {
+      await _instance!.setRetentionDays(defaultRetentionDays);
+    }
 
     return _instance!;
   }
@@ -131,6 +136,16 @@ class SharedPreferenceHelper {
     return _preferences?.getBool(bonjourEnabledKey) ?? defaultBonjourEnabled;
   }
 
+  /// 保留天数相关操作
+  Future<void> setRetentionDays(int days) async {
+    if (days < 0) return;
+    await _preferences?.setInt(retentionDaysKey, days);
+  }
+
+  int getRetentionDays() {
+    return _preferences?.getInt(retentionDaysKey) ?? defaultRetentionDays;
+  }
+
   /// 批量操作方法
   Future<Map<String, dynamic>> getAllSettings() async {
     return {
@@ -138,6 +153,7 @@ class SharedPreferenceHelper {
       'maxItemStore': getMaxItemStore(),
       'loginInLaunch': getLoginInLaunch(),
       'bonjourEnabled': getBonjourEnabled(),
+      'retentionDays': getRetentionDays(),
     };
   }
 
@@ -148,6 +164,7 @@ class SharedPreferenceHelper {
       setMaxItemStore(defaultMaxItems),
       setLoginInLaunch(defaultLoginInLaunch),
       setBonjourEnabled(defaultBonjourEnabled),
+      setRetentionDays(defaultRetentionDays),
     ]);
   }
 

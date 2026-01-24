@@ -240,21 +240,19 @@ class PboardProvider extends ChangeNotifier {
         return const Result.success(null);
       }
 
-      // 更新内存中的数据
-      final newAllItems = [model, ..._state.allItems];
-      _updateState(_state.copyWith(
-        allItems: newAllItems,
-      ));
-      _applyFiltersAndSearch();
+      // 更新内存中的数据（预先插入到列表顶部）
+      List<ClipboardItemModel> nextAllItems = [model, ..._state.allItems];
 
-      // 保存到数据库
+      // 保存到数据库，并获取由于达到上限而被删除的非收藏项 ID
       final deletedItemId = await _db.insertPboardItem(model);
-      if (deletedItemId != 0) {
-        final updatedAllItems =
-            _state.allItems.where((item) => item.id != deletedItemId).toList();
-        _updateState(_state.copyWith(allItems: updatedAllItems));
-        _applyFiltersAndSearch();
+
+      if (deletedItemId != null) {
+        nextAllItems =
+            nextAllItems.where((item) => item.id != deletedItemId).toList();
       }
+
+      _updateState(_state.copyWith(allItems: nextAllItems));
+      _applyFiltersAndSearch();
 
       return const Result.success(null);
     } catch (e) {

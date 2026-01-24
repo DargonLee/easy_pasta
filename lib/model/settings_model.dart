@@ -9,6 +9,7 @@ enum SettingType {
   exitApp,
   about,
   bonjour,
+  retention,
 }
 
 class SettingItem {

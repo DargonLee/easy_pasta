@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:easy_pasta/db/shared_preference_helper.dart';
 
 class ModernCounter extends StatefulWidget {
   final ValueChanged<int>? onChanged;
@@ -11,8 +10,8 @@ class ModernCounter extends StatefulWidget {
     Key? key,
     this.onChanged,
     this.minValue = 10,
-    this.maxValue = 500,
-    this.defaultValue = 50,
+    this.maxValue = 2000,
+    this.defaultValue = 500,
   }) : super(key: key);
 
   @override
@@ -33,20 +32,9 @@ class _ModernCounterState extends State<ModernCounter> {
 
   Future<void> _loadStoredValue() async {
     if (!_mounted) return;
-    try {
-      final prefs = await SharedPreferenceHelper.instance;
-      if (!_mounted) return;
-      setState(() {
-        _count = prefs.getMaxItemStore();
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!_mounted) return;
-      setState(() {
-        _count = widget.defaultValue;
-        _isLoading = false;
-      });
-    }
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Future<void> _updateValue(int newValue) async {
@@ -64,17 +52,6 @@ class _ModernCounterState extends State<ModernCounter> {
 
     setState(() => _count = newValue);
     widget.onChanged?.call(newValue);
-
-    try {
-      final prefs = await SharedPreferenceHelper.instance;
-      await prefs.setMaxItemStore(newValue);
-    } catch (e) {
-      if (!_mounted) return;
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('保存失败，请重试')),
-      );
-    }
   }
 
   Widget _buildButton(bool isIncrement, ThemeData theme) {

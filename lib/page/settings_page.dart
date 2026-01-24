@@ -26,6 +26,8 @@ class _SettingsPageState extends State<SettingsPage> {
   final _settingsService = SettingsService();
   bool _autoLaunch = false;
   bool _bonjourEnabled = false;
+  int _maxItems = 500;
+  int _retentionDays = 7;
   HotKey? _hotKey;
 
   final List<SettingItem> _basicSettings = [
@@ -52,6 +54,12 @@ class _SettingsPageState extends State<SettingsPage> {
       title: SettingsConstants.maxStorageTitle,
       subtitle: SettingsConstants.maxStorageSubtitle,
       icon: Icons.storage,
+    ),
+    const SettingItem(
+      type: SettingType.retention,
+      title: '保留时长',
+      subtitle: '历史记录保留天数（收藏项除外）',
+      icon: Icons.history,
     ),
     const SettingItem(
       type: SettingType.bonjour,
@@ -87,6 +95,8 @@ class _SettingsPageState extends State<SettingsPage> {
     _hotKey = await _settingsService.getHotKey();
     _autoLaunch = await _settingsService.getAutoLaunch();
     _bonjourEnabled = await _settingsService.getBonjourEnabled();
+    _maxItems = await _settingsService.getMaxItems();
+    _retentionDays = await _settingsService.getRetentionDays();
     setState(() {});
   }
 
@@ -264,7 +274,23 @@ class _SettingsPageState extends State<SettingsPage> {
           },
         );
       case SettingType.maxStorage:
-        return MaxStorageTile(item: item);
+        return MaxStorageTile(
+          item: item,
+          value: _maxItems,
+          onChanged: (val) async {
+            await _settingsService.setMaxItems(val);
+            setState(() => _maxItems = val);
+          },
+        );
+      case SettingType.retention:
+        return RetentionDaysTile(
+          item: item,
+          currentValue: _retentionDays,
+          onChanged: (val) async {
+            await _settingsService.setRetentionDays(val);
+            setState(() => _retentionDays = val);
+          },
+        );
       case SettingType.clearData:
         return ClearDataTile(
           item: item,

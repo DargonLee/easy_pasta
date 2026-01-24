@@ -47,6 +47,24 @@ class SettingsService {
     return prefs.getBonjourEnabled();
   }
 
+  Future<void> setMaxItems(int value) async {
+    await _prefs.then((prefs) => prefs.setMaxItemStore(value));
+  }
+
+  Future<int> getMaxItems() async {
+    final prefs = await _prefs;
+    return prefs.getMaxItemStore();
+  }
+
+  Future<void> setRetentionDays(int value) async {
+    await _prefs.then((prefs) => prefs.setRetentionDays(value));
+  }
+
+  Future<int> getRetentionDays() async {
+    final prefs = await _prefs;
+    return prefs.getRetentionDays();
+  }
+
   Future<void> clearAllData(BuildContext context) async {
     context.read<PboardProvider>().clearAll();
   }

@@ -48,8 +48,11 @@ abstract class IDatabaseHelper {
   Future<void> cancelFavorite(ClipboardItemModel model);
   Future<void> deletePboardItem(ClipboardItemModel model);
   Future<String?> insertPboardItem(ClipboardItemModel model);
+  Future<void> cleanupExpiredItems();
   Future<int> getCount();
   Future<int> deleteAll();
+  Future<int> getMaxCount();
+  Future<int> getRetentionDays();
 }
 
 /// Implementation of database operations for clipboard management
@@ -75,6 +78,11 @@ class DatabaseHelper implements IDatabaseHelper {
 
     _db ??= await _initDatabase();
     return _db!;
+  }
+
+  Future<int> getRetentionDays() async {
+    final prefs = await SharedPreferenceHelper.instance;
+    return prefs.getRetentionDays();
   }
 
   /// Initializes the database
@@ -373,22 +381,56 @@ class DatabaseHelper implements IDatabaseHelper {
   Future<String?> insertPboardItem(ClipboardItemModel model) async {
     final db = await database;
     final maxCount = await getMaxCount();
+    final retentionDays = await getRetentionDays();
+
     return await db.transaction((txn) async {
       try {
-        await txn.insert(DatabaseConfig.tableName, model.toMap());
-        final count = await _getCountInTransaction(txn);
+        // 1. 先执行时间清理: 删除超过 retentionDays 且非收藏的项
+        if (retentionDays > 0) {
+          final expirationDate =
+              DateTime.now().subtract(Duration(days: retentionDays));
+          await txn.delete(
+            DatabaseConfig.tableName,
+            where:
+                '${DatabaseConfig.columnIsFavorite} = 0 AND ${DatabaseConfig.columnTime} < ?',
+            whereArgs: [expirationDate.toString()],
+          );
+        }
 
+        // 2. 插入新项
+        await txn.insert(DatabaseConfig.tableName, model.toMap());
+
+        // 3. 检查总量限制: 如果超过 maxCount, 删除最旧的非收藏项
+        final count = await _getCountInTransaction(txn);
         if (count > maxCount) {
           final itemId = await _deleteOldestNonFavoriteItemInTransaction(txn);
-          if (itemId != null) {
-            return itemId;
-          }
+          return itemId;
         }
         return null;
       } catch (e) {
         throw DatabaseException('Failed to insert item', e);
       }
     });
+  }
+
+  @override
+  Future<void> cleanupExpiredItems() async {
+    try {
+      final db = await database;
+      final retentionDays = await getRetentionDays();
+      if (retentionDays <= 0) return;
+
+      final expirationDate =
+          DateTime.now().subtract(Duration(days: retentionDays));
+      await db.delete(
+        DatabaseConfig.tableName,
+        where:
+            '${DatabaseConfig.columnIsFavorite} = 0 AND ${DatabaseConfig.columnTime} < ?',
+        whereArgs: [expirationDate.toString()],
+      );
+    } catch (e) {
+      developer.log('Cleanup expired items failed: $e');
+    }
   }
 
   Future<int> _getCountInTransaction(Transaction txn) async {
