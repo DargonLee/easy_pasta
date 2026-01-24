@@ -56,6 +56,7 @@ class BonjourManager {
         'device_name': deviceName ?? 'EasyPasta Device',
         'version': '1.0.0',
         'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+        'portal_url': attributes?['portal_url'] ?? '',
         ...?attributes,
       };
 

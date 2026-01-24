@@ -8,11 +8,20 @@ import 'package:easy_pasta/core/startup_service.dart';
 import 'package:easy_pasta/providers/theme_provider.dart';
 import 'package:easy_pasta/model/app_theme.dart';
 import 'package:easy_pasta/core/auto_paste_service.dart';
+import 'package:easy_pasta/core/sync_portal_service.dart';
+import 'package:easy_pasta/core/bonsoir_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 启动移动端同步服务
+  await SyncPortalService.instance.start();
+
+  // 启动 Bonjour 广播，方便其他设备发现
+  BonjourManager.instance.startService(
+      attributes: {'portal_url': SyncPortalService.instance.portalUrl ?? ''});
 
   // 添加错误处理
   FlutterError.onError = (FlutterErrorDetails details) {

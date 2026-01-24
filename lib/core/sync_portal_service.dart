@@ -1,0 +1,376 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:shelf/shelf.dart';
+import 'package:shelf/shelf_io.dart' as io;
+import 'package:shelf_router/shelf_router.dart';
+import 'package:easy_pasta/model/pasteboard_model.dart';
+import 'package:easy_pasta/model/clipboard_type.dart';
+
+/// 移动端同步 Portal 服务
+/// 在局域网内启动 Web 服务器，供手机浏览器访问以实现跨设备同步
+class SyncPortalService {
+  static final SyncPortalService _instance = SyncPortalService._internal();
+  static SyncPortalService get instance => _instance;
+
+  HttpServer? _server;
+  final _router = Router();
+  int _port = 8899;
+  String? _ip;
+
+  // 服务器状态监控
+  final ValueNotifier<bool> isRunning = ValueNotifier<bool>(false);
+  final ValueNotifier<String?> lastError = ValueNotifier<String?>(null);
+
+  // 当前待同步的内容
+  ClipboardItemModel? _currentItem;
+
+  // 用于通知移动端更新的状态流 (简易 SSE 实现)
+  final StreamController<ClipboardItemModel?> _syncController =
+      StreamController<ClipboardItemModel?>.broadcast();
+
+  SyncPortalService._internal() {
+    _setupRoutes();
+  }
+
+  void _setupRoutes() {
+    // 首页：提供给移动端浏览器
+    _router.get('/', _handleIndex);
+
+    // 获取当前剪贴板内容 (JSON)
+    _router.get('/api/current', _handleGetCurrent);
+
+    // 图片数据接口
+    _router.get('/api/image/<id>', _handleGetImage);
+
+    // 更新流 (SSE)
+    _router.get('/api/events', _handleEvents);
+  }
+
+  /// 启动服务器
+  Future<bool> start() async {
+    try {
+      if (_server != null) return true;
+
+      // 获取本地非回环地址
+      final interfaces = await NetworkInterface.list();
+      for (var interface in interfaces) {
+        for (var addr in interface.addresses) {
+          if (!addr.isLoopback && addr.type == InternetAddressType.IPv4) {
+            _ip = addr.address;
+            break;
+          }
+        }
+        if (_ip != null) break;
+      }
+
+      _server = await io.serve(_router, InternetAddress.anyIPv4, _port);
+      isRunning.value = true;
+      lastError.value = null;
+      if (kDebugMode) {
+        print(
+            'Sync Portal Server running at http://${_ip ?? "localhost"}:$_port');
+      }
+      return true;
+    } catch (e) {
+      isRunning.value = false;
+      lastError.value = e.toString();
+      if (kDebugMode) print('Failed to start Sync Portal Server: $e');
+      return false;
+    }
+  }
+
+  /// 停止服务器
+  Future<void> stop() async {
+    await _server?.close(force: true);
+    _server = null;
+    isRunning.value = false;
+  }
+
+  /// 推送内容到手机
+  void pushItem(ClipboardItemModel item) {
+    if (kDebugMode) {
+      print(
+          'SyncPortal: Pushing item ${item.id} (Type: ${item.ptype}, Value length: ${item.pvalue.length})');
+      if (item.ptype == ClipboardType.image) {
+        print('SyncPortal: Image bytes length: ${item.bytes?.length ?? 0}');
+      }
+    }
+    _currentItem = item;
+    _syncController.add(item);
+    if (kDebugMode) print('SyncPortal: Item pushed to stream');
+  }
+
+  String? get portalUrl => _ip != null ? 'http://$_ip:$_port' : null;
+
+  // --- Handler 模拟 ---
+
+  Response _handleIndex(Request request) {
+    final html = _getPortalHtml();
+    return Response.ok(html,
+        headers: {'content-type': 'text/html; charset=utf-8'});
+  }
+
+  Response _handleGetCurrent(Request request) {
+    if (_currentItem == null) {
+      return Response.ok(jsonEncode({'status': 'empty'}));
+    }
+    return Response.ok(
+        jsonEncode({
+          'id': _currentItem!.id,
+          'type': _currentItem!.ptype.toString(),
+          'value': _currentItem!.pvalue,
+          'hasImage': _currentItem!.ptype == ClipboardType.image,
+        }),
+        headers: {'content-type': 'application/json'});
+  }
+
+  Future<Response> _handleGetImage(Request request, String id) async {
+    if (_currentItem == null ||
+        _currentItem!.id != id ||
+        _currentItem!.bytes == null) {
+      return Response.notFound('Image not found');
+    }
+    return Response.ok(_currentItem!.bytes!,
+        headers: {'content-type': 'image/png'});
+  }
+
+  Response _handleEvents(Request request) {
+    if (kDebugMode)
+      print(
+          'SyncPortal: New SSE connection from ${request.context['shelf.io.connection_info']}');
+    final controller = StreamController<List<int>>();
+
+    // 发送初始状态
+    if (_currentItem != null) {
+      if (kDebugMode) print('SyncPortal: Sending initial state to new member');
+      controller.add(utf8.encode(
+          'data: ${jsonEncode({'update': true, 'id': _currentItem!.id})}\n\n'));
+    }
+
+    final subscription = _syncController.stream.listen((item) {
+      if (kDebugMode)
+        print('SyncPortal: Sending update signal for item ${item?.id}');
+      controller.add(utf8
+          .encode('data: ${jsonEncode({'update': true, 'id': item?.id})}\n\n'));
+    });
+
+    // 定期发送 ping 以保持连接活跃并检测死连接
+    final timer = Timer.periodic(const Duration(seconds: 15), (t) {
+      if (!controller.isClosed) {
+        controller.add(utf8.encode(
+            'event: ping\ndata: {"time": ${DateTime.now().millisecondsSinceEpoch}}\n\n'));
+      }
+    });
+
+    controller.done.then((_) {
+      if (kDebugMode) print('SyncPortal: SSE connection closed');
+      subscription.cancel();
+      timer.cancel();
+    });
+
+    return Response.ok(
+      controller.stream,
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    );
+  }
+
+  String _getPortalHtml() {
+    return '''
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>EasyPasta Mobile Sync</title>
+    <style>
+        :root {
+            --primary: #0071e3;
+            --bg: #f5f5f7;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --text-main: #1d1d1f;
+            --text-sec: #86868b;
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg); 
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            color: var(--text-main);
+        }
+        .container { width: 100%; max-width: 500px; }
+        .header-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; width: 100%;
+        }
+        .header { font-weight: 700; font-size: 24px; letter-spacing: -0.5px; }
+        .refresh-icon {
+            background: white; border: none; width: 36px; height: 36px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .refresh-icon:active { transform: rotate(180deg) scale(0.9); background: #eee; }
+        .card { 
+            background: var(--card-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px; padding: 24px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.05);
+            margin-bottom: 24px; min-height: 120px;
+            display: flex; flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .content { font-size: 16px; line-height: 1.6; word-break: break-all; margin-bottom: 24px; white-space: pre-wrap; }
+        .image { width: 100%; border-radius: 12px; margin-bottom: 24px; display: none; object-fit: contain; max-height: 70vh; }
+        .btn { 
+            background: var(--primary); color: white; border: none; 
+            padding: 14px 28px; border-radius: 14px; font-weight: 600;
+            cursor: pointer; font-size: 16px; transition: transform 0.1s, opacity 0.2s;
+            text-align: center; width: 100%; box-sizing: border-box;
+        }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
+        .footer { text-align: center; }
+        .status-text { font-size: 13px; color: var(--text-sec); margin-bottom: 8px; }
+        .last-updated { font-size: 11px; color: #b0b0b5; }
+        
+        #toast {
+            position: fixed; top: 30px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); color: white; padding: 12px 24px;
+            border-radius: 24px; display: none; z-index: 1000; font-size: 14px; font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-row">
+            <div class="header">EasyPasta</div>
+            <button class="refresh-icon" id="refresh-btn" title="手动刷新">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="card" id="card">
+            <div id="text-content" class="content">等待 Mac 端推送内容...</div>
+            <img id="image-content" class="image" src="" />
+            <button class="btn" id="copy-btn" style="display:none">一键复制内容</button>
+        </div>
+        <div class="footer">
+            <div class="status-text">保持页面开启，Mac 端点击同步后将自动更新</div>
+            <div class="last-updated" id="update-time"></div>
+        </div>
+    </div>
+    <div id="toast">已同步到剪贴板</div>
+
+    <script>
+        const textEl = document.getElementById('text-content');
+        const imgEl = document.getElementById('image-content');
+        const copyBtn = document.getElementById('copy-btn');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const timeEl = document.getElementById('update-time');
+        const toast = document.getElementById('toast');
+        let currentData = null;
+
+        async function updateContent() {
+            try {
+                const res = await fetch('/api/current');
+                const data = await res.json();
+                
+                // 更新时间显示
+                const now = new Date();
+                timeEl.innerText = "最后更新: " + now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0') + ":" + now.getSeconds().toString().padStart(2, '0');
+
+                if (data.status === 'empty') return;
+                
+                currentData = data;
+                if (data.hasImage) {
+                    textEl.style.display = 'none';
+                    imgEl.style.display = 'block';
+                    imgEl.src = '/api/image/' + data.id + '?t=' + new Date().getTime();
+                    copyBtn.innerText = '暂不支持直接从网页复制图片';
+                    copyBtn.style.background = '#86868b';
+                } else {
+                    imgEl.style.display = 'none';
+                    textEl.style.display = 'block';
+                    textEl.innerText = data.value;
+                    copyBtn.innerText = '一键复制文字';
+                    copyBtn.style.background = '#0071e3';
+                }
+                copyBtn.style.display = 'block';
+            } catch (e) {
+                console.error('Fetch error:', e);
+            }
+        }
+
+        refreshBtn.onclick = () => {
+            updateContent();
+            console.log("Manual refresh triggered");
+        };
+
+        copyBtn.onclick = async () => {
+            if (!currentData || currentData.hasImage) return;
+            try {
+                await navigator.clipboard.writeText(currentData.value);
+                showToast();
+            } catch (err) {
+                const textArea = document.createElement("textarea");
+                textArea.value = currentData.value;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showToast();
+            }
+        };
+
+        function showToast() {
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        }
+
+        // SSE 监听
+        let evtSource = null;
+        function connectSSE() {
+            if (evtSource) evtSource.close();
+            
+            console.log("Connecting to SSE...");
+            evtSource = new EventSource("/api/events");
+            
+            evtSource.onopen = () => {
+                console.log("SSE Connection opened");
+            };
+
+            evtSource.onmessage = (event) => {
+                console.log("SSE Message received:", event.data);
+                const data = JSON.parse(event.data);
+                if (data.update) {
+                    updateContent();
+                }
+            };
+            
+            evtSource.addEventListener('ping', (event) => {
+                console.log("SSE Ping received");
+            });
+
+            evtSource.onerror = (err) => {
+                console.error("SSE Error/Closed, reconnecting...", err);
+                evtSource.close();
+                setTimeout(connectSSE, 3000);
+            };
+        }
+        
+        // 初始加载
+        updateContent();
+        connectSSE();
+    </script>
+</body>
+</html>
+    ''';
+  }
+}

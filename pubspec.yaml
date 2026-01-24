@@ -29,6 +29,9 @@ dependencies:
   bonsoir: ^6.0.1
   html: ^0.15.4
   image: ^4.7.2
+  shelf: ^1.4.1
+  shelf_router: ^1.1.4
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

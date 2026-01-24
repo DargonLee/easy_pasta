@@ -5,6 +5,10 @@ import 'package:easy_pasta/core/icon_service.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:easy_pasta/providers/pboard_provider.dart';
+import 'package:easy_pasta/core/sync_portal_service.dart';
 
 class FooterContent extends StatelessWidget {
   final ClipboardItemModel model;
@@ -111,6 +115,48 @@ class FooterContent extends StatelessWidget {
                       onPressed: () {
                         HapticFeedback.mediumImpact();
                         onDelete(model);
+                      },
+                    ),
+
+                    SizedBox(width: spacing),
+
+                    // 同步到手机
+                    _ActionButton(
+                      icon: Icons.mobile_screen_share,
+                      tooltip: '同步到手机',
+                      iconSize: actionIconSize,
+                      onPressed: () async {
+                        HapticFeedback.selectionClick();
+                        try {
+                          if (kDebugMode)
+                            print(
+                                'SyncPortal: Fetching full data for item ${model.id}');
+                          final pboardProvider = context.read<PboardProvider>();
+                          final fullModel =
+                              await pboardProvider.ensureBytes(model);
+
+                          SyncPortalService.instance.pushItem(fullModel);
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('已发送到手机 Portal'),
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (kDebugMode) print('SyncPortal ERROR in UI: $e');
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('发送失败: $e'),
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.error,
+                              ),
+                            );
+                          }
+                        }
                       },
                     ),
                   ],

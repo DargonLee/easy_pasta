@@ -7,6 +7,7 @@ import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
 import 'package:easy_pasta/model/grid_density.dart';
 import 'package:easy_pasta/model/time_filter.dart';
+import 'package:easy_pasta/widget/mobile_sync_dialog.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   static const double height = 72;
@@ -102,6 +103,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                 density: density,
                 onChanged: onDensityChanged,
               ),
+              const SizedBox(width: AppSpacing.md),
+              _SyncButton(),
               const SizedBox(width: AppSpacing.md),
               _SettingsButton(onTap: onSettingsTap),
             ],
@@ -600,6 +603,66 @@ class _SettingsButtonState extends State<_SettingsButton> {
               ),
               child: Icon(
                 Icons.settings,
+                size: 18,
+                color: isDark
+                    ? AppColors.darkTextPrimary
+                    : AppColors.lightTextPrimary,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SyncButton extends StatefulWidget {
+  @override
+  State<_SyncButton> createState() => _SyncButtonState();
+}
+
+class _SyncButtonState extends State<_SyncButton> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark
+        ? AppColors.darkSecondaryBackground.withValues(alpha: 0.7)
+        : AppColors.lightSecondaryBackground.withValues(alpha: 0.7);
+    final hoverColor = isDark
+        ? AppColors.darkTertiaryBackground.withValues(alpha: 0.7)
+        : AppColors.lightTertiaryBackground.withValues(alpha: 0.7);
+
+    return Tooltip(
+      message: '手机同步',
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              MobileSyncDialog.show(context);
+            },
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: AnimatedContainer(
+              duration: AppDurations.fast,
+              curve: AppCurves.standard,
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _isHovered ? hoverColor : baseColor,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(
+                  color: isDark
+                      ? AppColors.darkBorder.withValues(alpha: 0.4)
+                      : AppColors.lightBorder.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Icon(
+                Icons.mobile_screen_share,
                 size: 18,
                 color: isDark
                     ? AppColors.darkTextPrimary
