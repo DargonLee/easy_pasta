@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
@@ -106,9 +107,18 @@ class PboardProvider extends ChangeNotifier {
     });
 
     // 监听移动端同步推送
-    SyncPortalService.instance.receivedItemsStream.listen((text) {
+    _mobileUploadSubscription =
+        SyncPortalService.instance.receivedItemsStream.listen((text) {
       _handleMobileUpload(text);
     });
+  }
+
+  StreamSubscription? _mobileUploadSubscription;
+
+  @override
+  void dispose() {
+    _mobileUploadSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _handleMobileUpload(String text) async {
