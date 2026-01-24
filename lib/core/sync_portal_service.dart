@@ -36,6 +36,10 @@ class SyncPortalService {
 
   Stream<String> get receivedItemsStream => _receivedItemsController.stream;
 
+  // 活跃连接计数
+  int _activeConnections = 0;
+  bool get hasActiveConnections => _activeConnections > 0;
+
   SyncPortalService._internal() {
     _setupRoutes();
   }
@@ -125,14 +129,22 @@ class SyncPortalService {
 
   /// 推送内容到手机
   void pushItem(ClipboardItemModel item) {
+    _currentItem = item; // 始终更新当前内容，供新连接获取
+
+    // 只在有活跃连接时才广播更新，节省资源
+    if (!hasActiveConnections) {
+      if (kDebugMode)
+        print('SyncPortal: No active connections, skipping broadcast');
+      return;
+    }
+
     if (kDebugMode) {
       print(
-          'SyncPortal: Pushing item ${item.id} (Type: ${item.ptype}, Value length: ${item.pvalue.length})');
+          'SyncPortal: Pushing item ${item.id} to $_activeConnections active connection(s) (Type: ${item.ptype}, Value length: ${item.pvalue.length})');
       if (item.ptype == ClipboardType.image) {
         print('SyncPortal: Image bytes length: ${item.bytes?.length ?? 0}');
       }
     }
-    _currentItem = item;
     _syncController.add(item);
     if (kDebugMode) print('SyncPortal: Item pushed to stream');
   }
@@ -175,6 +187,12 @@ class SyncPortalService {
     if (kDebugMode)
       print(
           'SyncPortal: New SSE connection from ${request.context['shelf.io.connection_info']}');
+
+    // 增加活跃连接计数
+    _activeConnections++;
+    if (kDebugMode)
+      print('SyncPortal: Active connections: $_activeConnections');
+
     final controller = StreamController<List<int>>();
 
     // 发送初始状态
@@ -203,6 +221,10 @@ class SyncPortalService {
       if (kDebugMode) print('SyncPortal: SSE connection closed');
       subscription.cancel();
       timer.cancel();
+      // 减少活跃连接计数
+      _activeConnections--;
+      if (kDebugMode)
+        print('SyncPortal: Active connections: $_activeConnections');
     });
 
     return Response.ok(

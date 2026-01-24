@@ -251,7 +251,17 @@ class _MyHomePageState extends State<MyHomePage>
 
   @override
   void onTrayIconMouseDown() {
-    WindowService().showWindow();
+    windowManager.show();
+  }
+
+  @override
+  void onTrayIconRightMouseDown() {
+    trayManager.popUpContextMenu();
+  }
+
+  @override
+  void onWindowFocus() {
+    setState(() {});
   }
 
   @override
