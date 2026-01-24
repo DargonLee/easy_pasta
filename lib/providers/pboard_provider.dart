@@ -5,6 +5,9 @@ import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
 import 'package:easy_pasta/model/time_filter.dart';
 import 'package:easy_pasta/service/clipboard_service.dart';
+import 'package:easy_pasta/core/sync_portal_service.dart';
+import 'package:easy_pasta/model/clipboard_type.dart';
+import 'package:uuid/uuid.dart';
 
 @immutable
 class PboardState {
@@ -101,6 +104,22 @@ class PboardProvider extends ChangeNotifier {
         _initializeState();
       }
     });
+
+    // 监听移动端同步推送
+    SyncPortalService.instance.receivedItemsStream.listen((text) {
+      _handleMobileUpload(text);
+    });
+  }
+
+  Future<void> _handleMobileUpload(String text) async {
+    final model = ClipboardItemModel(
+      id: const Uuid().v4(),
+      pvalue: text,
+      ptype: ClipboardType.text,
+      time: DateTime.now().toIso8601String(),
+      isFavorite: false,
+    );
+    await addItem(model);
   }
 
   Future<void> _initializeState() async {

@@ -30,6 +30,12 @@ class SyncPortalService {
   final StreamController<ClipboardItemModel?> _syncController =
       StreamController<ClipboardItemModel?>.broadcast();
 
+  // 用于接收移动端传回的内容
+  final StreamController<String> _receivedItemsController =
+      StreamController<String>.broadcast();
+
+  Stream<String> get receivedItemsStream => _receivedItemsController.stream;
+
   SyncPortalService._internal() {
     _setupRoutes();
   }
@@ -46,6 +52,9 @@ class SyncPortalService {
 
     // 更新流 (SSE)
     _router.get('/api/events', _handleEvents);
+
+    // 接收移动端上传的内容
+    _router.post('/api/upload', _handleUpload);
   }
 
   /// 启动服务器
@@ -180,6 +189,28 @@ class SyncPortalService {
     );
   }
 
+  Future<Response> _handleUpload(Request request) async {
+    try {
+      final body = await request.readAsString();
+      final data = jsonDecode(body);
+      final text = data['text'] as String?;
+
+      if (text != null && text.trim().isNotEmpty) {
+        if (kDebugMode)
+          print('SyncPortal: Received text from mobile: ${text.length} chars');
+        _receivedItemsController.add(text);
+        return Response.ok(jsonEncode({'status': 'success'}),
+            headers: {'content-type': 'application/json'});
+      } else {
+        return Response.badRequest(body: jsonEncode({'error': 'Empty text'}));
+      }
+    } catch (e) {
+      if (kDebugMode) print('SyncPortal ERROR in upload: $e');
+      return Response.internalServerError(
+          body: jsonEncode({'error': e.toString()}));
+    }
+  }
+
   String _getPortalHtml() {
     return '''
 <!DOCTYPE html>
@@ -224,6 +255,16 @@ class SyncPortalService {
             display: flex; flex-direction: column;
             border: 1px solid rgba(255,255,255,0.3);
         }
+        .input-card { margin-top: 10px; }
+        .textarea {
+            width: 100%; height: 100px; border: 1px solid #ddd;
+            border-radius: 12px; padding: 12px; margin-bottom: 16px;
+            font-family: inherit; font-size: 15px; resize: none;
+            box-sizing: border-box; background: rgba(255,255,255,0.5);
+            outline: none; transition: border-color 0.2s;
+        }
+        .textarea:focus { border-color: var(--primary); }
+        .btn-sec { background: #34c759; margin-top: 10px; }
         .content { font-size: 16px; line-height: 1.6; word-break: break-all; margin-bottom: 24px; white-space: pre-wrap; }
         .image { width: 100%; border-radius: 12px; margin-bottom: 24px; display: none; object-fit: contain; max-height: 70vh; }
         .btn { 
@@ -261,6 +302,10 @@ class SyncPortalService {
             <img id="image-content" class="image" src="" />
             <button class="btn" id="copy-btn" style="display:none">一键复制内容</button>
         </div>
+        <div class="card input-card">
+            <textarea id="upload-input" class="textarea" placeholder="输入内容发送到 Mac..."></textarea>
+            <button class="btn btn-sec" id="send-btn">发送到 Mac</button>
+        </div>
         <div class="footer">
             <div class="status-text">保持页面开启，Mac 端点击同步后将自动更新</div>
             <div class="last-updated" id="update-time"></div>
@@ -273,9 +318,17 @@ class SyncPortalService {
         const imgEl = document.getElementById('image-content');
         const copyBtn = document.getElementById('copy-btn');
         const refreshBtn = document.getElementById('refresh-btn');
+        const sendBtn = document.getElementById('send-btn');
+        const uploadInput = document.getElementById('upload-input');
         const timeEl = document.getElementById('update-time');
         const toast = document.getElementById('toast');
         let currentData = null;
+
+        function showMessage(msg) {
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        }
 
         async function updateContent() {
             try {
@@ -317,7 +370,7 @@ class SyncPortalService {
             if (!currentData || currentData.hasImage) return;
             try {
                 await navigator.clipboard.writeText(currentData.value);
-                showToast();
+                showMessage("已同步到剪贴板");
             } catch (err) {
                 const textArea = document.createElement("textarea");
                 textArea.value = currentData.value;
@@ -325,13 +378,39 @@ class SyncPortalService {
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                showToast();
+                showMessage("已同步到剪贴板");
+            }
+        };
+
+        sendBtn.onclick = async () => {
+            const text = uploadInput.value.trim();
+            if (!text) return;
+            
+            try {
+                sendBtn.disabled = true;
+                sendBtn.innerText = "发送中...";
+                const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    uploadInput.value = '';
+                    showMessage("已成功发送到 Mac");
+                } else {
+                    showMessage("发送失败: " + (data.error || "未知错误"));
+                }
+            } catch (e) {
+                showMessage("网络错误: " + e.message);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerText = "发送到 Mac";
             }
         };
 
         function showToast() {
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+            // 已被 showMessage 替代
         }
 
         // SSE 监听
@@ -368,6 +447,12 @@ class SyncPortalService {
         // 初始加载
         updateContent();
         connectSSE();
+
+        // 轮询机制：作为 SSE 的鲁棒性补充，每 2 秒尝试静默检查一次
+        // 这样即使 SSE 断连，用户也无需手动点击刷新按钮
+        setInterval(() => {
+            updateContent();
+        }, 2000);
     </script>
 </body>
 </html>
