@@ -181,10 +181,23 @@ extension WindowInfo {
             return UserApp(url: url, bundleIdentifier: bundleIdentifier)
         }
 
+        // Sort windows by priority to get the most accurate frontmost window
+        let sortedWindows = allWindows().sorted { w1, w2 in
+            // Priority 1: layer (higher layer = more on top)
+            if w1.layer != w2.layer {
+                return w1.layer > w2.layer
+            }
+            // Priority 2: isOnScreen (visible windows first)
+            if w1.isOnScreen != w2.isOnScreen {
+                return w1.isOnScreen
+            }
+            // Priority 3: alpha (more opaque windows first)
+            return w1.alpha > w2.alpha
+        }
+        
         guard
             let app = (
-                allWindows()
-                    // TODO: Use `.firstNonNil()` here when available.
+                sortedWindows
                     .lazy
                     .compactMap { createApp($0.owner.app) }
                     .first
