@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'package:easy_pasta/db/database_helper.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 
 /// 剪贴板数据模型
@@ -10,8 +11,9 @@ class ClipboardItemModel {
   final String time;
   final ClipboardType? ptype;
   final String pvalue;
-  bool isFavorite;
+  final bool isFavorite;
   final Uint8List? bytes;
+  final Uint8List? thumbnail; // 新增缩略图
   final String? sourceAppId;
 
   /// 创建剪贴板数据模型
@@ -22,6 +24,7 @@ class ClipboardItemModel {
     required this.pvalue,
     this.isFavorite = false,
     this.bytes,
+    this.thumbnail,
     this.sourceAppId,
   })  : id = id ?? const Uuid().v4(),
         time = time ?? DateTime.now().toString();
@@ -33,9 +36,10 @@ class ClipboardItemModel {
       time: map['time'],
       ptype: ClipboardType.fromString(map['type']),
       pvalue: map['value'],
-      isFavorite: map['isFavorite'] == 1,
-      bytes: map['bytes'],
-      sourceAppId: map['sourceAppId'],
+      isFavorite: map[DatabaseConfig.columnIsFavorite] == 1,
+      bytes: map[DatabaseConfig.columnBytes],
+      thumbnail: map[DatabaseConfig.columnThumbnail],
+      sourceAppId: map[DatabaseConfig.columnSourceAppId],
     );
   }
 
@@ -46,9 +50,10 @@ class ClipboardItemModel {
       'time': time,
       'type': ptype.toString(),
       'value': pvalue,
-      'isFavorite': isFavorite ? 1 : 0,
-      'bytes': bytes,
-      'sourceAppId': sourceAppId,
+      DatabaseConfig.columnIsFavorite: isFavorite ? 1 : 0,
+      DatabaseConfig.columnBytes: bytes,
+      DatabaseConfig.columnThumbnail: thumbnail,
+      DatabaseConfig.columnSourceAppId: sourceAppId,
     };
   }
 
@@ -81,6 +86,7 @@ class ClipboardItemModel {
     String? pvalue,
     bool? isFavorite,
     Uint8List? bytes,
+    Uint8List? thumbnail,
     String? sourceAppId,
   }) {
     return ClipboardItemModel(
@@ -90,6 +96,7 @@ class ClipboardItemModel {
       pvalue: pvalue ?? this.pvalue,
       isFavorite: isFavorite ?? this.isFavorite,
       bytes: bytes ?? this.bytes,
+      thumbnail: thumbnail ?? this.thumbnail,
       sourceAppId: sourceAppId ?? this.sourceAppId,
     );
   }

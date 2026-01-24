@@ -222,7 +222,10 @@ class _MyHomePageState extends State<MyHomePage>
   }
 
   Future<void> _setPasteboardItem(ClipboardItemModel model) async {
-    await _superClipboard.setPasteboardItem(model);
+    // 确保有完整字节 (如果是从 FTS/列表加载的，最初只有缩略图)
+    final fullModel = await _pboardProvider.ensureBytes(model);
+
+    await _superClipboard.setPasteboardItem(fullModel);
 
     final isAutoPasteEnabled = await SettingsService().getAutoPaste();
     if (isAutoPasteEnabled) {

@@ -407,8 +407,8 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final unselectedColor = isDark
-        ? AppColors.darkSecondaryBackground.withOpacity(0.7)
-        : AppColors.lightSecondaryBackground.withOpacity(0.7);
+        ? AppColors.darkSecondaryBackground.withValues(alpha: 0.7)
+        : AppColors.lightSecondaryBackground.withValues(alpha: 0.7);
 
     return Tooltip(
       message: option.label,
@@ -467,8 +467,8 @@ class _DensityToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final background = isDark
-        ? AppColors.darkSecondaryBackground.withOpacity(0.7)
-        : AppColors.lightSecondaryBackground.withOpacity(0.7);
+        ? AppColors.darkSecondaryBackground.withValues(alpha: 0.7)
+        : AppColors.lightSecondaryBackground.withValues(alpha: 0.7);
     final border = isDark
         ? AppColors.darkBorder.withValues(alpha: 0.4)
         : AppColors.lightBorder.withValues(alpha: 0.4);
@@ -565,11 +565,11 @@ class _SettingsButtonState extends State<_SettingsButton> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseColor = isDark
-        ? AppColors.darkSecondaryBackground.withOpacity(0.7)
-        : AppColors.lightSecondaryBackground.withOpacity(0.7);
+        ? AppColors.darkSecondaryBackground.withValues(alpha: 0.7)
+        : AppColors.lightSecondaryBackground.withValues(alpha: 0.7);
     final hoverColor = isDark
-        ? AppColors.darkTertiaryBackground.withOpacity(0.7)
-        : AppColors.lightTertiaryBackground.withOpacity(0.7);
+        ? AppColors.darkTertiaryBackground.withValues(alpha: 0.7)
+        : AppColors.lightTertiaryBackground.withValues(alpha: 0.7);
 
     return Tooltip(
       message: '设置',
@@ -594,8 +594,8 @@ class _SettingsButtonState extends State<_SettingsButton> {
                 borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
                   color: isDark
-                      ? AppColors.darkBorder.withOpacity(0.4)
-                      : AppColors.lightBorder.withOpacity(0.4),
+                      ? AppColors.darkBorder.withValues(alpha: 0.4)
+                      : AppColors.lightBorder.withValues(alpha: 0.4),
                 ),
               ),
               child: Icon(

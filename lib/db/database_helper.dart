@@ -23,7 +23,8 @@ class DatabaseException implements Exception {
 class DatabaseConfig {
   static const String dbName = 'easy_pasta.db';
   static const String tableName = 'clipboard_items';
-  static const int version = 3;
+  static const String ftsTableName = 'clipboard_items_fts'; // FTS5 虚拟表
+  static const int version = 4;
 
   // Table columns
   static const String columnId = 'id';
@@ -32,6 +33,7 @@ class DatabaseConfig {
   static const String columnValue = 'value';
   static const String columnIsFavorite = 'isFavorite';
   static const String columnBytes = 'bytes';
+  static const String columnThumbnail = 'thumbnail'; // 新增缩略图字段
   static const String columnSourceAppId = 'sourceAppId';
 }
 
@@ -169,6 +171,56 @@ class DatabaseHelper implements IDatabaseHelper {
       await db.execute(
           'ALTER TABLE ${DatabaseConfig.tableName} ADD COLUMN ${DatabaseConfig.columnSourceAppId} TEXT');
     }
+    if (oldVersion < 4) {
+      await _upgradeToV4(db);
+    }
+  }
+
+  Future<void> _upgradeToV4(Database db) async {
+    await db.transaction((txn) async {
+      // 1. 添加缩略图列
+      await txn.execute(
+          'ALTER TABLE ${DatabaseConfig.tableName} ADD COLUMN ${DatabaseConfig.columnThumbnail} BLOB');
+
+      // 2. 创建 FTS5 虚拟表
+      await txn.execute('''
+        CREATE VIRTUAL TABLE IF NOT EXISTS ${DatabaseConfig.ftsTableName} USING fts5(
+          ${DatabaseConfig.columnId} UNINDEXED, 
+          ${DatabaseConfig.columnValue}
+        )
+      ''');
+
+      // 3. 初始同步存量数据到 FTS5
+      await txn.execute('''
+        INSERT INTO ${DatabaseConfig.ftsTableName}(${DatabaseConfig.columnId}, ${DatabaseConfig.columnValue})
+        SELECT ${DatabaseConfig.columnId}, ${DatabaseConfig.columnValue} FROM ${DatabaseConfig.tableName}
+      ''');
+
+      // 4. 创建触发器保持同步
+      await txn.execute('''
+        CREATE TRIGGER IF NOT EXISTS trg_pboard_insert AFTER INSERT ON ${DatabaseConfig.tableName}
+        BEGIN
+          INSERT INTO ${DatabaseConfig.ftsTableName}(${DatabaseConfig.columnId}, ${DatabaseConfig.columnValue})
+          VALUES (new.${DatabaseConfig.columnId}, new.${DatabaseConfig.columnValue});
+        END
+      ''');
+
+      await txn.execute('''
+        CREATE TRIGGER IF NOT EXISTS trg_pboard_delete AFTER DELETE ON ${DatabaseConfig.tableName}
+        BEGIN
+          DELETE FROM ${DatabaseConfig.ftsTableName} WHERE ${DatabaseConfig.columnId} = old.${DatabaseConfig.columnId};
+        END
+      ''');
+
+      await txn.execute('''
+        CREATE TRIGGER IF NOT EXISTS trg_pboard_update AFTER UPDATE OF ${DatabaseConfig.columnValue} ON ${DatabaseConfig.tableName}
+        BEGIN
+          UPDATE ${DatabaseConfig.ftsTableName} 
+          SET ${DatabaseConfig.columnValue} = new.${DatabaseConfig.columnValue}
+          WHERE ${DatabaseConfig.columnId} = old.${DatabaseConfig.columnId};
+        END
+      ''');
+    });
   }
 
   /// Returns the maximum number of items to store

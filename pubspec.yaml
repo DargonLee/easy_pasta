@@ -28,6 +28,7 @@ dependencies:
   uuid: ^4.5.1
   bonsoir: ^6.0.1
   html: ^0.15.4
+  image: ^4.7.2
 
 dev_dependencies:
   flutter_test:

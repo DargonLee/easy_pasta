@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:typed_data';
 import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:easy_pasta/widget/cards/image_card.dart';
 import 'package:easy_pasta/widget/cards/file_card.dart';
 import 'package:easy_pasta/widget/cards/text_card.dart';
 import 'package:easy_pasta/widget/cards/footer_card.dart';
@@ -177,7 +176,7 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
                               right: 0,
                               child: IgnorePointer(
                                 child: SourceAppBadge(
-                                  bundleId: sourceAppId!,
+                                  bundleId: sourceAppId,
                                   size: badgeSize,
                                 ),
                               ),
@@ -244,7 +243,6 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
 
   Widget _buildContentByType(BuildContext context,
       {required double availableHeight}) {
-    final spec = widget.density.spec;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseStyle = isDark ? AppTypography.darkBody : AppTypography.lightBody;
     final textLines = _calculateMaxLines(baseStyle, availableHeight);
@@ -254,10 +252,7 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
     );
     switch (widget.model.ptype) {
       case ClipboardType.image:
-        return ImageContent(
-          imageBytes: widget.model.bytes ?? Uint8List(0),
-          borderRadius: spec.imageRadius,
-        );
+        return _ImagePreview(model: widget.model);
       case ClipboardType.file:
         return FileContent(
           fileName: widget.model.pvalue,
@@ -296,6 +291,36 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
       showActions: showActions,
       compact: widget.density == GridDensity.compact,
       onSuccess: _triggerPulse,
+    );
+  }
+}
+
+class _ImagePreview extends StatelessWidget {
+  final ClipboardItemModel model;
+
+  const _ImagePreview({required this.model});
+
+  @override
+  Widget build(BuildContext context) {
+    // 优先加载缩略图以节省内存，如果正在预览或已缓存完整字节则加载完整字节
+    final imageData = model.thumbnail ?? model.bytes;
+
+    if (imageData == null) {
+      return Center(
+        child: Icon(
+          Icons.broken_image_outlined,
+          color: Theme.of(context).disabledColor,
+        ),
+      );
+    }
+
+    return Image.memory(
+      imageData,
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: double.infinity,
+      // 启用图片缓存优化
+      cacheWidth: 400,
     );
   }
 }

@@ -65,7 +65,7 @@ class _ModernCounterState extends State<ModernCounter> {
       decoration: BoxDecoration(
         color: isDisabled
             ? (isDark ? Colors.grey[800] : Colors.grey[200])
-            : theme.colorScheme.primary.withOpacity(isDark ? 0.2 : 0.1),
+            : theme.colorScheme.primary.withValues(alpha: isDark ? 0.2 : 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: IconButton(

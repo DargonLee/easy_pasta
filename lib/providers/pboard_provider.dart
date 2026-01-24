@@ -1,10 +1,10 @@
 import 'dart:collection';
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
-import 'package:easy_pasta/db/database_helper.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
 import 'package:easy_pasta/model/time_filter.dart';
+import 'package:easy_pasta/service/clipboard_service.dart';
 
 @immutable
 class PboardState {
@@ -69,7 +69,7 @@ class PboardState {
 }
 
 class PboardProvider extends ChangeNotifier {
-  final DatabaseHelper _db;
+  final ClipboardService _service;
 
   PboardState _state;
 
@@ -86,8 +86,8 @@ class PboardProvider extends ChangeNotifier {
 
   bool _isInitialized = false;
 
-  PboardProvider({DatabaseHelper? db})
-      : _db = db ?? DatabaseHelper.instance,
+  PboardProvider({ClipboardService? service})
+      : _service = service ?? ClipboardService(),
         _state = const PboardState(
           allItems: [],
           filteredItems: [],
@@ -108,24 +108,16 @@ class PboardProvider extends ChangeNotifier {
     _isInitialized = true;
 
     try {
-      final maxCount = await _db.getMaxCount();
-      _updateState(_state.copyWith(maxItems: maxCount));
-
-      // 使用分页加载初始数据
-      final range = _state.timeFilter.range;
-      final result = await _db.getPboardItemListPaginated(
+      // 1. 加载分页项 (服务层会自动处理 FTS 或普通拉取，并仅拉取缩略图)
+      final items = await _service.getFilteredItems(
         limit: _state.pageSize,
         offset: 0,
-        startTime: range.start,
-        endTime: range.end,
+        filterType: _state.filterType.toString().split('.').last,
       );
-      final items =
-          result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
 
       _updateState(_state.copyWith(
         allItems: items,
         filteredItems: items,
-        filterType: NSPboardSortType.all,
         searchQuery: '',
         currentPage: 0,
         hasMore: items.length >= _state.pageSize,
@@ -139,6 +131,24 @@ class PboardProvider extends ChangeNotifier {
   void _updateState(PboardState newState) {
     _state = newState;
     notifyListeners();
+  }
+
+  /// 确保项具有完整 bytes (Lazy Loading)
+  Future<ClipboardItemModel> ensureBytes(ClipboardItemModel model) async {
+    if (model.bytes != null) return model;
+
+    final updated = await _service.ensureBytes(model);
+
+    // 更新内存状态
+    final index = _state.allItems.indexWhere((item) => item.id == model.id);
+    if (index != -1) {
+      final newItems = List<ClipboardItemModel>.from(_state.allItems);
+      newItems[index] = updated;
+      _updateState(_state.copyWith(allItems: newItems));
+      _applyFiltersAndSearch();
+    }
+
+    return updated;
   }
 
   void _handleError(String operation, dynamic error) {
@@ -177,12 +187,13 @@ class PboardProvider extends ChangeNotifier {
   }
 
   // 应用过滤和搜索
+  // 应用过滤和搜索
   void _applyFiltersAndSearch() {
     var filteredItems = List<ClipboardItemModel>.from(_state.allItems);
     bool hasSearch = _state.searchQuery.isNotEmpty;
     bool hasFilter = _state.filterType != NSPboardSortType.all;
 
-    // 应用类型过滤
+    // 应用内存级别基础过滤 (提升 UI 响应深度)
     if (hasFilter) {
       if (_state.filterType == NSPboardSortType.favorite) {
         filteredItems = filteredItems.where((item) => item.isFavorite).toList();
@@ -194,16 +205,10 @@ class PboardProvider extends ChangeNotifier {
       }
     }
 
-    // 应用搜索过滤与权重排序
+    // 对于搜索，我们在加载时已经利用了 FTS5
+    // 这里做最后的权重微调排序
     if (hasSearch) {
       final query = _state.searchQuery.toLowerCase();
-      filteredItems = filteredItems.where((item) {
-        return item.pvalue.toLowerCase().contains(query);
-      }).toList();
-
-      // 精准/相关度排序:
-      // 1. 如果搜索项以搜索词开头, 权重最高 (Prefix match)
-      // 2. 否则按时间排序
       filteredItems.sort((a, b) {
         final aVal = a.pvalue.toLowerCase();
         final bVal = b.pvalue.toLowerCase();
@@ -213,7 +218,6 @@ class PboardProvider extends ChangeNotifier {
         if (aStarts && !bStarts) return -1;
         if (!aStarts && bStarts) return 1;
 
-        // 如果都是前缀匹配或都不是，则保持时间倒序
         return b.time.compareTo(a.time);
       });
     }
@@ -250,37 +254,11 @@ class PboardProvider extends ChangeNotifier {
 
   Future<Result<void>> addItem(ClipboardItemModel model) async {
     try {
-      // 检查重复
-      final duplicate = await _db.checkDuplicate(model);
-      if (duplicate != null) {
-        // 更新现有项的时间戳
-        final updatedModel =
-            duplicate.copyWith(time: DateTime.now().toString());
-        await _db.setFavorite(updatedModel); // 使用 setFavorite 来更新时间戳
+      // 插入逻辑移交给 Service (自动处理缩略图生成)
+      final deletedItemId = await _service.processAndInsert(model);
 
-        // 更新内存中的数据
-        final newAllItems = _state.allItems.map((item) {
-          if (item.id == duplicate.id) {
-            return updatedModel;
-          }
-          return item;
-        }).toList();
-
-        // 重新排序,将更新的项移到最前面
-        newAllItems.removeWhere((item) => item.id == duplicate.id);
-        newAllItems.insert(0, updatedModel);
-
-        _updateState(_state.copyWith(allItems: newAllItems));
-        _applyFiltersAndSearch();
-
-        return const Result.success(null);
-      }
-
-      // 更新内存中的数据（预先插入到列表顶部）
+      // 更新内存状态 (内存中可以保留 bytes 减少重复拉取)
       List<ClipboardItemModel> nextAllItems = [model, ..._state.allItems];
-
-      // 保存到数据库，并获取由于达到上限而被删除的非收藏项 ID
-      final deletedItemId = await _db.insertPboardItem(model);
 
       if (deletedItemId != null) {
         nextAllItems =
@@ -300,16 +278,13 @@ class PboardProvider extends ChangeNotifier {
   Future<Result<void>> loadItems() async {
     return await _withLoading(() async {
       try {
-        final range = _state.timeFilter.range;
-        // Use pagination even for full load to keep it consistent
-        final result = await _db.getPboardItemListPaginated(
+        final items = await _service.getFilteredItems(
           limit: _state.pageSize,
           offset: 0,
-          startTime: range.start,
-          endTime: range.end,
+          searchQuery:
+              _state.searchQuery.isNotEmpty ? _state.searchQuery : null,
+          filterType: _state.filterType.toString().split('.').last,
         );
-        final items =
-            result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
 
         _updateState(_state.copyWith(
           allItems: items,
@@ -340,7 +315,7 @@ class PboardProvider extends ChangeNotifier {
       _updateState(_state.copyWith(allItems: newAllItems));
       _applyFiltersAndSearch();
 
-      await _db.setFavorite(newModel);
+      await _service.toggleFavorite(newModel);
       return const Result.success(null);
     } catch (e) {
       _handleError('设置收藏', e);
@@ -356,7 +331,7 @@ class PboardProvider extends ChangeNotifier {
       _updateState(_state.copyWith(allItems: newAllItems));
       _applyFiltersAndSearch();
 
-      await _db.deletePboardItem(model);
+      await _service.delete(model);
       return const Result.success(null);
     } catch (e) {
       _handleError('删除', e);
@@ -390,23 +365,17 @@ class PboardProvider extends ChangeNotifier {
     await loadItems();
   }
 
-  // 优化后的search方法 - 只在内存中操作
+  // 搜索方法 - 触发重新加载 (利用 FTS5)
   Future<Result<void>> search(String query) async {
     query = query.trim();
-
-    try {
-      _updateState(_state.copyWith(searchQuery: query));
-      _applyFiltersAndSearch();
-      return const Result.success(null);
-    } catch (e) {
-      _handleError('搜索', e);
-      return Result.failure(e.toString());
-    }
+    _updateState(_state.copyWith(searchQuery: query));
+    return await loadItems();
   }
 
   Future<Result<void>> clearAll() async {
     try {
-      await _db.deleteAll();
+      // 暂保留直接 DB 调用用于清空，或由 Service 扩展
+      await _service.clearAll();
       _updateState(_state.copyWith(
         allItems: [],
         filteredItems: [],
@@ -431,22 +400,18 @@ class PboardProvider extends ChangeNotifier {
     try {
       final nextPage = _state.currentPage + 1;
       final offset = nextPage * _state.pageSize;
-      final range = _state.timeFilter.range;
 
-      final result = await _db.getPboardItemListPaginated(
+      final newItems = await _service.getFilteredItems(
         limit: _state.pageSize,
         offset: offset,
-        startTime: range.start,
-        endTime: range.end,
+        searchQuery: _state.searchQuery.isNotEmpty ? _state.searchQuery : null,
+        filterType: _state.filterType.toString().split('.').last,
       );
 
-      if (result.isEmpty) {
+      if (newItems.isEmpty) {
         _updateState(_state.copyWith(hasMore: false));
         return const Result.success(null);
       }
-
-      final newItems =
-          result.map((map) => ClipboardItemModel.fromMapObject(map)).toList();
 
       final updatedAllItems = [..._state.allItems, ...newItems];
 
