@@ -21,6 +21,7 @@ class SuperClipboard {
   ValueChanged<ClipboardItemModel?>? _onClipboardChanged;
   ClipboardItemModel? _lastContent;
   Timer? _pollingTimer;
+  bool _isPolling = false;
 
   static const Duration _pollingInterval = Duration(seconds: 1);
 
@@ -32,20 +33,27 @@ class SuperClipboard {
 
   /// Polls clipboard content for changes
   Future<void> _pollClipboard() async {
+    if (_isPolling) return;
+    _isPolling = true;
+
     try {
       final reader = await _clipboard?.read();
-      if (reader == null) return;
+      if (reader == null) {
+        _isPolling = false;
+        return;
+      }
 
       await _processClipboardContent(reader);
     } catch (e) {
       debugPrint('Clipboard polling error: $e');
+    } finally {
+      _isPolling = false;
     }
   }
 
   /// Processes different types of clipboard content
   Future<void> _processClipboardContent(ClipboardReader reader) async {
-    final sourceAppId =
-        await AppSourceService().getFrontmostAppBundleId();
+    final sourceAppId = await AppSourceService().getFrontmostAppBundleId();
     if (await _processHtmlContent(reader, sourceAppId)) return;
     if (await _processFileContent(reader, sourceAppId)) return;
     if (await _processTextContent(reader, sourceAppId)) return;
@@ -112,19 +120,25 @@ class SuperClipboard {
       reader.getFile(Formats.png, (file) async {
         try {
           final stream = file.getStream();
-          final bytes = await stream.toList();
-          final imageData = bytes.expand((x) => x).toList();
-          _handleContentChange('', ClipboardType.image,
-              bytes: Uint8List.fromList(imageData),
-              sourceAppId: sourceAppId);
-          completer.complete(true);
+          final bytesList = await stream.toList();
+          final imageData = bytesList.expand((x) => x).toList();
+
+          if (imageData.isNotEmpty) {
+            _handleContentChange('', ClipboardType.image,
+                bytes: Uint8List.fromList(imageData), sourceAppId: sourceAppId);
+          }
+          if (!completer.isCompleted) completer.complete(true);
         } catch (e) {
           debugPrint('Error processing image: $e');
-          completer.complete(false);
+          if (!completer.isCompleted) completer.complete(false);
         }
       });
 
-      return await completer.future;
+      // 设置一个超时，防止 getFile 回调永远不执行
+      return await completer.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => false,
+      );
     } catch (e) {
       debugPrint('Error accessing image file: $e');
       return false;
@@ -143,8 +157,8 @@ class SuperClipboard {
   }
 
   /// Creates a content model based on the clipboard type
-  ClipboardItemModel _createContentModel(
-      String content, ClipboardType? type, Uint8List? bytes, String? sourceAppId) {
+  ClipboardItemModel _createContentModel(String content, ClipboardType? type,
+      Uint8List? bytes, String? sourceAppId) {
     return ClipboardItemModel(
       ptype: type,
       pvalue: content,

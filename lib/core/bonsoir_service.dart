@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter/foundation.dart';
 
@@ -15,6 +16,7 @@ class BonjourManager {
   BonsoirService? _service;
   BonsoirBroadcast? _broadcast;
   BonsoirDiscovery? _discovery;
+  StreamSubscription? _discoverySubscription;
 
   // 发现的设备列表 - 使用 service name 作为 key
   final Map<String, BonsoirService> _discoveredServices = {};
@@ -66,7 +68,7 @@ class BonjourManager {
 
       _broadcast = BonsoirBroadcast(service: _service!);
 
-      await _broadcast!.ready;
+      await _broadcast!.initialize();
       await _broadcast!.start();
 
       if (kDebugMode) {
@@ -75,7 +77,6 @@ class BonjourManager {
 
       onServiceStateChanged?.call(true);
       return true;
-
     } catch (e) {
       final error = 'Bonjour 服务启动失败: $e';
       if (kDebugMode) print(error);
@@ -110,15 +111,15 @@ class BonjourManager {
 
       _discovery = BonsoirDiscovery(type: _serviceType);
 
-      await _discovery!.ready;
+      await _discovery!.initialize();
 
       // 监听发现的服务 - 必须在 start() 之前设置监听
-      _discovery!.eventStream!.listen((event) {
-        if (event.type == BonsoirDiscoveryEventType.discoveryServiceFound) {
+      _discoverySubscription = _discovery!.eventStream!.listen((event) {
+        if (event is BonsoirDiscoveryServiceFoundEvent) {
           _handleServiceFound(event.service!);
-        } else if (event.type == BonsoirDiscoveryEventType.discoveryServiceResolved) {
+        } else if (event is BonsoirDiscoveryServiceResolvedEvent) {
           _handleServiceResolved(event.service!);
-        } else if (event.type == BonsoirDiscoveryEventType.discoveryServiceLost) {
+        } else if (event is BonsoirDiscoveryServiceLostEvent) {
           _handleServiceLost(event.service!);
         }
       });
@@ -132,7 +133,6 @@ class BonjourManager {
       }
 
       return true;
-
     } catch (e) {
       final error = '设备发现启动失败: $e';
       if (kDebugMode) print(error);
@@ -148,6 +148,9 @@ class BonjourManager {
         await _discovery!.stop();
         _discovery = null;
       }
+
+      await _discoverySubscription?.cancel();
+      _discoverySubscription = null;
 
       _discoveredServices.clear();
       _resolvedServices.clear();

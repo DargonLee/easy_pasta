@@ -24,7 +24,7 @@ class SettingsConstants {
 
   // 启用Bonjour
   static const String bonjourTitle = '启用Bonjour';
-  static const String bonjourSubtitle = '测试Bonjour功能';
+  static const String bonjourSubtitle = '跨设备同步剪贴板内容 (Beta)';
 
   // 清除记录
   static const String clearDataTitle = '清除记录';

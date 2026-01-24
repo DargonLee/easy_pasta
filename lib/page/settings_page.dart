@@ -13,6 +13,7 @@ import 'package:easy_pasta/widget/settting_page_widgets.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
 import 'package:easy_pasta/core/animation_helper.dart';
+import 'package:easy_pasta/page/bonsoir_page.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -85,6 +86,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadSettings() async {
     _hotKey = await _settingsService.getHotKey();
     _autoLaunch = await _settingsService.getAutoLaunch();
+    _bonjourEnabled = await _settingsService.getBonjourEnabled();
     setState(() {});
   }
 
@@ -151,7 +153,7 @@ class _SettingsPageState extends State<SettingsPage> {
     required List<SettingItem> items,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -163,19 +165,19 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           child: Text(
             title.toUpperCase(),
-            style: (isDark 
-                ? AppTypography.darkCaption 
-                : AppTypography.lightCaption
-            ).copyWith(
-              color: isDark 
-                  ? AppColors.darkTextSecondary 
+            style: (isDark
+                    ? AppTypography.darkCaption
+                    : AppTypography.lightCaption)
+                .copyWith(
+              color: isDark
+                  ? AppColors.darkTextSecondary
                   : AppColors.lightTextSecondary,
               fontWeight: AppFontWeights.semiBold,
               letterSpacing: 0.5,
             ),
           ),
         ),
-        
+
         // 设置项卡片
         Container(
           decoration: BoxDecoration(
@@ -192,22 +194,21 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           child: Column(
             children: [
-              for (int i = 0; i < items.length; i++) ...
-                [
-                  Column(
-                    children: [
-                      _buildSettingTile(items[i]),
-                      if (i < items.length - 1)
-                        Divider(
-                          height: 1,
-                          indent: AppSpacing.xxxl + AppSpacing.lg,
-                          color: isDark 
-                              ? AppColors.darkDivider 
-                              : AppColors.lightDivider,
-                        ),
-                    ],
-                  ),
-                ],
+              for (int i = 0; i < items.length; i++) ...[
+                Column(
+                  children: [
+                    _buildSettingTile(items[i]),
+                    if (i < items.length - 1)
+                      Divider(
+                        height: 1,
+                        indent: AppSpacing.xxxl + AppSpacing.lg,
+                        color: isDark
+                            ? AppColors.darkDivider
+                            : AppColors.lightDivider,
+                      ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -247,13 +248,19 @@ class _SettingsPageState extends State<SettingsPage> {
             setState(() => _autoLaunch = value);
           },
         );
-      case SettingType.bonjour:  // Handle the new Bonjour setting type
+      case SettingType.bonjour:
         return ToggleSettingTile(
           item: item,
           value: _bonjourEnabled,
           onChanged: (bool value) async {
+            await _settingsService.setBonjourEnabled(value);
             setState(() => _bonjourEnabled = value);
-            // Here you could add logic to start or stop Bonjour service
+          },
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BonjourTestPage()),
+            );
           },
         );
       case SettingType.maxStorage:

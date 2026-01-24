@@ -38,6 +38,15 @@ class SettingsService {
     return prefs.getLoginInLaunch();
   }
 
+  Future<void> setBonjourEnabled(bool value) async {
+    await _prefs.then((prefs) => prefs.setBonjourEnabled(value));
+  }
+
+  Future<bool> getBonjourEnabled() async {
+    final prefs = await _prefs;
+    return prefs.getBonjourEnabled();
+  }
+
   Future<void> clearAllData(BuildContext context) async {
     context.read<PboardProvider>().clearAll();
   }

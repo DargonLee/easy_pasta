@@ -12,11 +12,12 @@ class BonjourTestPage extends StatefulWidget {
 class _BonjourTestPageState extends State<BonjourTestPage> {
   final BonjourManager _bonjourManager = BonjourManager.instance;
   final TextEditingController _deviceNameController = TextEditingController();
-  final TextEditingController _portController = TextEditingController(text: '8888');
+  final TextEditingController _portController =
+      TextEditingController(text: '8888');
 
   List<BonsoirService> _discoveredServices = [];
   List<BonsoirService> _resolvedServices = [];
-  String _statusMessage = '就绪';
+  String _statusMessage = '已就绪';
   bool _isServiceRunning = false;
   bool _isDiscovering = false;
 
@@ -24,7 +25,8 @@ class _BonjourTestPageState extends State<BonjourTestPage> {
   void initState() {
     super.initState();
     _setupBonjourCallbacks();
-    _deviceNameController.text = 'Test-Device-${DateTime.now().millisecondsSinceEpoch % 10000}';
+    _deviceNameController.text =
+        'Test-Device-${DateTime.now().millisecondsSinceEpoch % 10000}';
   }
 
   void _setupBonjourCallbacks() {
@@ -129,7 +131,7 @@ class _BonjourTestPageState extends State<BonjourTestPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Bonjour 测试'),
+        title: const Text('Bonjour 功能测试'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
@@ -148,8 +150,8 @@ class _BonjourTestPageState extends State<BonjourTestPage> {
                     Text(
                       '状态信息',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     Text('状态: $_statusMessage'),
@@ -172,8 +174,8 @@ class _BonjourTestPageState extends State<BonjourTestPage> {
                     Text(
                       '服务控制',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -237,8 +239,8 @@ class _BonjourTestPageState extends State<BonjourTestPage> {
                     Text(
                       '设备发现',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -285,61 +287,65 @@ class _BonjourTestPageState extends State<BonjourTestPage> {
                     children: [
                       Text(
                         '发现的设备',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                       ),
                       const SizedBox(height: 8),
                       Expanded(
                         child: _discoveredServices.isEmpty
                             ? const Center(
-                          child: Text(
-                            '暂无发现的设备\n请确保其他设备也在运行 EasyPasta 服务',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        )
+                                child: Text(
+                                  '暂无发现的设备\n请确保其他设备也在运行 EasyPasta 服务',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              )
                             : ListView.builder(
-                          itemCount: _discoveredServices.length,
-                          itemBuilder: (context, index) {
-                            final service = _discoveredServices[index];
-                            final isResolved = _resolvedServices
-                                .any((s) => s.name == service.name);
+                                itemCount: _discoveredServices.length,
+                                itemBuilder: (context, index) {
+                                  final service = _discoveredServices[index];
+                                  final isResolved = _resolvedServices
+                                      .any((s) => s.name == service.name);
 
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: ListTile(
-                                leading: Icon(
-                                  isResolved
-                                      ? Icons.check_circle
-                                      : Icons.device_unknown,
-                                  color: isResolved
-                                      ? Colors.green
-                                      : Colors.grey,
-                                ),
-                                title: Text(service.name),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('类型: ${service.type}'),
-                                    if (isResolved) ...[
-                                      Text('端口: ${service.port}'),
-                                      if (service.attributes.isNotEmpty)
-                                        Text('属性: ${service.attributes}'),
-                                    ],
-                                  ],
-                                ),
-                                trailing: isResolved
-                                    ? const Icon(Icons.done, color: Colors.green)
-                                    : ElevatedButton(
-                                  onPressed: () => _resolveService(service.name),
-                                  child: const Text('解析'),
-                                ),
-                                isThreeLine: true,
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    child: ListTile(
+                                      leading: Icon(
+                                        isResolved
+                                            ? Icons.check_circle
+                                            : Icons.device_unknown,
+                                        color: isResolved
+                                            ? Colors.green
+                                            : Colors.grey,
+                                      ),
+                                      title: Text(service.name),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text('类型: ${service.type}'),
+                                          if (isResolved) ...[
+                                            Text('端口: ${service.port}'),
+                                            if (service.attributes.isNotEmpty)
+                                              Text('属性: ${service.attributes}'),
+                                          ],
+                                        ],
+                                      ),
+                                      trailing: isResolved
+                                          ? const Icon(Icons.done,
+                                              color: Colors.green)
+                                          : ElevatedButton(
+                                              onPressed: () =>
+                                                  _resolveService(service.name),
+                                              child: const Text('解析'),
+                                            ),
+                                      isThreeLine: true,
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
                       ),
                     ],
                   ),

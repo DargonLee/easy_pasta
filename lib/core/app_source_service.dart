@@ -10,6 +10,7 @@ class AppSourceService {
 
   static const MethodChannel _channel = MethodChannel('app_source');
 
+  static const int _maxCacheSize = 50;
   final Map<String, Uint8List> _iconCache = {};
   final Map<String, Future<Uint8List?>> _iconInFlight = {};
 
@@ -30,10 +31,12 @@ class AppSourceService {
     final inflight = _iconInFlight[bundleId];
     if (inflight != null) return inflight;
 
-    final future = _channel
-        .invokeMethod<Uint8List>('getAppIcon', bundleId)
-        .then((data) {
+    final future =
+        _channel.invokeMethod<Uint8List>('getAppIcon', bundleId).then((data) {
       if (data != null) {
+        if (_iconCache.length >= _maxCacheSize) {
+          _iconCache.remove(_iconCache.keys.first);
+        }
         _iconCache[bundleId] = data;
       }
       _iconInFlight.remove(bundleId);

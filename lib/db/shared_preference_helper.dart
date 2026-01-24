@@ -13,7 +13,7 @@ class SharedPreferenceHelper {
 
   // SharedPreferences 实例
   static SharedPreferences? _preferences;
-  
+
   // 初始化锁
   static bool _isInitializing = false;
   static Future<SharedPreferenceHelper>? _initFuture;
@@ -24,9 +24,12 @@ class SharedPreferenceHelper {
   static const String loginInLaunchKey = '${_keyPrefix}LoginInLaunchKey';
   static const String maxItemStoreKey = '${_keyPrefix}MaxItemStoreKey';
   static const String themeModeKey = '${_keyPrefix}ThemeModeKey';
+  static const String bonjourEnabledKey = '${_keyPrefix}BonjourEnabledKey';
+
   /// 默认值常量
   static const int defaultMaxItems = 50;
   static const bool defaultLoginInLaunch = false;
+  static const bool defaultBonjourEnabled = false;
 
   /// 平台特定的默认快捷键
   static String get defaultShortcut {
@@ -47,16 +50,16 @@ class SharedPreferenceHelper {
     if (_instance != null && _preferences != null) {
       return _instance!;
     }
-    
+
     // 如果正在初始化，等待完成
     if (_isInitializing && _initFuture != null) {
       return _initFuture!;
     }
-    
+
     // 开始初始化
     _isInitializing = true;
     _initFuture = _initialize();
-    
+
     try {
       final result = await _initFuture!;
       return result;
@@ -65,12 +68,12 @@ class SharedPreferenceHelper {
       _initFuture = null;
     }
   }
-  
+
   /// 初始化方法
   static Future<SharedPreferenceHelper> _initialize() async {
     _instance ??= SharedPreferenceHelper._();
     _preferences ??= await SharedPreferences.getInstance();
-    
+
     // 设置默认值
     if (_preferences?.getString(shortcutKey) == null) {
       await _instance!.setShortcutKey(defaultShortcut);
@@ -78,7 +81,7 @@ class SharedPreferenceHelper {
     if (_preferences?.getInt(maxItemStoreKey) == null) {
       await _instance!.setMaxItemStore(defaultMaxItems);
     }
-    
+
     return _instance!;
   }
 
@@ -119,12 +122,22 @@ class SharedPreferenceHelper {
     return _preferences?.getInt(themeModeKey) ?? ThemeMode.system.index;
   }
 
+  /// Bonjour 相关操作
+  Future<void> setBonjourEnabled(bool status) async {
+    await _preferences?.setBool(bonjourEnabledKey, status);
+  }
+
+  bool getBonjourEnabled() {
+    return _preferences?.getBool(bonjourEnabledKey) ?? defaultBonjourEnabled;
+  }
+
   /// 批量操作方法
   Future<Map<String, dynamic>> getAllSettings() async {
     return {
       'shortcutKey': getShortcutKey(),
       'maxItemStore': getMaxItemStore(),
       'loginInLaunch': getLoginInLaunch(),
+      'bonjourEnabled': getBonjourEnabled(),
     };
   }
 
@@ -134,6 +147,7 @@ class SharedPreferenceHelper {
       setShortcutKey(defaultShortcut),
       setMaxItemStore(defaultMaxItems),
       setLoginInLaunch(defaultLoginInLaunch),
+      setBonjourEnabled(defaultBonjourEnabled),
     ]);
   }
 

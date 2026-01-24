@@ -28,7 +28,7 @@ class HotkeyTile extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final captionStyle =
         isDark ? AppTypography.darkCaption : AppTypography.lightCaption;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -55,7 +55,7 @@ class HotkeyTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
-              
+
               // 文字内容
               Expanded(
                 child: Column(
@@ -63,32 +63,30 @@ class HotkeyTile extends StatelessWidget {
                   children: [
                     Text(
                       item.title,
-                      style: (isDark 
-                          ? AppTypography.darkBody 
-                          : AppTypography.lightBody
-                      ).copyWith(
+                      style: (isDark
+                              ? AppTypography.darkBody
+                              : AppTypography.lightBody)
+                          .copyWith(
                         color: item.textColor,
                         fontWeight: AppFontWeights.regular,
                       ),
                     ),
-                    if (hotKey != null) ...
-                    [
+                    if (hotKey != null) ...[
                       const SizedBox(height: AppSpacing.xs),
                       HotKeyVirtualView(hotKey: hotKey!),
-                    ] else ...
-                    [
+                    ] else ...[
                       const SizedBox(height: AppSpacing.xs / 2),
                       Text(
                         item.subtitle,
-                        style: isDark 
-                            ? AppTypography.darkFootnote 
+                        style: isDark
+                            ? AppTypography.darkFootnote
                             : AppTypography.lightFootnote,
                       ),
                     ],
                   ],
                 ),
               ),
-              
+
               // 按钮
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -100,13 +98,13 @@ class HotkeyTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
-                  hotKey != null 
-                      ? SettingsConstants.modifyText 
+                  hotKey != null
+                      ? SettingsConstants.modifyText
                       : SettingsConstants.setUpText,
-                  style: (isDark 
-                      ? AppTypography.darkFootnote 
-                      : AppTypography.lightFootnote
-                  ).copyWith(
+                  style: (isDark
+                          ? AppTypography.darkFootnote
+                          : AppTypography.lightFootnote)
+                      .copyWith(
                     color: AppColors.primary,
                     fontWeight: AppFontWeights.semiBold,
                   ),
@@ -149,7 +147,7 @@ class ThemeTile extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final captionStyle =
         isDark ? AppTypography.darkCaption : AppTypography.lightCaption;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
@@ -172,7 +170,7 @@ class ThemeTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          
+
           // 文字内容
           Expanded(
             child: Column(
@@ -180,21 +178,20 @@ class ThemeTile extends StatelessWidget {
               children: [
                 Text(
                   item.title,
-                  style: isDark 
-                      ? AppTypography.darkBody 
-                      : AppTypography.lightBody,
+                  style:
+                      isDark ? AppTypography.darkBody : AppTypography.lightBody,
                 ),
                 const SizedBox(height: AppSpacing.xs / 2),
                 Text(
                   item.subtitle,
-                  style: isDark 
-                      ? AppTypography.darkFootnote 
+                  style: isDark
+                      ? AppTypography.darkFootnote
                       : AppTypography.lightFootnote,
                 ),
               ],
             ),
           ),
-          
+
           // 分段控制器
           CupertinoSegmentedControl<int>(
             padding: const EdgeInsets.all(2),
@@ -249,13 +246,11 @@ class ThemeTile extends StatelessWidget {
                   break;
               }
             },
-            unselectedColor: isDark 
-                ? AppColors.darkSecondaryBackground 
+            unselectedColor: isDark
+                ? AppColors.darkSecondaryBackground
                 : AppColors.lightSecondaryBackground,
             selectedColor: AppColors.primary,
-            borderColor: isDark 
-                ? AppColors.darkBorder 
-                : AppColors.lightBorder,
+            borderColor: isDark ? AppColors.darkBorder : AppColors.lightBorder,
             pressedColor: AppColors.primary.withOpacity(0.1),
           ),
         ],
@@ -290,18 +285,21 @@ class ToggleSettingTile extends StatelessWidget {
   final SettingItem item;
   final bool value;
   final ValueChanged<bool> onChanged;
+  final VoidCallback? onTap;
 
   const ToggleSettingTile({
     super.key,
     required this.item,
     required this.value,
     required this.onChanged,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return _BaseSettingTile(
       item: item,
+      onTap: onTap,
       trailing: CupertinoSwitch(
         value: value,
         onChanged: (val) {
@@ -400,7 +398,7 @@ class AboutTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -430,7 +428,7 @@ class AboutTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
-              
+
               // 文字内容
               Expanded(
                 child: Column(
@@ -438,21 +436,21 @@ class AboutTile extends StatelessWidget {
                   children: [
                     Text(
                       item.title,
-                      style: isDark 
-                          ? AppTypography.darkBody 
+                      style: isDark
+                          ? AppTypography.darkBody
                           : AppTypography.lightBody,
                     ),
                     const SizedBox(height: AppSpacing.xs / 2),
                     Text(
                       '当前版本：${SettingsConstants.appVersion}',
-                      style: isDark 
-                          ? AppTypography.darkFootnote 
+                      style: isDark
+                          ? AppTypography.darkFootnote
                           : AppTypography.lightFootnote,
                     ),
                   ],
                 ),
               ),
-              
+
               // GitHub 链接
               Icon(
                 Icons.open_in_new,
@@ -482,7 +480,7 @@ class _BaseSettingTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     final content = Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
@@ -505,7 +503,7 @@ class _BaseSettingTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          
+
           // 文字内容
           Expanded(
             child: Column(
@@ -513,24 +511,24 @@ class _BaseSettingTile extends StatelessWidget {
               children: [
                 Text(
                   item.title,
-                  style: (isDark 
-                      ? AppTypography.darkBody 
-                      : AppTypography.lightBody
-                  ).copyWith(
+                  style: (isDark
+                          ? AppTypography.darkBody
+                          : AppTypography.lightBody)
+                      .copyWith(
                     color: item.textColor,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs / 2),
                 Text(
                   item.subtitle,
-                  style: isDark 
-                      ? AppTypography.darkFootnote 
+                  style: isDark
+                      ? AppTypography.darkFootnote
                       : AppTypography.lightFootnote,
                 ),
               ],
             ),
           ),
-          
+
           // 右侧内容
           if (trailing != null) trailing!,
         ],
