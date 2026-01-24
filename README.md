@@ -125,7 +125,7 @@ scripts\build.bat
 - [ ] 背景特效：支持窗口背景实时毛玻璃（Vibrancy）效果
 - [ ] 记忆状态：自动记住上次关闭时的分类选择和滚动位置
 - [ ] 触感优化：为操作添加细腻的触感反馈或系统级音效提示
-- [ ] 升级库版本：
+- [x] 升级库版本：
 ```
  bonsoir 5.1.11 (6.0.1 available)
   bonsoir_android 5.1.6 (6.0.1 available)
