@@ -152,13 +152,21 @@ class _SearchFieldState extends State<_SearchField> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseColor = isDark
-        ? AppColors.darkSecondaryBackground.withOpacity(0.7)
-        : AppColors.lightSecondaryBackground.withOpacity(0.7);
-    final borderColor = _isFocused
-        ? AppColors.primary
-        : (isDark
-            ? AppColors.darkBorder.withOpacity(0.4)
-            : AppColors.lightBorder.withOpacity(0.4));
+        ? AppColors.darkSecondaryBackground.withValues(alpha: 0.7)
+        : AppColors.lightSecondaryBackground.withValues(alpha: 0.7);
+    final shadows = <BoxShadow>[
+      if (_isFocused)
+        BoxShadow(
+          color: AppColors.primary.withValues(alpha: isDark ? 0.25 : 0.15),
+          blurRadius: 10,
+          spreadRadius: 2,
+        ),
+      if (_isHovered && !_isFocused) ...AppShadows.md,
+    ];
+
+    final borderColor = isDark
+        ? AppColors.darkBorder.withValues(alpha: 0.4)
+        : AppColors.lightBorder.withValues(alpha: 0.4);
     final textStyle = isDark ? AppTypography.darkBody : AppTypography.lightBody;
 
     return MouseRegion(
@@ -168,14 +176,19 @@ class _SearchFieldState extends State<_SearchField> {
         duration: AppDurations.fast,
         curve: AppCurves.standard,
         decoration: BoxDecoration(
-          color: baseColor,
+          color: _isFocused
+              ? (isDark
+                  ? AppColors.darkSecondaryBackground
+                  : AppColors.lightSecondaryBackground)
+              : baseColor,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
-            color: borderColor,
-            width: _isFocused ? 1.5 : 1,
+            color: _isFocused
+                ? AppColors.primary.withValues(alpha: 0.4)
+                : borderColor,
+            width: 1,
           ),
-          boxShadow:
-              (_isHovered || _isFocused) ? AppShadows.sm : AppShadows.none,
+          boxShadow: shadows,
         ),
         child: TextField(
           focusNode: _focusNode,
@@ -270,14 +283,14 @@ class _TimeFilterButton extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: selectedFilter != TimeFilter.all
-              ? AppColors.primary.withOpacity(isDark ? 0.2 : 0.1)
+              ? AppColors.primary.withValues(alpha: isDark ? 0.2 : 0.1)
               : (isDark
-                  ? Colors.white.withOpacity(0.05)
-                  : Colors.black.withOpacity(0.05)),
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.black.withValues(alpha: 0.05)),
           borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
             color: selectedFilter != TimeFilter.all
-                ? AppColors.primary.withOpacity(0.3)
+                ? AppColors.primary.withValues(alpha: 0.3)
                 : Colors.transparent,
           ),
         ),
@@ -457,8 +470,8 @@ class _DensityToggle extends StatelessWidget {
         ? AppColors.darkSecondaryBackground.withOpacity(0.7)
         : AppColors.lightSecondaryBackground.withOpacity(0.7);
     final border = isDark
-        ? AppColors.darkBorder.withOpacity(0.5)
-        : AppColors.lightBorder.withOpacity(0.5);
+        ? AppColors.darkBorder.withValues(alpha: 0.4)
+        : AppColors.lightBorder.withValues(alpha: 0.4);
 
     return Container(
       padding: const EdgeInsets.all(2),

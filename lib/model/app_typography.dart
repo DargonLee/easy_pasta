@@ -13,7 +13,7 @@ class AppTypography {
   static const String monospaceFontFamily = '.SF Mono'; // 等宽字体
 
   // ==================== 浅色模式文本样式 ====================
-  
+
   /// 大标题 1 - 34pt
   static TextStyle lightTitle1 = TextStyle(
     fontFamily: displayFontFamily,
@@ -247,7 +247,8 @@ class AppTypography {
       fontFamily: fontFamily,
       fontSize: fontSize,
       fontWeight: fontWeight ?? AppFontWeights.regular,
-      color: color ?? (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
+      color: color ??
+          (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary),
       height: height ?? 1.4,
       letterSpacing: letterSpacing ?? 0,
     );
@@ -300,6 +301,6 @@ extension TextStyleExtensions on TextStyle {
 
   /// 设置透明度
   TextStyle withOpacity(double opacity) => copyWith(
-        color: color?.withOpacity(opacity),
+        color: color?.withValues(alpha: opacity),
       );
 }

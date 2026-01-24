@@ -84,7 +84,8 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
     final borderColor = isSelected
         ? AppColors.primary
         : (isDark ? AppColors.darkFrostedBorder : AppColors.lightFrostedBorder);
-    final focusRingColor = AppColors.primary.withOpacity(isDark ? 0.4 : 0.25);
+    final focusRingColor =
+        AppColors.primary.withValues(alpha: isDark ? 0.4 : 0.25);
     final baseShadows = isDark
         ? (isElevated ? AppShadows.darkSm : AppShadows.none)
         : (isElevated ? AppShadows.md : AppShadows.sm);
@@ -146,7 +147,7 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
                         boxShadow: [
                           if (_showPulse)
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.4),
+                              color: AppColors.primary.withValues(alpha: 0.4),
                               blurRadius: 12,
                               spreadRadius: 4,
                             ),
@@ -196,7 +197,8 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
                                 borderRadius:
                                     BorderRadius.circular(AppRadius.card),
                                 border: Border.all(
-                                  color: AppColors.primary.withOpacity(0.5),
+                                  color:
+                                      AppColors.primary.withValues(alpha: 0.5),
                                   width: 2,
                                 ),
                               ),

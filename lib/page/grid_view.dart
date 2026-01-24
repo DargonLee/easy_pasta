@@ -219,8 +219,8 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.darkTextPrimary.withOpacity(0.9)
-                            : AppColors.lightTextPrimary.withOpacity(0.9),
+                            ? AppColors.darkTextPrimary.withValues(alpha: 0.9)
+                            : AppColors.lightTextPrimary.withValues(alpha: 0.9),
                       ),
                     ),
                   ),

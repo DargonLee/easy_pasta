@@ -18,31 +18,29 @@ class HtmlContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // 从FIML中提取纯文本
     final plainText = ContentProcessor.extractTextFromHtml(htmlData);
-    
+
     // 如果提取失败或为空，显示提示
     if (plainText.isEmpty) {
       return _buildEmptyState(isDark);
     }
-    
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       child: Text(
         plainText,
         maxLines: maxLines,
         overflow: TextOverflow.fade,
-        style: (isDark 
-            ? AppTypography.darkBody 
-            : AppTypography.lightBody
-        ).copyWith(
+        style: (isDark ? AppTypography.darkBody : AppTypography.lightBody)
+            .copyWith(
           height: 1.5,
         ),
       ),
     );
   }
-  
+
   /// 构建空状态
   Widget _buildEmptyState(bool isDark) {
     return Container(
@@ -53,22 +51,22 @@ class HtmlContent extends StatelessWidget {
           Icon(
             Icons.code,
             size: 20,
-            color: (isDark 
-                ? AppColors.darkTextSecondary 
-                : AppColors.lightTextSecondary
-            ).withOpacity(0.5),
+            color: (isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary)
+                .withValues(alpha: 0.5),
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
             'HTML 内容',
-            style: (isDark 
-                ? AppTypography.darkCaption 
-                : AppTypography.lightCaption
-            ).copyWith(
-              color: (isDark 
-                  ? AppColors.darkTextSecondary 
-                  : AppColors.lightTextSecondary
-              ).withOpacity(0.5),
+            style: (isDark
+                    ? AppTypography.darkCaption
+                    : AppTypography.lightCaption)
+                .copyWith(
+              color: (isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary)
+                  .withValues(alpha: 0.5),
             ),
           ),
         ],

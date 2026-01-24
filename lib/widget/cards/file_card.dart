@@ -19,7 +19,7 @@ class FileContent extends StatelessWidget {
     required this.fileName,
     required this.fileUri,
   });
-  
+
   /// 获取文件列表
   List<String> get _fileList => ContentProcessor.extractFileList(fileUri);
 
@@ -29,16 +29,16 @@ class FileContent extends StatelessWidget {
     if (_fileList.length > 1) {
       return _buildMultipleFiles(context);
     }
-    
+
     // 单文件显示
     return _buildSingleFile(context);
   }
-  
+
   /// 构建单文件显示
   Widget _buildSingleFile(BuildContext context) {
     final decodedPath = ContentProcessor.decodeFilePath(fileUri);
     final displayName = ContentProcessor.extractFileName(decodedPath);
-    
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -48,14 +48,14 @@ class FileContent extends StatelessWidget {
       ],
     );
   }
-  
+
   /// 构建多文件显示
   Widget _buildMultipleFiles(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final files = _fileList;
     final displayFiles = files.take(_maxFilesToShow).toList();
     final remainingCount = files.length - displayFiles.length;
-    
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -68,7 +68,7 @@ class FileContent extends StatelessWidget {
             Transform.translate(
               offset: const Offset(8, 8),
               child: _buildFileIconWithBackground(
-                files[0], 
+                files[0],
                 opacity: 0.3,
               ),
             ),
@@ -77,7 +77,7 @@ class FileContent extends StatelessWidget {
               Transform.translate(
                 offset: const Offset(4, -4),
                 child: _buildFileIconWithBackground(
-                  files[1], 
+                  files[1],
                   opacity: 0.5,
                 ),
               ),
@@ -93,17 +93,17 @@ class FileContent extends StatelessWidget {
             vertical: AppSpacing.xs,
           ),
           decoration: BoxDecoration(
-            color: isDark 
-                ? AppColors.darkSecondaryBackground 
+            color: isDark
+                ? AppColors.darkSecondaryBackground
                 : AppColors.lightSecondaryBackground,
             borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
           child: Text(
             '${files.length} 个项目',
-            style: (isDark 
-                ? AppTypography.darkCaption 
-                : AppTypography.lightCaption
-            ).copyWith(
+            style: (isDark
+                    ? AppTypography.darkCaption
+                    : AppTypography.lightCaption)
+                .copyWith(
               fontWeight: AppFontWeights.semiBold,
             ),
           ),
@@ -131,10 +131,9 @@ class FileContent extends StatelessWidget {
                     name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: (isDark 
-                        ? AppTypography.darkCaption 
-                        : AppTypography.lightCaption
-                    ),
+                    style: (isDark
+                        ? AppTypography.darkCaption
+                        : AppTypography.lightCaption),
                   ),
                 ),
               ],
@@ -147,33 +146,33 @@ class FileContent extends StatelessWidget {
             padding: const EdgeInsets.only(top: AppSpacing.xxs),
             child: Text(
               '还有 $remainingCount 个...',
-              style: (isDark 
-                  ? AppTypography.darkCaption 
-                  : AppTypography.lightCaption
-              ).copyWith(
-                color: (isDark 
-                    ? AppColors.darkTextSecondary 
-                    : AppColors.lightTextSecondary
-                ).withOpacity(0.6),
+              style: (isDark
+                      ? AppTypography.darkCaption
+                      : AppTypography.lightCaption)
+                  .copyWith(
+                color: (isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary)
+                    .withOpacity(0.6),
               ),
             ),
           ),
       ],
     );
   }
-  
+
   /// 构建带背景的文件图标
   Widget _buildFileIconWithBackground(String path, {double opacity = 1.0}) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: _getIconColorForPath(path).withOpacity(0.15 * opacity),
+        color: _getIconColorForPath(path).withValues(alpha: 0.15 * opacity),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Icon(
         _getFileIconForPath(path),
         size: _iconSize,
-        color: _getIconColorForPath(path).withOpacity(opacity),
+        color: _getIconColorForPath(path).withValues(alpha: opacity),
       ),
     );
   }
@@ -188,16 +187,14 @@ class FileContent extends StatelessWidget {
 
   Widget _buildFileName(String name, BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Text(
       name,
       textAlign: TextAlign.center,
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
-      style: (isDark 
-          ? AppTypography.darkBody 
-          : AppTypography.lightBody
-      ).copyWith(
+      style:
+          (isDark ? AppTypography.darkBody : AppTypography.lightBody).copyWith(
         fontSize: _fontSize,
         height: 1.3,
       ),

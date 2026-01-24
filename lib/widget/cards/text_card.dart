@@ -111,7 +111,7 @@ class TextContent extends StatelessWidget {
         style: style.copyWith(
           color: AppColors.primary,
           fontWeight: FontWeight.bold,
-          backgroundColor: AppColors.primary.withOpacity(0.1),
+          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
         ),
       ));
       start = indexOfHighlight + highlight!.length;

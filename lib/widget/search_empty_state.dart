@@ -8,7 +8,7 @@ import 'package:easy_pasta/core/animation_helper.dart';
 class SearchEmptyState extends StatefulWidget {
   final String? searchQuery;
   final VoidCallback? onClear;
-  
+
   const SearchEmptyState({
     super.key,
     this.searchQuery,
@@ -88,18 +88,19 @@ class _SearchEmptyStateState extends State<SearchEmptyState>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: AppSpacing.md),
-                
+
                 // 搜索关键词
-                if (widget.searchQuery != null && widget.searchQuery!.isNotEmpty)
+                if (widget.searchQuery != null &&
+                    widget.searchQuery!.isNotEmpty)
                   _buildSearchQuery(isDark),
-                
+
                 const SizedBox(height: AppSpacing.lg),
-                
+
                 // 建议
                 _buildSuggestions(isDark),
-                
+
                 // 清除按钮
                 if (widget.onClear != null) ...[
                   const SizedBox(height: AppSpacing.xl),
@@ -124,11 +125,11 @@ class _SearchEmptyStateState extends State<SearchEmptyState>
         color: (isDark
                 ? AppColors.darkSecondaryBackground
                 : AppColors.lightSecondaryBackground)
-            .withOpacity(0.5),
+            .withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: (isDark ? AppColors.darkBorder : AppColors.lightBorder)
-              .withOpacity(0.3),
+              .withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -145,9 +146,7 @@ class _SearchEmptyStateState extends State<SearchEmptyState>
           Flexible(
             child: Text(
               '"${widget.searchQuery}"',
-              style: (isDark
-                      ? AppTypography.darkBody
-                      : AppTypography.lightBody)
+              style: (isDark ? AppTypography.darkBody : AppTypography.lightBody)
                   .copyWith(
                 fontWeight: AppFontWeights.medium,
                 color: isDark
@@ -187,11 +186,11 @@ class _SearchEmptyStateState extends State<SearchEmptyState>
         color: (isDark
                 ? AppColors.darkSecondaryBackground
                 : AppColors.lightSecondaryBackground)
-            .withOpacity(0.3),
+            .withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: (isDark ? AppColors.darkBorder : AppColors.lightBorder)
-              .withOpacity(0.2),
+              .withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -280,7 +279,7 @@ class _SearchEmptyStateState extends State<SearchEmptyState>
             borderRadius: BorderRadius.circular(AppRadius.md),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
+                color: AppColors.primary.withValues(alpha: 0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -297,10 +296,9 @@ class _SearchEmptyStateState extends State<SearchEmptyState>
               const SizedBox(width: AppSpacing.sm),
               Text(
                 '清除搜索',
-                style: (isDark
-                        ? AppTypography.darkBody
-                        : AppTypography.lightBody)
-                    .copyWith(
+                style:
+                    (isDark ? AppTypography.darkBody : AppTypography.lightBody)
+                        .copyWith(
                   color: Colors.white,
                   fontWeight: AppFontWeights.semiBold,
                 ),

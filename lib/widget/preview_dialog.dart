@@ -53,11 +53,11 @@ class PreviewDialog extends StatelessWidget {
     final screenSize = MediaQuery.of(context).size;
 
     // 根据类型确定对话框大小
-    final dialogWidth = model.ptype == ClipboardType.image 
-        ? screenSize.width * 0.8 
+    final dialogWidth = model.ptype == ClipboardType.image
+        ? screenSize.width * 0.8
         : screenSize.width * 0.65;
-    final dialogHeight = model.ptype == ClipboardType.image 
-        ? screenSize.height * 0.8 
+    final dialogHeight = model.ptype == ClipboardType.image
+        ? screenSize.height * 0.8
         : screenSize.height * 0.7;
 
     return Center(
@@ -78,14 +78,14 @@ class PreviewDialog extends StatelessWidget {
               filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDark 
-                      ? AppColors.darkCardBackground.withOpacity(0.85)
-                      : AppColors.lightCardBackground.withOpacity(0.85),
+                  color: isDark
+                      ? AppColors.darkCardBackground.withValues(alpha: 0.85)
+                      : AppColors.lightCardBackground.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(AppRadius.dialog),
                   border: Border.all(
-                    color: isDark 
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.black.withOpacity(0.1),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Colors.black.withValues(alpha: 0.1),
                     width: 1,
                   ),
                 ),
@@ -112,9 +112,9 @@ class PreviewDialog extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: isDark 
-                ? AppColors.darkDivider.withOpacity(0.5)
-                : AppColors.lightDivider.withOpacity(0.5),
+            color: isDark
+                ? AppColors.darkDivider.withValues(alpha: 0.5)
+                : AppColors.lightDivider.withValues(alpha: 0.5),
             width: 1,
           ),
         ),
@@ -125,7 +125,7 @@ class PreviewDialog extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Icon(
@@ -135,7 +135,7 @@ class PreviewDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          
+
           // 标题
           Expanded(
             child: Column(
@@ -143,24 +143,24 @@ class PreviewDialog extends StatelessWidget {
               children: [
                 Text(
                   '预览',
-                  style: (isDark 
-                      ? AppTypography.darkHeadline 
-                      : AppTypography.lightHeadline
-                  ).copyWith(
+                  style: (isDark
+                          ? AppTypography.darkHeadline
+                          : AppTypography.lightHeadline)
+                      .copyWith(
                     fontSize: AppFontSizes.lg,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs / 2),
                 Text(
                   _getTypeLabel(),
-                  style: isDark 
-                      ? AppTypography.darkCaption 
+                  style: isDark
+                      ? AppTypography.darkCaption
                       : AppTypography.lightCaption,
                 ),
               ],
             ),
           ),
-          
+
           // 关闭按钮
           Material(
             color: Colors.transparent,
@@ -175,8 +175,8 @@ class PreviewDialog extends StatelessWidget {
                 child: Icon(
                   Icons.close,
                   size: 20,
-                  color: isDark 
-                      ? AppColors.darkTextSecondary 
+                  color: isDark
+                      ? AppColors.darkTextSecondary
                       : AppColors.lightTextSecondary,
                 ),
               ),
@@ -190,7 +190,7 @@ class PreviewDialog extends StatelessWidget {
   /// 构建内容区域
   Widget _buildContentArea(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.xl),
       child: SingleChildScrollView(
@@ -205,13 +205,13 @@ class PreviewDialog extends StatelessWidget {
     switch (model.ptype) {
       case ClipboardType.image:
         return _buildImageContent();
-      
+
       case ClipboardType.html:
         return _buildHtmlContent(isDark);
-      
+
       case ClipboardType.file:
         return _buildFileContent(isDark);
-      
+
       case ClipboardType.text:
       default:
         return _buildTextContent(isDark);
@@ -235,7 +235,7 @@ class PreviewDialog extends StatelessWidget {
                   Icon(
                     Icons.broken_image_outlined,
                     size: 64,
-                    color: AppColors.error.withOpacity(0.5),
+                    color: AppColors.error.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
@@ -258,21 +258,19 @@ class PreviewDialog extends StatelessWidget {
     // 从 HTML 中提取纯文本
     final htmlString = model.bytesToString(model.bytes ?? Uint8List(0));
     final plainText = ContentProcessor.extractTextFromHtml(htmlString);
-    
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: isDark 
-            ? AppColors.darkSecondaryBackground.withOpacity(0.3)
-            : AppColors.lightSecondaryBackground.withOpacity(0.3),
+        color: isDark
+            ? AppColors.darkSecondaryBackground.withValues(alpha: 0.3)
+            : AppColors.lightSecondaryBackground.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: SelectableText(
         plainText.isEmpty ? 'HTML 内容' : plainText,
-        style: (isDark 
-            ? AppTypography.darkBody 
-            : AppTypography.lightBody
-        ).copyWith(
+        style: (isDark ? AppTypography.darkBody : AppTypography.lightBody)
+            .copyWith(
           height: 1.6,
           letterSpacing: 0.3,
         ),
@@ -284,7 +282,7 @@ class PreviewDialog extends StatelessWidget {
   Widget _buildFileContent(bool isDark) {
     final fileUri = model.bytesToString(model.bytes ?? Uint8List(0));
     final fileList = ContentProcessor.extractFileList(fileUri);
-    
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
@@ -297,17 +295,17 @@ class PreviewDialog extends StatelessWidget {
               vertical: AppSpacing.xs,
             ),
             decoration: BoxDecoration(
-              color: isDark 
-                  ? AppColors.darkSecondaryBackground 
+              color: isDark
+                  ? AppColors.darkSecondaryBackground
                   : AppColors.lightSecondaryBackground,
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(
               fileList.length == 1 ? '1 个项目' : '${fileList.length} 个项目',
-              style: (isDark 
-                  ? AppTypography.darkCaption 
-                  : AppTypography.lightCaption
-              ).copyWith(
+              style: (isDark
+                      ? AppTypography.darkCaption
+                      : AppTypography.lightCaption)
+                  .copyWith(
                 fontWeight: AppFontWeights.semiBold,
               ),
             ),
@@ -318,14 +316,14 @@ class PreviewDialog extends StatelessWidget {
             final fileName = ContentProcessor.extractFileName(filePath);
             final isDir = ContentProcessor.isDirectory(filePath);
             final extension = ContentProcessor.getFileExtension(filePath);
-            
+
             return Container(
               margin: const EdgeInsets.only(bottom: AppSpacing.sm),
               padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
-                color: isDark 
-                    ? AppColors.darkSecondaryBackground.withOpacity(0.3)
-                    : AppColors.lightSecondaryBackground.withOpacity(0.3),
+                color: isDark
+                    ? AppColors.darkSecondaryBackground.withValues(alpha: 0.3)
+                    : AppColors.lightSecondaryBackground.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Row(
@@ -334,9 +332,7 @@ class PreviewDialog extends StatelessWidget {
                   Icon(
                     isDir ? Icons.folder_rounded : _getFileIcon(extension),
                     size: 32,
-                    color: isDir 
-                        ? Colors.blue[600] 
-                        : _getFileColor(extension),
+                    color: isDir ? Colors.blue[600] : _getFileColor(extension),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   // 文件信息
@@ -348,18 +344,22 @@ class PreviewDialog extends StatelessWidget {
                           fileName,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: (isDark 
-                              ? AppTypography.darkBody 
-                              : AppTypography.lightBody
-                          ).copyWith(
+                          style: (isDark
+                                  ? AppTypography.darkBody
+                                  : AppTypography.lightBody)
+                              .copyWith(
                             fontWeight: AppFontWeights.medium,
                           ),
                         ),
                         const SizedBox(height: AppSpacing.xxs),
                         Text(
-                          isDir ? '文件夹' : (extension.isEmpty ? '文件' : extension.toUpperCase()),
-                          style: isDark 
-                              ? AppTypography.darkCaption 
+                          isDir
+                              ? '文件夹'
+                              : (extension.isEmpty
+                                  ? '文件'
+                                  : extension.toUpperCase()),
+                          style: isDark
+                              ? AppTypography.darkCaption
                               : AppTypography.lightCaption,
                         ),
                       ],
@@ -379,17 +379,15 @@ class PreviewDialog extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: isDark 
-            ? AppColors.darkSecondaryBackground.withOpacity(0.3)
-            : AppColors.lightSecondaryBackground.withOpacity(0.3),
+        color: isDark
+            ? AppColors.darkSecondaryBackground.withValues(alpha: 0.3)
+            : AppColors.lightSecondaryBackground.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: SelectableText(
         model.pvalue,
-        style: (isDark 
-            ? AppTypography.darkBody 
-            : AppTypography.lightBody
-        ).copyWith(
+        style: (isDark ? AppTypography.darkBody : AppTypography.lightBody)
+            .copyWith(
           height: 1.6,
           letterSpacing: 0.3,
         ),
@@ -426,7 +424,7 @@ class PreviewDialog extends StatelessWidget {
         return '文本';
     }
   }
-  
+
   /// 获取文件图标
   IconData _getFileIcon(String extension) {
     const iconMap = {
@@ -465,7 +463,7 @@ class PreviewDialog extends StatelessWidget {
     };
     return iconMap[extension] ?? Icons.insert_drive_file_rounded;
   }
-  
+
   /// 获取文件颜色
   Color _getFileColor(String extension) {
     const colorMap = {

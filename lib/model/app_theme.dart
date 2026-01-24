@@ -10,7 +10,7 @@ class AppTheme {
   // ==================== 亮色主题 ====================
   static ThemeData light() => ThemeData(
         useMaterial3: true,
-        
+
         // 配色方案
         colorScheme: const ColorScheme.light(
           primary: AppColors.primary,
@@ -30,10 +30,10 @@ class AppTheme {
         scaffoldBackgroundColor: AppColors.lightBackground,
         cardColor: AppColors.lightCardBackground,
         dividerColor: AppColors.lightDivider,
-        
+
         // 文本主题
         textTheme: AppTypography.getTextTheme(false),
-        
+
         // AppBar 主题
         appBarTheme: const AppBarTheme(
           elevation: 0,
@@ -161,7 +161,7 @@ class AppTheme {
         // 滚动条主题
         scrollbarTheme: ScrollbarThemeData(
           thumbColor: WidgetStateProperty.all(
-            AppColors.lightTextSecondary.withOpacity(0.3),
+            AppColors.lightTextSecondary.withValues(alpha: 0.3),
           ),
           radius: const Radius.circular(AppRadius.sm),
           thickness: WidgetStateProperty.all(6),
@@ -179,7 +179,7 @@ class AppTheme {
   // ==================== 暗色主题 ====================
   static ThemeData dark() => ThemeData(
         useMaterial3: true,
-        
+
         // 配色方案
         colorScheme: const ColorScheme.dark(
           primary: AppColors.primaryLight,
@@ -199,10 +199,10 @@ class AppTheme {
         scaffoldBackgroundColor: AppColors.darkBackground,
         cardColor: AppColors.darkCardBackground,
         dividerColor: AppColors.darkDivider,
-        
+
         // 文本主题
         textTheme: AppTypography.getTextTheme(true),
-        
+
         // AppBar 主题
         appBarTheme: const AppBarTheme(
           elevation: 0,
@@ -278,7 +278,8 @@ class AppTheme {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
-            borderSide: const BorderSide(color: AppColors.primaryLight, width: 2),
+            borderSide:
+                const BorderSide(color: AppColors.primaryLight, width: 2),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
@@ -330,7 +331,7 @@ class AppTheme {
         // 滚动条主题
         scrollbarTheme: ScrollbarThemeData(
           thumbColor: WidgetStateProperty.all(
-            AppColors.darkTextSecondary.withOpacity(0.3),
+            AppColors.darkTextSecondary.withValues(alpha: 0.3),
           ),
           radius: const Radius.circular(AppRadius.sm),
           thickness: WidgetStateProperty.all(6),

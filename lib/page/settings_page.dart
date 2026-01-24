@@ -527,11 +527,11 @@ class _HeaderButtonState extends State<_HeaderButton> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseColor = isDark
-        ? AppColors.darkSecondaryBackground.withOpacity(0.7)
-        : AppColors.lightSecondaryBackground.withOpacity(0.7);
+        ? AppColors.darkSecondaryBackground.withValues(alpha: 0.7)
+        : AppColors.lightSecondaryBackground.withValues(alpha: 0.7);
     final hoverColor = isDark
-        ? AppColors.darkTertiaryBackground.withOpacity(0.7)
-        : AppColors.lightTertiaryBackground.withOpacity(0.7);
+        ? AppColors.darkTertiaryBackground.withValues(alpha: 0.7)
+        : AppColors.lightTertiaryBackground.withValues(alpha: 0.7);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -551,8 +551,8 @@ class _HeaderButtonState extends State<_HeaderButton> {
               borderRadius: BorderRadius.circular(AppRadius.md),
               border: Border.all(
                 color: isDark
-                    ? AppColors.darkBorder.withOpacity(0.4)
-                    : AppColors.lightBorder.withOpacity(0.4),
+                    ? AppColors.darkBorder.withValues(alpha: 0.4)
+                    : AppColors.lightBorder.withValues(alpha: 0.4),
               ),
             ),
             child: Icon(
@@ -590,8 +590,8 @@ class _SettingsBackground extends StatelessWidget {
               left: -80,
               child: _SettingsGlow(
                 color: isDark
-                    ? AppColors.primary.withOpacity(0.12)
-                    : AppColors.primary.withOpacity(0.08),
+                    ? AppColors.primary.withValues(alpha: 0.12)
+                    : AppColors.primary.withValues(alpha: 0.08),
                 radius: 220,
               ),
             ),
@@ -600,8 +600,8 @@ class _SettingsBackground extends StatelessWidget {
               right: -90,
               child: _SettingsGlow(
                 color: isDark
-                    ? AppColors.primaryLight.withOpacity(0.08)
-                    : AppColors.primaryLight.withOpacity(0.12),
+                    ? AppColors.primaryLight.withValues(alpha: 0.08)
+                    : AppColors.primaryLight.withValues(alpha: 0.12),
                 radius: 260,
               ),
             ),
@@ -631,7 +631,7 @@ class _SettingsGlow extends StatelessWidget {
         gradient: RadialGradient(
           colors: [
             color,
-            color.withOpacity(0),
+            color.withValues(alpha: 0),
           ],
         ),
       ),

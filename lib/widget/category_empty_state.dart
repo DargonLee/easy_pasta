@@ -8,7 +8,7 @@ import 'package:easy_pasta/core/animation_helper.dart';
 /// 为不同的剪贴板类型提供专属的空状态展示
 class CategoryEmptyState extends StatefulWidget {
   final NSPboardSortType category;
-  
+
   const CategoryEmptyState({
     super.key,
     required this.category,
@@ -97,9 +97,9 @@ class _CategoryEmptyStateState extends State<CategoryEmptyState>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: AppSpacing.md),
-                
+
                 // 描述
                 Text(
                   config.description,
@@ -113,9 +113,9 @@ class _CategoryEmptyStateState extends State<CategoryEmptyState>
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: AppSpacing.xxl),
-                
+
                 // 提示卡片
                 _buildTipsCard(config, isDark),
               ],
@@ -132,10 +132,10 @@ class _CategoryEmptyStateState extends State<CategoryEmptyState>
       constraints: const BoxConstraints(maxWidth: 400),
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: config.color.withOpacity(0.08),
+        color: config.color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
-          color: config.color.withOpacity(0.2),
+          color: config.color.withValues(alpha: 0.2),
           width: 1,
         ),
       ),

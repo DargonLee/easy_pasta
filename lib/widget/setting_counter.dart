@@ -98,7 +98,7 @@ class _ModernCounterState extends State<ModernCounter> {
 
     return Container(
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface.withOpacity(0.1),
+        color: theme.colorScheme.surface.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(

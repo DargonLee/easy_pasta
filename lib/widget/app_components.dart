@@ -56,7 +56,9 @@ class AppButton extends StatelessWidget {
                     : AppColors.primary),
             foregroundColor: foregroundColor ??
                 (isSecondary
-                    ? (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary)
+                    ? (isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.lightTextPrimary)
                     : Colors.white),
             padding: padding ??
                 const EdgeInsets.symmetric(
@@ -70,7 +72,7 @@ class AppButton extends StatelessWidget {
             disabledBackgroundColor: (isDark
                     ? AppColors.darkSecondaryBackground
                     : AppColors.lightSecondaryBackground)
-                .withOpacity(0.5),
+                .withValues(alpha: 0.5),
           ),
           child: isLoading
               ? SizedBox(
@@ -149,9 +151,7 @@ class AppIconButton extends StatelessWidget {
       ),
     );
 
-    return tooltip != null
-        ? Tooltip(message: tooltip!, child: button)
-        : button;
+    return tooltip != null ? Tooltip(message: tooltip!, child: button) : button;
   }
 }
 
@@ -188,9 +188,8 @@ class _AppCardState extends State<AppCard> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final defaultBg = isDark
-        ? AppColors.darkCardBackground
-        : AppColors.lightCardBackground;
+    final defaultBg =
+        isDark ? AppColors.darkCardBackground : AppColors.lightCardBackground;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
@@ -210,7 +209,7 @@ class _AppCardState extends State<AppCard> {
               : (widget.elevation != null
                   ? [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         offset: Offset(0, widget.elevation!),
                         blurRadius: widget.elevation! * 2,
                       )

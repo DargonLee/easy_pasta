@@ -276,8 +276,8 @@ class _HomeBackground extends StatelessWidget {
               right: -80,
               child: _Glow(
                 color: isDark
-                    ? AppColors.primary.withOpacity(0.12)
-                    : AppColors.primary.withOpacity(0.08),
+                    ? AppColors.primary.withValues(alpha: 0.12)
+                    : AppColors.primary.withValues(alpha: 0.08),
                 radius: 220,
               ),
             ),
@@ -286,8 +286,8 @@ class _HomeBackground extends StatelessWidget {
               left: -100,
               child: _Glow(
                 color: isDark
-                    ? AppColors.primaryLight.withOpacity(0.08)
-                    : AppColors.primaryLight.withOpacity(0.12),
+                    ? AppColors.primaryLight.withValues(alpha: 0.08)
+                    : AppColors.primaryLight.withValues(alpha: 0.12),
                 radius: 260,
               ),
             ),
@@ -317,7 +317,7 @@ class _Glow extends StatelessWidget {
         gradient: RadialGradient(
           colors: [
             color,
-            color.withOpacity(0),
+            color.withValues(alpha: 0),
           ],
         ),
       ),

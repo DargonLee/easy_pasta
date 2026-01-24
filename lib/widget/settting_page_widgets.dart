@@ -45,7 +45,8 @@ class HotkeyTile extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: (item.iconColor ?? AppColors.primary).withOpacity(0.1),
+                  color: (item.iconColor ?? AppColors.primary)
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Icon(
@@ -94,7 +95,7 @@ class HotkeyTile extends StatelessWidget {
                   vertical: AppSpacing.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
@@ -160,7 +161,8 @@ class ThemeTile extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: (item.iconColor ?? AppColors.primary).withOpacity(0.1),
+              color:
+                  (item.iconColor ?? AppColors.primary).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Icon(
@@ -251,7 +253,7 @@ class ThemeTile extends StatelessWidget {
                 : AppColors.lightSecondaryBackground,
             selectedColor: AppColors.primary,
             borderColor: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-            pressedColor: AppColors.primary.withOpacity(0.1),
+            pressedColor: AppColors.primary.withValues(alpha: 0.1),
           ),
         ],
       ),
@@ -345,11 +347,11 @@ class AutoPasteTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
             decoration: BoxDecoration(
               color: (isPermissionOk ? Colors.green : Colors.orange)
-                  .withOpacity(0.1),
+                  .withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(4),
               border: Border.all(
                 color: (isPermissionOk ? Colors.green : Colors.orange)
-                    .withOpacity(0.3),
+                    .withValues(alpha: 0.3),
                 width: 0.5,
               ),
             ),
@@ -430,7 +432,8 @@ class RetentionDaysTile extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: (item.iconColor ?? AppColors.primary).withOpacity(0.1),
+              color:
+                  (item.iconColor ?? AppColors.primary).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Icon(
@@ -589,7 +592,7 @@ class AboutTile extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Icon(
@@ -666,7 +669,8 @@ class BaseSettingTile extends StatelessWidget {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: (item.iconColor ?? AppColors.primary).withOpacity(0.1),
+              color:
+                  (item.iconColor ?? AppColors.primary).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Icon(
