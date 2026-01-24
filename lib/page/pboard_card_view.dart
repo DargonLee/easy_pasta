@@ -24,6 +24,7 @@ class NewPboardItemCard extends StatefulWidget {
   final bool enableHover;
   final bool showFocus;
   final String? highlight;
+  final int? badgeIndex; // 新增：显示数字快捷键角标
 
   const NewPboardItemCard({
     Key? key,
@@ -38,6 +39,7 @@ class NewPboardItemCard extends StatefulWidget {
     this.enableHover = true,
     this.showFocus = false,
     this.highlight,
+    this.badgeIndex,
   }) : super(key: key);
 
   @override
@@ -60,7 +62,8 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
   void didUpdateWidget(covariant NewPboardItemCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!widget.enableHover && _isHovered) {
-      _isHovered = false;
+      // 必须调用 setState，否则状态更改不会反映到 UI [FIXED]
+      setState(() => _isHovered = false);
     }
   }
 
@@ -98,120 +101,131 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
         ),
     ];
 
-    return MouseRegion(
-      onEnter:
-          widget.enableHover ? (_) => setState(() => _isHovered = true) : null,
-      onExit:
-          widget.enableHover ? (_) => setState(() => _isHovered = false) : null,
-      child: RepaintBoundary(
-        child: AnimatedScale(
-          scale: isElevated ? 1.01 : 1.0,
+    // [CRITICAL FIX] 条件渲染：键盘模式下完全移除 MouseRegion
+    final child = RepaintBoundary(
+      child: AnimatedScale(
+        scale: isElevated ? 1.01 : 1.0,
+        duration: AppDurations.fast,
+        curve: AppCurves.standard,
+        child: AnimatedContainer(
           duration: AppDurations.fast,
           curve: AppCurves.standard,
-          child: AnimatedContainer(
-            duration: AppDurations.fast,
-            curve: AppCurves.standard,
-            decoration: BoxDecoration(
-              gradient: isDark
-                  ? AppGradients.darkCardSheen
-                  : AppGradients.lightCardSheen,
-              borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(
-                color: borderColor,
-                width: isSelected ? 1.5 : 1,
-              ),
-              boxShadow: shadows,
+          decoration: BoxDecoration(
+            gradient: isDark
+                ? AppGradients.darkCardSheen
+                : AppGradients.lightCardSheen,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(
+              color: borderColor,
+              width: isSelected ? 1.5 : 1,
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(AppRadius.card),
-                onTap: () {
-                  HapticFeedback.selectionClick();
-                  widget.onTap(widget.model);
-                },
-                onDoubleTap: () {
-                  HapticFeedback.mediumImpact();
-                  _triggerPulse();
-                  widget.onDoubleTap(widget.model);
-                },
-                child: Stack(
-                  children: [
-                    // 背景脉冲阴影动画
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 400),
-                      curve: Curves.easeOut,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(AppRadius.card),
-                        boxShadow: [
-                          if (_showPulse)
-                            BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.4),
-                              blurRadius: 12,
-                              spreadRadius: 4,
-                            ),
-                        ],
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(spec.cardPadding),
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Expanded(child: _buildContent(context)),
-                                const SizedBox(height: AppSpacing.xs),
-                                _buildFooter(
-                                  context,
-                                  showActions: true,
-                                ),
-                              ],
-                            ),
+            boxShadow: shadows,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              onTap: () {
+                HapticFeedback.selectionClick();
+                widget.onTap(widget.model);
+              },
+              onDoubleTap: () {
+                HapticFeedback.mediumImpact();
+                _triggerPulse();
+                widget.onDoubleTap(widget.model);
+              },
+              child: Stack(
+                children: [
+                  // 背景脉冲阴影动画
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOut,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.card),
+                      boxShadow: [
+                        if (_showPulse)
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            spreadRadius: 4,
                           ),
-                          if (showSourceBadge)
-                            Positioned(
-                              top: 0,
-                              right: 0,
-                              child: IgnorePointer(
-                                child: SourceAppBadge(
-                                  bundleId: sourceAppId,
-                                  size: badgeSize,
-                                ),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(spec.cardPadding),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(child: _buildContent(context)),
+                              const SizedBox(height: AppSpacing.xs),
+                              _buildFooter(
+                                context,
+                                showActions: true,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (showSourceBadge)
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: IgnorePointer(
+                              child: SourceAppBadge(
+                                bundleId: sourceAppId,
+                                size: badgeSize,
                               ),
                             ),
-                        ],
-                      ),
+                          ),
+                        if (widget.badgeIndex != null && widget.badgeIndex! < 9)
+                          Positioned(
+                            top: -2,
+                            left: -2,
+                            child: _ShortcutBadge(index: widget.badgeIndex!),
+                          ),
+                      ],
                     ),
-                    // 前景脉冲边框动画
-                    if (_showPulse)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: AnimatedOpacity(
-                            duration: const Duration(milliseconds: 400),
-                            opacity: _showPulse ? 0 : 1,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.card),
-                                border: Border.all(
-                                  color:
-                                      AppColors.primary.withValues(alpha: 0.5),
-                                  width: 2,
-                                ),
+                  ),
+                  // 前景脉冲边框动画
+                  if (_showPulse)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 400),
+                          opacity: _showPulse ? 0 : 1,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.card),
+                              border: Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.5),
+                                width: 2,
                               ),
                             ),
                           ),
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
           ),
         ),
       ),
+    );
+
+    // 键盘模式下完全不使用 MouseRegion
+    if (!widget.enableHover) {
+      return child;
+    }
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: child,
     );
   }
 
@@ -321,6 +335,42 @@ class _ImagePreview extends StatelessWidget {
       height: double.infinity,
       // 启用图片缓存优化
       cacheWidth: 400,
+    );
+  }
+}
+
+class _ShortcutBadge extends StatelessWidget {
+  final int index;
+
+  const _ShortcutBadge({required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.9),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(AppRadius.card - 1),
+          bottomRight: Radius.circular(AppRadius.md),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 4,
+            offset: const Offset(1, 1),
+          ),
+        ],
+      ),
+      child: Text(
+        '${index + 1}',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          height: 1,
+        ),
+      ),
     );
   }
 }
