@@ -282,23 +282,36 @@ class PboardProvider extends ChangeNotifier {
   }
 
   Future<Result<void>> addItem(ClipboardItemModel model) async {
+    debugPrint(
+        '🔵 PboardProvider.addItem called: ${model.ptype}, id: ${model.id}');
     try {
       // 插入逻辑移交给 Service (自动处理缩略图生成)
+      debugPrint('🔵 Calling service.processAndInsert...');
       final deletedItemId = await _service.processAndInsert(model);
+      debugPrint(
+          '🔵 processAndInsert completed, deletedItemId: $deletedItemId');
 
       // 更新内存状态 (内存中可以保留 bytes 减少重复拉取)
       List<ClipboardItemModel> nextAllItems = [model, ..._state.allItems];
+      debugPrint(
+          '🔵 Current allItems count: ${_state.allItems.length}, new count will be: ${nextAllItems.length}');
 
       if (deletedItemId != null) {
         nextAllItems =
             nextAllItems.where((item) => item.id != deletedItemId).toList();
+        debugPrint(
+            '🔵 Removed deleted item, final count: ${nextAllItems.length}');
       }
 
       _updateState(_state.copyWith(allItems: nextAllItems));
+      debugPrint('🔵 State updated with new allItems');
       _applyFiltersAndSearch();
+      debugPrint(
+          '✅ addItem completed successfully, filteredItems count: ${_state.filteredItems.length}');
 
       return const Result.success(null);
     } catch (e) {
+      debugPrint('❌ addItem failed: $e');
       _handleError('添加', e);
       return Result.failure(e.toString());
     }

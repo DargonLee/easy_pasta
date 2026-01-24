@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -24,7 +24,7 @@ class DatabaseConfig {
   static const String dbName = 'easy_pasta.db';
   static const String tableName = 'clipboard_items';
   static const String ftsTableName = 'clipboard_items_fts'; // FTS5 虚拟表
-  static const int version = 4;
+  static const int version = 5;
 
   // Table columns
   static const String columnId = 'id';
@@ -67,21 +67,32 @@ class DatabaseHelper implements IDatabaseHelper {
 
   Database? _db;
   bool _isInitializing = false;
+  Future<Database>? _initFuture;
 
   /// Returns database instance, initializing if necessary
   Future<Database> get database async {
-    if (_db != null) return _db!;
-
-    // 如果正在初始化，等待完成
-    while (_isInitializing) {
-      await Future.delayed(const Duration(milliseconds: 50));
+    // 如果已初始化，直接返回
+    if (_db != null) {
+      return _db!;
     }
 
-    // 再次检查，可能已初始化完成
-    if (_db != null) return _db!;
+    // 如果正在初始化，等待完成
+    if (_isInitializing && _initFuture != null) {
+      return _initFuture!;
+    }
 
-    _db ??= await _initDatabase();
-    return _db!;
+    // 开始初始化
+    _isInitializing = true;
+    _initFuture = _initDatabase();
+
+    try {
+      final result = await _initFuture!;
+      _db = result; // 关键：保存初始化结果
+      return result;
+    } finally {
+      _isInitializing = false;
+      _initFuture = null;
+    }
   }
 
   Future<int> getRetentionDays() async {
@@ -91,17 +102,13 @@ class DatabaseHelper implements IDatabaseHelper {
 
   /// Initializes the database
   Future<Database> _initDatabase() async {
-    if (_isInitializing) {
-      developer.log('数据库正在初始化中...');
-      throw DatabaseException('数据库正在初始化中');
-    }
-
-    _isInitializing = true;
+    // Log using debugPrint for visibility
+    debugPrint('🟡 _initDatabase called');
 
     try {
       sqfliteFfiInit();
       final path = await _getDatabasePath();
-      developer.log('db path: $path');
+      debugPrint('🟡 db path: $path');
       final databaseFactory = databaseFactoryFfi;
 
       final db = await databaseFactory.openDatabase(
@@ -143,6 +150,7 @@ class DatabaseHelper implements IDatabaseHelper {
           ${DatabaseConfig.columnValue} TEXT NOT NULL,
           ${DatabaseConfig.columnIsFavorite} INTEGER DEFAULT 0,
           ${DatabaseConfig.columnBytes} BLOB,
+          ${DatabaseConfig.columnThumbnail} BLOB,
           ${DatabaseConfig.columnSourceAppId} TEXT
         )
       ''');
@@ -174,13 +182,20 @@ class DatabaseHelper implements IDatabaseHelper {
     if (oldVersion < 4) {
       await _upgradeToV4(db);
     }
+    if (oldVersion < 5) {
+      await _upgradeToV5(db);
+    }
   }
 
   Future<void> _upgradeToV4(Database db) async {
     await db.transaction((txn) async {
       // 1. 添加缩略图列
-      await txn.execute(
-          'ALTER TABLE ${DatabaseConfig.tableName} ADD COLUMN ${DatabaseConfig.columnThumbnail} BLOB');
+      try {
+        await txn.execute(
+            'ALTER TABLE ${DatabaseConfig.tableName} ADD COLUMN ${DatabaseConfig.columnThumbnail} BLOB');
+      } catch (e) {
+        debugPrint('Column thumbnail might already exist (v4 upgrade): $e');
+      }
 
       // 2. 创建 FTS5 虚拟表
       await txn.execute('''
@@ -220,6 +235,20 @@ class DatabaseHelper implements IDatabaseHelper {
           WHERE ${DatabaseConfig.columnId} = old.${DatabaseConfig.columnId};
         END
       ''');
+    });
+  }
+
+  Future<void> _upgradeToV5(Database db) async {
+    debugPrint('🟡 Upgrading database to v5...');
+    await db.transaction((txn) async {
+      // Ensure thumbnail column exists
+      try {
+        await txn.execute(
+            'ALTER TABLE ${DatabaseConfig.tableName} ADD COLUMN ${DatabaseConfig.columnThumbnail} BLOB');
+        debugPrint('✅ Added missing thumbnail column in v5 upgrade');
+      } catch (e) {
+        debugPrint('Thumbnail column already exists (v5 checked): $e');
+      }
     });
   }
 
@@ -433,9 +462,12 @@ class DatabaseHelper implements IDatabaseHelper {
 
   @override
   Future<String?> insertPboardItem(ClipboardItemModel model) async {
+    debugPrint('🟡 DatabaseHelper.insertPboardItem called for ${model.id}');
     final db = await database;
+    debugPrint('🟡 Database instance obtained');
     final maxCount = await getMaxCount();
     final retentionDays = await getRetentionDays();
+    debugPrint('🟡 maxCount: $maxCount, retentionDays: $retentionDays');
 
     return await db.transaction((txn) async {
       try {
@@ -452,16 +484,21 @@ class DatabaseHelper implements IDatabaseHelper {
         }
 
         // 2. 插入新项
+        debugPrint('🟡 Inserting item into database...');
         await txn.insert(DatabaseConfig.tableName, model.toMap());
+        debugPrint('✅ Item inserted successfully');
 
         // 3. 检查总量限制: 如果超过 maxCount, 删除最旧的非收藏项
         final count = await _getCountInTransaction(txn);
+        debugPrint('🟡 Current item count: $count');
         if (count > maxCount) {
           final itemId = await _deleteOldestNonFavoriteItemInTransaction(txn);
+          debugPrint('🟡 Deleted oldest item: $itemId');
           return itemId;
         }
         return null;
       } catch (e) {
+        debugPrint('❌ Database insert failed: $e');
         throw DatabaseException('Failed to insert item', e);
       }
     });
@@ -483,7 +520,7 @@ class DatabaseHelper implements IDatabaseHelper {
         whereArgs: [expirationDate.toString()],
       );
     } catch (e) {
-      developer.log('Cleanup expired items failed: $e');
+      debugPrint('Cleanup expired items failed: $e');
     }
   }
 
@@ -552,7 +589,7 @@ class DatabaseHelper implements IDatabaseHelper {
       }
       return 0.0;
     } catch (e) {
-      developer.log('Get database size failed: $e');
+      debugPrint('Get database size failed: $e');
       return 0.0;
     }
   }
@@ -563,7 +600,7 @@ class DatabaseHelper implements IDatabaseHelper {
       final db = await database;
       await db.execute('VACUUM');
     } catch (e) {
-      developer.log('Optimize database failed: $e');
+      debugPrint('Optimize database failed: $e');
       rethrow;
     }
   }
@@ -590,7 +627,7 @@ class DatabaseHelper implements IDatabaseHelper {
         await file.delete();
       }
     } catch (e) {
-      throw DatabaseException('Failed to delete database', e);
+      debugPrint('Failed to delete database: $e');
     }
   }
 }

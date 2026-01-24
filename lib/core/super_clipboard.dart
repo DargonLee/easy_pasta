@@ -29,6 +29,7 @@ class SuperClipboard {
   void _startPollingTimer() {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(_pollingInterval, (_) => _pollClipboard());
+    debugPrint('Clipboard polling started.');
   }
 
   /// Polls clipboard content for changes
