@@ -8,6 +8,7 @@ import 'package:easy_pasta/model/app_typography.dart';
 import 'package:easy_pasta/model/grid_density.dart';
 import 'package:easy_pasta/model/time_filter.dart';
 import 'package:easy_pasta/widget/mobile_sync_dialog.dart';
+import 'package:easy_pasta/core/bonsoir_service.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   static const double height = 72;
@@ -627,6 +628,8 @@ class _SyncButtonState extends State<_SyncButton> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor =
+        isDark ? AppColors.darkFrostedSurface : AppColors.lightFrostedSurface;
     final baseColor = isDark
         ? AppColors.darkSecondaryBackground.withValues(alpha: 0.7)
         : AppColors.lightSecondaryBackground.withValues(alpha: 0.7);
@@ -661,12 +664,41 @@ class _SyncButtonState extends State<_SyncButton> {
                       : AppColors.lightBorder.withValues(alpha: 0.4),
                 ),
               ),
-              child: Icon(
-                Icons.mobile_screen_share,
-                size: 18,
-                color: isDark
-                    ? AppColors.darkTextPrimary
-                    : AppColors.lightTextPrimary,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    Icons.mobile_screen_share,
+                    size: 18,
+                    color: isDark
+                        ? AppColors.darkTextPrimary
+                        : AppColors.lightTextPrimary,
+                  ),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: ValueListenableBuilder<bool>(
+                      valueListenable:
+                          BonjourManager.instance.isRunningNotifier,
+                      builder: (context, isRunning, _) {
+                        return Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isRunning
+                                ? Colors.green
+                                : Colors.grey.withValues(alpha: 0.5),
+                            border: Border.all(
+                              color: surfaceColor,
+                              width: 1.5,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

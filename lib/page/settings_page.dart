@@ -15,6 +15,7 @@ import 'package:easy_pasta/model/app_typography.dart';
 import 'package:easy_pasta/core/animation_helper.dart';
 import 'package:easy_pasta/page/bonsoir_page.dart';
 import 'package:easy_pasta/core/auto_paste_service.dart';
+import 'package:easy_pasta/core/bonsoir_service.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -26,7 +27,6 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final _settingsService = SettingsService();
   bool _autoLaunch = false;
-  bool _bonjourEnabled = false;
   bool _autoPasteEnabled = false;
   bool _isAccessibilityTrusted = false;
   double _dbSizeMb = 0.0;
@@ -104,7 +104,6 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadSettings() async {
     _hotKey = await _settingsService.getHotKey();
     _autoLaunch = await _settingsService.getAutoLaunch();
-    _bonjourEnabled = await _settingsService.getBonjourEnabled();
     _autoPasteEnabled = await _settingsService.getAutoPaste();
     _isAccessibilityTrusted = await AutoPasteService().checkAccessibility();
     _dbSizeMb = await _settingsService.getDatabaseSize();
@@ -311,17 +310,23 @@ class _SettingsPageState extends State<SettingsPage> {
           },
         );
       case SettingType.bonjour:
-        return ToggleSettingTile(
-          item: item,
-          value: _bonjourEnabled,
-          onChanged: (bool value) async {
-            await _settingsService.setBonjourEnabled(value);
-            setState(() => _bonjourEnabled = value);
-          },
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const BonjourTestPage()),
+        return ValueListenableBuilder<bool>(
+          valueListenable: BonjourManager.instance.isRunningNotifier,
+          builder: (context, isRunning, _) {
+            // 这里我们优先使用 Service 的实际状态
+            // 但如果用户手动切换了开关，UI 会先响应，Service 状态随后更新
+            return ToggleSettingTile(
+              item: item,
+              value: isRunning,
+              onChanged: (bool value) async {
+                await _settingsService.setBonjourEnabled(value);
+              },
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BonjourTestPage()),
+                );
+              },
             );
           },
         );

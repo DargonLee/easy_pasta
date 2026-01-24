@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:easy_pasta/core/sync_portal_service.dart';
+import 'package:easy_pasta/core/bonsoir_service.dart';
+import 'package:easy_pasta/core/settings_service.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 
 class MobileSyncDialog extends StatelessWidget {
@@ -166,6 +168,80 @@ class MobileSyncDialog extends StatelessWidget {
                   },
                 ),
               ],
+              const SizedBox(height: 20),
+              // Bonjour 状态指示与开启按钮
+              ValueListenableBuilder<bool>(
+                valueListenable: BonjourManager.instance.isRunningNotifier,
+                builder: (context, isRunning, _) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isRunning
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isRunning
+                            ? Colors.green.withValues(alpha: 0.2)
+                            : Colors.orange.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isRunning
+                              ? Icons.wifi_tethering
+                              : Icons.wifi_tethering_off,
+                          size: 20,
+                          color: isRunning ? Colors.green : Colors.orange,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isRunning ? 'Bonjour 已就绪' : 'Bonjour 未启动',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      isRunning ? Colors.green : Colors.orange,
+                                ),
+                              ),
+                              Text(
+                                isRunning ? '手机可自动发现此设备' : '手机可能无法自动发现',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color:
+                                      (isRunning ? Colors.green : Colors.orange)
+                                          .withValues(alpha: 0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!isRunning)
+                          TextButton(
+                            onPressed: () async {
+                              await SettingsService().setBonjourEnabled(true);
+                            },
+                            style: TextButton.styleFrom(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text('立即开启',
+                                style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
               const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(12),

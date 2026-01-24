@@ -6,6 +6,8 @@ import 'package:easy_pasta/db/shared_preference_helper.dart';
 import 'package:easy_pasta/core/hotkey_service.dart';
 import 'package:easy_pasta/core/startup_service.dart';
 import 'dart:convert';
+import 'package:easy_pasta/core/bonsoir_service.dart';
+import 'package:easy_pasta/core/sync_portal_service.dart';
 import 'package:provider/provider.dart';
 
 class SettingsService {
@@ -42,6 +44,13 @@ class SettingsService {
 
   Future<void> setBonjourEnabled(bool value) async {
     await _prefs.then((prefs) => prefs.setBonjourEnabled(value));
+    if (value) {
+      await BonjourManager.instance.startService(attributes: {
+        'portal_url': SyncPortalService.instance.portalUrl ?? ''
+      });
+    } else {
+      await BonjourManager.instance.stopService();
+    }
   }
 
   Future<bool> getBonjourEnabled() async {

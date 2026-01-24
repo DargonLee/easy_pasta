@@ -30,6 +30,9 @@ class BonjourManager {
   Function(bool isRunning)? onServiceStateChanged;
   Function(bool isDiscovering)? onDiscoveryStateChanged;
 
+  // 状态监控 (ValueNotifier)
+  final ValueNotifier<bool> isRunningNotifier = ValueNotifier<bool>(false);
+
   // 私有构造函数
   BonjourManager._internal();
 
@@ -77,6 +80,7 @@ class BonjourManager {
       }
 
       onServiceStateChanged?.call(true);
+      isRunningNotifier.value = true;
       return true;
     } catch (e) {
       final error = 'Bonjour 服务启动失败: $e';
@@ -96,6 +100,7 @@ class BonjourManager {
       _service = null;
 
       onServiceStateChanged?.call(false);
+      isRunningNotifier.value = false;
 
       if (kDebugMode) {
         print('EasyPasta Bonjour 服务已停止');

@@ -31,7 +31,7 @@ class SharedPreferenceHelper {
   /// 默认值常量
   static const int defaultMaxItems = 500;
   static const bool defaultLoginInLaunch = false;
-  static const bool defaultBonjourEnabled = false;
+  static const bool defaultBonjourEnabled = true;
   static const int defaultRetentionDays = 7;
   static const bool defaultAutoPasteEnabled = false;
 
