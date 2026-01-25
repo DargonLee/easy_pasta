@@ -19,27 +19,7 @@ class SearchEmptyState extends StatefulWidget {
   State<SearchEmptyState> createState() => _SearchEmptyStateState();
 }
 
-class _SearchEmptyStateState extends State<SearchEmptyState>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _SearchEmptyStateState extends State<SearchEmptyState> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
