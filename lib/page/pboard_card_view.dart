@@ -310,7 +310,7 @@ class _ImagePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 直接使用完整字节以显示高清图片
+    // 根据用户要求，直接使用完整字节以显示高清图片
     final imageData = model.bytes;
 
     if (imageData == null) {
@@ -327,7 +327,8 @@ class _ImagePreview extends StatelessWidget {
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      // 移除缓存压缩以显示原始高清图片
+      // 保持 cacheWidth 以防止极高分辨率图片爆内存，但增加宽度以保证清晰度
+      cacheWidth: 800,
     );
   }
 }

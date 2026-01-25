@@ -70,17 +70,13 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
 
   void _handleScroll() {
     if (!_isScrolling || _hoveredItem != null) {
-      if (mounted) {
-        setState(() {
-          _isScrolling = true;
-          _hoveredItem = null;
-        });
-      }
+      _isScrolling = true;
+      _hoveredItem = null;
     }
     _scrollEndTimer?.cancel();
     _scrollEndTimer = Timer(const Duration(milliseconds: 120), () {
       if (!mounted) return;
-      setState(() => _isScrolling = false);
+      _isScrolling = false;
       RendererBinding.instance.mouseTracker.updateAllDevices();
     });
 

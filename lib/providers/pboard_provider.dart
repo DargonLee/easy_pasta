@@ -88,6 +88,7 @@ class PboardProvider extends ChangeNotifier {
   TimeFilter get timeFilter => _state.timeFilter;
 
   bool _isInitialized = false;
+  bool _isDisposed = false;
 
   PboardProvider({ClipboardService? service})
       : _service = service ?? ClipboardService(),
@@ -100,7 +101,7 @@ class PboardProvider extends ChangeNotifier {
         ) {
     // 延迟初始化，避免与其他服务冲突
     Future.delayed(const Duration(milliseconds: 100), () {
-      if (!_isInitialized) {
+      if (!_isInitialized && !_isDisposed) {
         _initializeState();
       }
     });
@@ -116,6 +117,7 @@ class PboardProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _mobileUploadSubscription?.cancel();
     super.dispose();
   }
@@ -156,6 +158,7 @@ class PboardProvider extends ChangeNotifier {
   }
 
   void _updateState(PboardState newState) {
+    if (_isDisposed) return;
     _state = newState;
     notifyListeners();
   }

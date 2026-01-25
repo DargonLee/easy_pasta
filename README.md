@@ -110,65 +110,30 @@ scripts\build.bat
 
 ## 📅 路线图
 
-### ✨ 体验优化
+我们不仅记录历史，更致力于深度理解您的剪贴板内容。以下是正在开发中的核心能力：
 
-- [x] 多屏支持：窗口自动出现在鼠标所在的屏幕中心，紧跟操作焦点
-- [ ] 键盘导航与快捷键（体验优化中）：
-  - [ ] 焦点稳定性：键盘选中不被鼠标悬停抢焦点，离开鼠标不清空选中
-  - [ ] 方向键导航：`↑/↓/←/→` 移动时自动滚动保持可见
-  - [ ] 搜索聚焦/清空：`Cmd/Ctrl+F` 或 `/` 聚焦，`Esc` 仅清空搜索
-  - [ ] 操作一致性：`Enter`或 `鼠标双击` 复制+粘贴并关闭，`Shift+Enter` 仅复制
-- [ ] 自动粘贴：按下回车键（Enter）自动复制并粘贴内容到当前目标窗口
-- [ ] 搜索增强：唤起窗口时自动聚焦搜索框，并支持快捷键快速清除
-- [ ] 智能高度：根据内容数量动态调整窗口高度，减少视觉留白
-- [ ] 视觉反馈：增强卡片选中与焦点状态的视觉提示，对齐 macOS 原生体验
-- [ ] 背景特效：支持窗口背景实时毛玻璃（Vibrancy）效果
-- [ ] 记忆状态：自动记住上次关闭时的分类选择和滚动位置
-- [ ] 触感优化：为操作添加细腻的触感反馈或系统级音效提示
-- [x] 升级库版本：
-```
- bonsoir 5.1.11 (6.0.1 available)
-  bonsoir_android 5.1.6 (6.0.1 available)
-  bonsoir_darwin 5.1.3 (6.0.1 available)
-  bonsoir_linux 5.1.3 (6.0.1 available)
-  bonsoir_platform_interface 5.1.3 (6.0.1 available)
-  bonsoir_windows 5.1.5 (6.0.1 available)
-  characters 1.4.0 (1.4.1 available)
-  device_info_plus 10.1.2 (12.3.0 available)
-  flutter_lints 2.0.3 (6.0.0 available)
-  launch_at_startup 0.3.1 (0.5.1 available)
-  lints 2.1.1 (6.0.0 available)
-  matcher 0.12.17 (0.12.18 available)
-  material_color_utilities 0.11.1 (0.13.0 available)
-  meta 1.17.0 (1.18.0 available)
-  package_info_plus 8.3.1 (9.0.0 available)
-  path_provider_foundation 2.5.1 (2.6.0 available)
-  super_clipboard 0.8.24 (0.9.1 available)
-  super_native_extensions 0.8.24 (0.9.1 available)
-  test_api 0.7.7 (0.7.9 available)
-  tray_manager 0.3.2 (0.5.2 available)
-  win32_registry 1.1.5 (2.1.0 available)
-  window_manager 0.4.3 (0.5.1 available)
-```
+### 1️⃣ 内容识别引擎 (The Soul)
+通过深度分析，自动识别并为不同类型的内容提供定制化处理：
 
-### 👨‍💻 开发者专属功能
+| 类型 | 判定逻辑 | 专属特性 |
+| :--- | :--- | :--- |
+| 🔗 **URL** | 正则匹配 | 自动获取标题、提取纯链接、域名展示 |
+| 🧩 **Code** | 语法特征 + AI 检测 | 语法高亮、自动去除注释、代码美化 |
+| 📦 **JSON** | 结构校验 | 树形折叠、一键格式化、单行压缩 |
+| 💻 **Command** | 标识符识别 ($ / --) | 参数高亮、快捷复制执行 |
+| 📄 **Text** | Fallback | 分词联想、简单排版 |
 
-- [ ] 代码片段高亮与格式化
-- [ ] JSON / XML 一键美化与压缩
-- [ ] Base64 自动检测与解码预览
-- [ ] 颜色代码自动显示色块
-- [ ] 正则表达式测试工具
+### 2️⃣ 深度集成与交互
+- [ ] **不同类型专属 UI**: 为链接、代码、JSON 提供最直观的预览卡片
+- [ ] **智能操作**:
+  - **URL**: 一键复制 [标题 + 链接]、仅复制链接、直接打开
+  - **Code**: 智能去除多余空格/注释、语言切换、格式化
+  - **JSON**: 层次化预览、查询路径提取
+  - **Command**: 高亮关键参数、安全模式下的一键执行
+- [ ] **多端同步**: 移动端预览与跨设备剪贴板同步
 
-### 🔄 跨设备协作 & 内容增强 & AI 智能
+> 📌 **我们的目标**: 每一个功能点都旨在解决实际开发/办公中的微小痛点。这些细节的组合，正是 EasyPasta 与众不同的地方。
 
-- [ ] 局域网设备同步（Mac / iPhone 互传）
-- [ ] OCR 图片文字识别
-- [ ] 复制内容自动翻译
-- [ ] Markdown ↔ 富文本 ↔ 纯文本 格式转换
-- [ ] URL 自动抓取标题与缩略图
-- [ ] AI 智能分类与标签
-- [ ] 语义搜索（自然语言查找内容）
-- [ ] 敏感信息自动检测与保护
 
 ## 📄 许可证
 

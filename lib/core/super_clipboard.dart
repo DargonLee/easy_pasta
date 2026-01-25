@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
@@ -91,7 +91,7 @@ class SuperClipboard {
 
     if (html != null) {
       final processedHtml = HtmlProcessor.processHtml(html.toString());
-      _handleContentChange(htmlPlainText.toString(), ClipboardType.html,
+      await _handleContentChange(htmlPlainText.toString(), ClipboardType.html,
           bytes: Uint8List.fromList(utf8.encode(processedHtml)),
           sourceAppId: sourceAppId);
       return true;
@@ -108,7 +108,7 @@ class SuperClipboard {
     final fileUriString = await reader.readValue(Formats.plainText);
 
     if (fileUri != null) {
-      _handleContentChange(fileUriString.toString(), ClipboardType.file,
+      await _handleContentChange(fileUriString.toString(), ClipboardType.file,
           bytes: Uint8List.fromList(utf8.encode(fileUri.toString())),
           sourceAppId: sourceAppId);
       return true;
@@ -123,7 +123,7 @@ class SuperClipboard {
 
     final text = await reader.readValue(Formats.plainText);
     if (text != null) {
-      _handleContentChange(text.toString(), ClipboardType.text,
+      await _handleContentChange(text.toString(), ClipboardType.text,
           sourceAppId: sourceAppId);
       return true;
     }
@@ -145,7 +145,7 @@ class SuperClipboard {
           final imageData = bytesList.expand((x) => x).toList();
 
           if (imageData.isNotEmpty) {
-            _handleContentChange('', ClipboardType.image,
+            await _handleContentChange('', ClipboardType.image,
                 bytes: Uint8List.fromList(imageData), sourceAppId: sourceAppId);
           }
           if (!completer.isCompleted) completer.complete(true);
@@ -167,11 +167,19 @@ class SuperClipboard {
   }
 
   /// Handles content changes and notifies listeners
-  void _handleContentChange(String content, ClipboardType? type,
-      {Uint8List? bytes, String? sourceAppId}) {
-    // 为内容生成哈希值
+  Future<void> _handleContentChange(String content, ClipboardType? type,
+      {Uint8List? bytes, String? sourceAppId}) async {
+    // 为内容生成哈希值 - 移动到 background isolate 如果字节较大
     final bytesToHash = bytes ?? Uint8List.fromList(utf8.encode(content));
-    final contentHash = sha256.convert(bytesToHash).toString();
+
+    String contentHash;
+    if (bytesToHash.length > 1024 * 50) {
+      // 大于 50KB 则在 isolate 中计算哈希
+      contentHash = await compute(
+          (Uint8List b) => sha256.convert(b).toString(), bytesToHash);
+    } else {
+      contentHash = sha256.convert(bytesToHash).toString();
+    }
 
     if (contentHash != _lastContentHash) {
       _lastContentHash = contentHash;
