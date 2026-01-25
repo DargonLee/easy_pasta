@@ -44,12 +44,6 @@ class TextContent extends StatelessWidget {
         : _buildNormalText(cleanedText, textStyle);
   }
 
-  TextStyle _defaultTextStyle(BuildContext context) => TextStyle(
-        fontSize: fontSize,
-        height: 1.2,
-        color: Theme.of(context).textTheme.bodyMedium?.color,
-      );
-
   Widget _buildUrlText(String urlText, TextStyle baseStyle, bool isDark) {
     final effectiveLines = maxLines ?? 3;
     final urlLines = effectiveLines < 3 ? effectiveLines : 3;
@@ -132,7 +126,12 @@ class TextContent extends StatelessWidget {
 
   /// 打开URL
   Future<void> _launchURL(String url) async {
-    final uri = Uri.parse(url);
+    // Ensure the URL has a scheme; default to https if missing
+    String fixedUrl = url.trim();
+    if (!fixedUrl.contains('://')) {
+      fixedUrl = 'https://$fixedUrl';
+    }
+    final uri = Uri.parse(fixedUrl);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }

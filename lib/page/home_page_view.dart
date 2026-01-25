@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
@@ -245,6 +243,7 @@ class _MyHomePageState extends State<MyHomePage>
   void dispose() {
     _searchDebounce?.cancel();
     _searchController.dispose();
+    _superClipboard.setClipboardListener(null);
     trayManager.removeListener(this);
     windowManager.removeListener(this);
     super.dispose();

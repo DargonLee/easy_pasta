@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
@@ -26,8 +27,6 @@ class HotkeyTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final captionStyle =
-        isDark ? AppTypography.darkCaption : AppTypography.lightCaption;
 
     return Material(
       color: Colors.transparent,
@@ -308,7 +307,7 @@ class ToggleSettingTile extends StatelessWidget {
           HapticFeedback.lightImpact();
           onChanged(val);
         },
-        activeColor: AppColors.primary,
+        activeTrackColor: AppColors.primary,
       ),
     );
   }
@@ -372,7 +371,7 @@ class AutoPasteTile extends StatelessWidget {
           HapticFeedback.lightImpact();
           onChanged(val);
         },
-        activeColor: AppColors.primary,
+        activeTrackColor: AppColors.primary,
       ),
     );
   }
@@ -479,11 +478,11 @@ class RetentionDaysTile extends StatelessWidget {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<int>(
                 value: currentValue,
-                items: [
-                  const DropdownMenuItem(value: 3, child: Text('3 天')),
-                  const DropdownMenuItem(value: 7, child: Text('7 天')),
-                  const DropdownMenuItem(value: 14, child: Text('14 天')),
-                  const DropdownMenuItem(value: 30, child: Text('30 天')),
+                items: const [
+                  DropdownMenuItem(value: 3, child: Text('3 天')),
+                  DropdownMenuItem(value: 7, child: Text('7 天')),
+                  DropdownMenuItem(value: 14, child: Text('14 天')),
+                  DropdownMenuItem(value: 30, child: Text('30 天')),
                 ],
                 onChanged: (val) {
                   if (val != null) onChanged(val);
@@ -564,7 +563,11 @@ class AboutTile extends StatelessWidget {
       if (!await launchUrl(url)) {
         throw Exception('Could not launch $url');
       }
-    } catch (e) {}
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Failed to launch url: $e');
+      }
+    }
   }
 
   @override
@@ -624,7 +627,7 @@ class AboutTile extends StatelessWidget {
               ),
 
               // GitHub 链接
-              Icon(
+              const Icon(
                 Icons.open_in_new,
                 size: 16,
                 color: AppColors.primary,
@@ -645,6 +648,7 @@ class BaseSettingTile extends StatelessWidget {
   final VoidCallback? onTap;
 
   const BaseSettingTile({
+    super.key,
     required this.item,
     this.trailing,
     this.subtitle,

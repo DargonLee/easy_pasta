@@ -8,11 +8,11 @@ class SourceCodeContent extends StatelessWidget {
   final VoidCallback? onTap;
 
   const SourceCodeContent({
-    Key? key,
+    super.key,
     required this.code,
     this.isSelected = false,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -1,10 +1,8 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:crypto/crypto.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:easy_pasta/db/shared_preference_helper.dart';
 
 /// Exception thrown when database operations fail
@@ -461,7 +459,11 @@ class DatabaseHelper implements IDatabaseHelper {
             '${DatabaseConfig.columnIsFavorite} = 0 AND ${DatabaseConfig.columnTime} < ?',
         whereArgs: [expirationDate.toString()],
       );
-    } catch (e) {}
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Failed to cleanup expired items: $e');
+      }
+    }
   }
 
   @override
@@ -529,6 +531,10 @@ class DatabaseHelper implements IDatabaseHelper {
         await file.delete();
         debugPrint('✅ Database file deleted successfully');
       }
-    } catch (e) {}
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Failed to delete database file: $e');
+      }
+    }
   }
 }

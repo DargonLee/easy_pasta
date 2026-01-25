@@ -7,12 +7,12 @@ class ModernCounter extends StatefulWidget {
   final int defaultValue;
 
   const ModernCounter({
-    Key? key,
+    super.key,
     this.onChanged,
     this.minValue = 10,
     this.maxValue = 2000,
     this.defaultValue = 500,
-  }) : super(key: key);
+  });
 
   @override
   State<ModernCounter> createState() => _ModernCounterState();

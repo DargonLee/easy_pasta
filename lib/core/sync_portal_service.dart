@@ -85,8 +85,8 @@ class SyncPortalService {
       while (retryCount < maxRetries) {
         try {
           final currentPort = _port + retryCount;
-          _server =
-              await io.serve(_router, InternetAddress.anyIPv4, currentPort);
+          _server = await io.serve(
+              _router.call, InternetAddress.anyIPv4, currentPort);
           _port = currentPort; // 记录实际成功的端口
           break;
         } catch (e) {
@@ -128,14 +128,28 @@ class SyncPortalService {
     _currentItem = null;
   }
 
+  /// 释放资源（仅在应用退出时调用）
+  Future<void> dispose() async {
+    await stop();
+    if (!_syncController.isClosed) {
+      await _syncController.close();
+    }
+    if (!_receivedItemsController.isClosed) {
+      await _receivedItemsController.close();
+    }
+    isRunning.dispose();
+    lastError.dispose();
+  }
+
   /// 推送内容到手机
   void pushItem(ClipboardItemModel item) {
     _currentItem = item; // 始终更新当前内容，供新连接获取
 
     // 只在有活跃连接时才广播更新，节省资源
     if (!hasActiveConnections) {
-      if (kDebugMode)
+      if (kDebugMode) {
         print('SyncPortal: No active connections, skipping broadcast');
+      }
       return;
     }
 
@@ -147,7 +161,9 @@ class SyncPortalService {
       }
     }
     _syncController.add(item);
-    if (kDebugMode) print('SyncPortal: Item pushed to stream');
+    if (kDebugMode) {
+      print('SyncPortal: Item pushed to stream');
+    }
   }
 
   String? get portalUrl => _ip != null ? 'http://$_ip:$_port' : null;
@@ -185,47 +201,65 @@ class SyncPortalService {
   }
 
   Response _handleEvents(Request request) {
-    if (kDebugMode)
+    if (kDebugMode) {
       print(
           'SyncPortal: New SSE connection from ${request.context['shelf.io.connection_info']}');
+    }
 
     // 增加活跃连接计数
     _activeConnections++;
-    if (kDebugMode)
+    if (kDebugMode) {
       print('SyncPortal: Active connections: $_activeConnections');
+    }
 
-    final controller = StreamController<List<int>>();
+    StreamSubscription<ClipboardItemModel?>? subscription;
+    Timer? timer;
+    bool didCleanup = false;
+    late final StreamController<List<int>> controller;
+
+    void cleanup() {
+      if (didCleanup) return;
+      didCleanup = true;
+      subscription?.cancel();
+      timer?.cancel();
+      if (!controller.isClosed) {
+        controller.close();
+      }
+      // 减少活跃连接计数
+      _activeConnections--;
+      if (kDebugMode) {
+        print('SyncPortal: Active connections: $_activeConnections');
+      }
+    }
+
+    controller = StreamController<List<int>>(onCancel: cleanup);
 
     // 发送初始状态
     if (_currentItem != null) {
-      if (kDebugMode) print('SyncPortal: Sending initial state to new member');
-      controller.add(utf8.encode(
-          'data: ${jsonEncode({'update': true, 'id': _currentItem!.id})}\n\n'));
+      if (kDebugMode) {
+        print('SyncPortal: Sending initial state to new member');
+      }
+      if (!controller.isClosed) {
+        controller.add(utf8.encode(
+            'data: ${jsonEncode({'update': true, 'id': _currentItem!.id})}\n\n'));
+      }
     }
 
-    final subscription = _syncController.stream.listen((item) {
-      if (kDebugMode)
+    subscription = _syncController.stream.listen((item) {
+      if (controller.isClosed) return;
+      if (kDebugMode) {
         print('SyncPortal: Sending update signal for item ${item?.id}');
+      }
       controller.add(utf8
           .encode('data: ${jsonEncode({'update': true, 'id': item?.id})}\n\n'));
     });
 
     // 定期发送 ping 以保持连接活跃并检测死连接
-    final timer = Timer.periodic(const Duration(seconds: 15), (t) {
+    timer = Timer.periodic(const Duration(seconds: 15), (t) {
       if (!controller.isClosed) {
         controller.add(utf8.encode(
             'event: ping\ndata: {"time": ${DateTime.now().millisecondsSinceEpoch}}\n\n'));
       }
-    });
-
-    controller.done.then((_) {
-      if (kDebugMode) print('SyncPortal: SSE connection closed');
-      subscription.cancel();
-      timer.cancel();
-      // 减少活跃连接计数
-      _activeConnections--;
-      if (kDebugMode)
-        print('SyncPortal: Active connections: $_activeConnections');
     });
 
     return Response.ok(
@@ -245,8 +279,9 @@ class SyncPortalService {
       final text = data['text'] as String?;
 
       if (text != null && text.trim().isNotEmpty) {
-        if (kDebugMode)
+        if (kDebugMode) {
           print('SyncPortal: Received text from mobile: ${text.length} chars');
+        }
         _receivedItemsController.add(text);
         return Response.ok(jsonEncode({'status': 'success'}),
             headers: {'content-type': 'application/json'});

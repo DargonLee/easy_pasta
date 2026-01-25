@@ -43,6 +43,8 @@ void main() async {
 }
 
 class MyTextApp extends StatelessWidget {
+  const MyTextApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -50,7 +52,7 @@ class MyTextApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: BonjourTestPage(),
+      home: const BonjourTestPage(),
     );
   }
 }

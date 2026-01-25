@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
 import 'package:easy_pasta/model/grid_density.dart';
 import 'package:easy_pasta/page/pboard_card_view.dart';
 import 'package:easy_pasta/page/empty_view.dart';
-import 'package:easy_pasta/widget/preview_dialog.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
 
@@ -28,7 +26,7 @@ class PasteboardGridView extends StatefulWidget {
   final String? highlight;
 
   const PasteboardGridView({
-    Key? key,
+    super.key,
     required this.pboards,
     this.currentCategory = NSPboardSortType.all,
     required this.selectedId,
@@ -41,7 +39,7 @@ class PasteboardGridView extends StatefulWidget {
     this.onLoadMore,
     required this.groups,
     this.highlight,
-  }) : super(key: key);
+  });
 
   @override
   State<PasteboardGridView> createState() => _PasteboardGridViewState();
@@ -53,7 +51,6 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   ClipboardItemModel? _hoveredItem;
   bool _isScrolling = false;
   Timer? _scrollEndTimer;
-  double _lastWidth = 0;
 
   @override
   void initState() {
@@ -109,7 +106,6 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        _lastWidth = constraints.maxWidth;
         final spec = widget.density.spec;
         final maxColumns = _calculateMaxColumns(constraints.maxWidth);
         final aspectRatio = _calculateAspectRatio();

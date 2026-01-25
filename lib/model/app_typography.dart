@@ -15,7 +15,7 @@ class AppTypography {
   // ==================== 浅色模式文本样式 ====================
 
   /// 大标题 1 - 34pt
-  static TextStyle lightTitle1 = TextStyle(
+  static const TextStyle lightTitle1 = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: AppFontSizes.title1,
     fontWeight: AppFontWeights.bold,
@@ -25,7 +25,7 @@ class AppTypography {
   );
 
   /// 大标题 2 - 28pt
-  static TextStyle lightTitle2 = TextStyle(
+  static const TextStyle lightTitle2 = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: AppFontSizes.title2,
     fontWeight: AppFontWeights.bold,
@@ -35,7 +35,7 @@ class AppTypography {
   );
 
   /// 大标题 3 - 24pt
-  static TextStyle lightTitle3 = TextStyle(
+  static const TextStyle lightTitle3 = TextStyle(
     fontFamily: displayFontFamily,
     fontSize: AppFontSizes.title3,
     fontWeight: AppFontWeights.semiBold,
@@ -45,7 +45,7 @@ class AppTypography {
   );
 
   /// 标题 - 20pt
-  static TextStyle lightHeadline = TextStyle(
+  static const TextStyle lightHeadline = TextStyle(
     fontFamily: fontFamily,
     fontSize: AppFontSizes.headline,
     fontWeight: AppFontWeights.semiBold,
@@ -55,7 +55,7 @@ class AppTypography {
   );
 
   /// 副标题 - 17pt
-  static TextStyle lightSubheadline = TextStyle(
+  static const TextStyle lightSubheadline = TextStyle(
     fontFamily: fontFamily,
     fontSize: AppFontSizes.subheadline,
     fontWeight: AppFontWeights.regular,
@@ -65,7 +65,7 @@ class AppTypography {
   );
 
   /// 强调文本 - 15pt
-  static TextStyle lightCallout = TextStyle(
+  static const TextStyle lightCallout = TextStyle(
     fontFamily: fontFamily,
     fontSize: AppFontSizes.callout,
     fontWeight: AppFontWeights.regular,
@@ -75,7 +75,7 @@ class AppTypography {
   );
 
   /// 正文 - 13pt (默认)
-  static TextStyle lightBody = TextStyle(
+  static const TextStyle lightBody = TextStyle(
     fontFamily: fontFamily,
     fontSize: AppFontSizes.body,
     fontWeight: AppFontWeights.regular,
@@ -85,7 +85,7 @@ class AppTypography {
   );
 
   /// 正文（加粗）
-  static TextStyle lightBodyBold = TextStyle(
+  static const TextStyle lightBodyBold = TextStyle(
     fontFamily: fontFamily,
     fontSize: AppFontSizes.body,
     fontWeight: AppFontWeights.semiBold,
@@ -95,7 +95,7 @@ class AppTypography {
   );
 
   /// 脚注 - 11pt
-  static TextStyle lightFootnote = TextStyle(
+  static const TextStyle lightFootnote = TextStyle(
     fontFamily: fontFamily,
     fontSize: AppFontSizes.footnote,
     fontWeight: AppFontWeights.regular,
@@ -105,7 +105,7 @@ class AppTypography {
   );
 
   /// 说明文字 - 10pt
-  static TextStyle lightCaption = TextStyle(
+  static const TextStyle lightCaption = TextStyle(
     fontFamily: fontFamily,
     fontSize: AppFontSizes.caption,
     fontWeight: AppFontWeights.regular,
@@ -115,7 +115,7 @@ class AppTypography {
   );
 
   /// 等宽字体（代码）
-  static TextStyle lightMonospace = TextStyle(
+  static const TextStyle lightMonospace = TextStyle(
     fontFamily: monospaceFontFamily,
     fontSize: AppFontSizes.body,
     fontWeight: AppFontWeights.regular,
@@ -184,7 +184,7 @@ class AppTypography {
   // ==================== 特殊样式 ====================
 
   /// 链接样式
-  static TextStyle link = TextStyle(
+  static const TextStyle link = TextStyle(
     fontFamily: fontFamily,
     fontSize: AppFontSizes.body,
     fontWeight: AppFontWeights.regular,
@@ -195,7 +195,7 @@ class AppTypography {
   );
 
   /// 按钮文本
-  static TextStyle button = TextStyle(
+  static const TextStyle button = TextStyle(
     fontFamily: fontFamily,
     fontSize: AppFontSizes.callout,
     fontWeight: AppFontWeights.semiBold,
@@ -204,12 +204,12 @@ class AppTypography {
   );
 
   /// 数字（表格数字）
-  static TextStyle tabularNumbers = TextStyle(
+  static const TextStyle tabularNumbers = TextStyle(
     fontFamily: fontFamily,
     fontSize: AppFontSizes.body,
     fontWeight: AppFontWeights.regular,
     height: 1.45,
-    fontFeatures: const [FontFeature.tabularFigures()],
+    fontFeatures: [FontFeature.tabularFigures()],
   );
 
   // ==================== 工具方法 ====================

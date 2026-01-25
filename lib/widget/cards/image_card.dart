@@ -8,11 +8,11 @@ class ImageContent extends StatelessWidget {
   final BoxFit fit;
 
   const ImageContent({
-    Key? key,
+    super.key,
     required this.imageBytes,
     this.borderRadius = 8.0,
     this.fit = BoxFit.cover,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

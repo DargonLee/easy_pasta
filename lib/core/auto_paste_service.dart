@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class AutoPasteService {
@@ -14,7 +15,9 @@ class AutoPasteService {
           await _channel.invokeMethod<bool>('checkAccessibility');
       return isTrusted ?? false;
     } on PlatformException catch (e) {
-      print('Failed to check accessibility: ${e.message}');
+      if (kDebugMode) {
+        debugPrint('Failed to check accessibility: ${e.message}');
+      }
       return false;
     }
   }
@@ -24,7 +27,9 @@ class AutoPasteService {
     try {
       await _channel.invokeMethod('requestAccessibility');
     } on PlatformException catch (e) {
-      print('Failed to request accessibility: ${e.message}');
+      if (kDebugMode) {
+        debugPrint('Failed to request accessibility: ${e.message}');
+      }
     }
   }
 
@@ -34,7 +39,9 @@ class AutoPasteService {
       final bool? success = await _channel.invokeMethod<bool>('paste');
       return success ?? false;
     } on PlatformException catch (e) {
-      print('Failed to perform paste: ${e.message}');
+      if (kDebugMode) {
+        debugPrint('Failed to perform paste: ${e.message}');
+      }
       return false;
     }
   }

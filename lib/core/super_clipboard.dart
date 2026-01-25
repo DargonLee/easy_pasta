@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:crypto/crypto.dart';
 import 'package:super_clipboard/super_clipboard.dart';
@@ -14,9 +13,7 @@ class SuperClipboard {
   // Singleton implementation
   static final SuperClipboard _instance = SuperClipboard._internal();
   static SuperClipboard get instance => _instance;
-  SuperClipboard._internal() {
-    _startPollingTimer();
-  }
+  SuperClipboard._internal();
 
   final SystemClipboard? _clipboard = SystemClipboard.instance;
   ValueChanged<ClipboardItemModel?>? _onClipboardChanged;
@@ -29,12 +26,21 @@ class SuperClipboard {
 
   /// Starts monitoring clipboard changes
   void _startPollingTimer() {
-    _pollingTimer?.cancel();
+    if (_pollingTimer != null) return;
     _pollingTimer = Timer.periodic(_pollingInterval, (_) => _pollClipboard());
+  }
+
+  void _stopPollingTimer() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
   }
 
   /// Polls clipboard content for changes
   Future<void> _pollClipboard() async {
+    if (_onClipboardChanged == null) {
+      _stopPollingTimer();
+      return;
+    }
     if (_isPolling) return;
     _isPolling = true;
 
@@ -67,6 +73,9 @@ class SuperClipboard {
       _lastFormats = currentFormats;
       await _processClipboardContent(reader);
     } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Clipboard polling failed: $e');
+      }
     } finally {
       _isPolling = false;
     }
@@ -201,8 +210,13 @@ class SuperClipboard {
   }
 
   /// Sets clipboard change listener
-  void setClipboardListener(ValueChanged<ClipboardItemModel?> listener) {
+  void setClipboardListener(ValueChanged<ClipboardItemModel?>? listener) {
     _onClipboardChanged = listener;
+    if (listener == null) {
+      _stopPollingTimer();
+      return;
+    }
+    _startPollingTimer();
   }
 
   /// Writes content to clipboard
@@ -244,8 +258,7 @@ class SuperClipboard {
 
   /// Cleans up resources
   void dispose() {
-    _pollingTimer?.cancel();
-    _pollingTimer = null;
+    _stopPollingTimer();
     _onClipboardChanged = null;
     _lastContentHash = null;
     _lastFormats = null;

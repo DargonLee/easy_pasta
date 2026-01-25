@@ -11,7 +11,7 @@ class AppInfoContent extends StatelessWidget {
   final TextStyle? textStyle;
 
   const AppInfoContent({
-    Key? key,
+    super.key,
     this.appIcon,
     required this.appName,
     this.iconSize = 14,
@@ -19,7 +19,7 @@ class AppInfoContent extends StatelessWidget {
     this.maxWidth = 150,
     this.textColor,
     this.textStyle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -125,11 +125,11 @@ class BonjourManager {
       // 监听发现的服务 - 必须在 start() 之前设置监听
       _discoverySubscription = _discovery!.eventStream!.listen((event) {
         if (event is BonsoirDiscoveryServiceFoundEvent) {
-          _handleServiceFound(event.service!);
+          _handleServiceFound(event.service);
         } else if (event is BonsoirDiscoveryServiceResolvedEvent) {
-          _handleServiceResolved(event.service!);
+          _handleServiceResolved(event.service);
         } else if (event is BonsoirDiscoveryServiceLostEvent) {
-          _handleServiceLost(event.service!);
+          _handleServiceLost(event.service);
         }
       });
 

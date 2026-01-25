@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'dart:typed_data';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/widget/cards/file_card.dart';
 import 'package:easy_pasta/widget/cards/text_card.dart';
@@ -27,7 +26,7 @@ class NewPboardItemCard extends StatefulWidget {
   final int? badgeIndex; // 新增：显示数字快捷键角标
 
   const NewPboardItemCard({
-    Key? key,
+    super.key,
     required this.model,
     required this.selectedId,
     required this.onTap,
@@ -40,7 +39,7 @@ class NewPboardItemCard extends StatefulWidget {
     this.showFocus = false,
     this.highlight,
     this.badgeIndex,
-  }) : super(key: key);
+  });
 
   @override
   State<NewPboardItemCard> createState() => _NewPboardItemCardState();

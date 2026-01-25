@@ -18,7 +18,7 @@ import 'package:easy_pasta/core/auto_paste_service.dart';
 import 'package:easy_pasta/core/bonsoir_service.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({Key? key}) : super(key: key);
+  const SettingsPage({super.key});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();

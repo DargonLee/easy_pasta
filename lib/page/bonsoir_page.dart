@@ -3,7 +3,7 @@ import 'package:bonsoir/bonsoir.dart';
 import 'package:easy_pasta/core/bonsoir_service.dart';
 
 class BonjourTestPage extends StatefulWidget {
-  const BonjourTestPage({Key? key}) : super(key: key);
+  const BonjourTestPage({super.key});
 
   @override
   State<BonjourTestPage> createState() => _BonjourTestPageState();

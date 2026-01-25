@@ -22,8 +22,6 @@ class SearchEmptyState extends StatefulWidget {
 class _SearchEmptyStateState extends State<SearchEmptyState>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _rotateAnimation;
 
   @override
   void initState() {
@@ -32,27 +30,6 @@ class _SearchEmptyStateState extends State<SearchEmptyState>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-
-    _scaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.1)
-            .chain(CurveTween(curve: Curves.easeOut)),
-        weight: 60,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.1, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeInOut)),
-        weight: 40,
-      ),
-    ]).animate(_controller);
-
-    _rotateAnimation = Tween<double>(
-      begin: -0.1,
-      end: 0.1,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    ));
 
     _controller.forward();
   }
@@ -198,7 +175,7 @@ class _SearchEmptyStateState extends State<SearchEmptyState>
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.tips_and_updates_outlined,
                 size: 18,
                 color: AppColors.primary,

@@ -81,8 +81,6 @@ class AnimationHelper {
     Duration staggerDelay = const Duration(milliseconds: 50),
     Duration itemDuration = AppDurations.normal,
   }) {
-    final delay = staggerDelay * index;
-
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: itemDuration,

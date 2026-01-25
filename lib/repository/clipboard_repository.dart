@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:easy_pasta/db/database_helper.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:easy_pasta/model/clipboard_type.dart';
 
 class ClipboardRepository {
   final DatabaseHelper _db;

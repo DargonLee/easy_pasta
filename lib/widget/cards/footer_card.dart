@@ -20,7 +20,7 @@ class FooterContent extends StatelessWidget {
   final VoidCallback? onSuccess; // 新增成功回调
 
   const FooterContent({
-    Key? key,
+    super.key,
     required this.model,
     required this.onCopy,
     required this.onFavorite,
@@ -28,7 +28,7 @@ class FooterContent extends StatelessWidget {
     this.showActions = false,
     this.compact = false,
     this.onSuccess,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -128,9 +128,10 @@ class FooterContent extends StatelessWidget {
                       onPressed: () async {
                         HapticFeedback.selectionClick();
                         try {
-                          if (kDebugMode)
+                          if (kDebugMode) {
                             print(
                                 'SyncPortal: Fetching full data for item ${model.id}');
+                          }
                           final pboardProvider = context.read<PboardProvider>();
                           final fullModel =
                               await pboardProvider.ensureBytes(model);
@@ -146,7 +147,9 @@ class FooterContent extends StatelessWidget {
                             );
                           }
                         } catch (e) {
-                          if (kDebugMode) print('SyncPortal ERROR in UI: $e');
+                          if (kDebugMode) {
+                            print('SyncPortal ERROR in UI: $e');
+                          }
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(

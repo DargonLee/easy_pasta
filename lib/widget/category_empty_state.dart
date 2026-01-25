@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
-import 'package:easy_pasta/core/animation_helper.dart';
 
 /// 分类空状态组件
 /// 为不同的剪贴板类型提供专属的空状态展示
@@ -307,15 +306,6 @@ class _CategoryEmptyStateState extends State<CategoryEmptyState>
           ],
         );
 
-      default:
-        return _EmptyConfig(
-          icon: Icons.content_paste_rounded,
-          color: AppColors.primary,
-          title: '暂无内容',
-          description: '开始复制内容吧',
-          tips: ['使用 Cmd+C 复制内容'],
-          decorations: [AppColors.primary],
-        );
     }
   }
 }
