@@ -103,13 +103,9 @@ class DatabaseHelper implements IDatabaseHelper {
 
   /// Initializes the database
   Future<Database> _initDatabase() async {
-    // Log using debugPrint for visibility
-    debugPrint('🟡 _initDatabase called');
-
     try {
       sqfliteFfiInit();
       final path = await _getDatabasePath();
-      debugPrint('🟡 db path: $path');
       final databaseFactory = databaseFactoryFfi;
 
       final db = await databaseFactory.openDatabase(
@@ -202,10 +198,7 @@ class DatabaseHelper implements IDatabaseHelper {
   }
 
   /// Handles database upgrades (No-op since we reset to v1)
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    debugPrint(
-        'Database upgrade from $oldVersion to $newVersion requested, but treated as fresh due to dev reset.');
-  }
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {}
 
   @override
   Future<int> getMaxCount() async {
@@ -249,7 +242,6 @@ class DatabaseHelper implements IDatabaseHelper {
         ''', [query]);
         return results;
       } catch (e) {
-        debugPrint('FTS5 search failed, falling back to LIKE: $e');
         return await db.query(
           DatabaseConfig.tableName,
           where: '${DatabaseConfig.columnValue} LIKE ?',
@@ -406,12 +398,9 @@ class DatabaseHelper implements IDatabaseHelper {
 
   @override
   Future<String?> insertPboardItem(ClipboardItemModel model) async {
-    debugPrint('🟡 DatabaseHelper.insertPboardItem called for ${model.id}');
     final db = await database;
-    debugPrint('🟡 Database instance obtained');
     final maxCount = await getMaxCount();
     final retentionDays = await getRetentionDays();
-    debugPrint('🟡 maxCount: $maxCount, retentionDays: $retentionDays');
 
     return await db.transaction((txn) async {
       try {
@@ -426,14 +415,11 @@ class DatabaseHelper implements IDatabaseHelper {
           );
         }
 
-        debugPrint('🟡 Inserting item into database...');
         await txn.insert(DatabaseConfig.tableName, model.toMap());
-        debugPrint('✅ Item inserted successfully');
 
         final result = await txn
             .rawQuery('SELECT COUNT(*) FROM ${DatabaseConfig.tableName}');
         final count = result.isNotEmpty ? result.first.values.first as int : 0;
-        debugPrint('🟡 Current item count: $count');
         if (count > maxCount) {
           final oldestItems = await txn.query(
             DatabaseConfig.tableName,
@@ -450,13 +436,11 @@ class DatabaseHelper implements IDatabaseHelper {
               where: '${DatabaseConfig.columnId} = ?',
               whereArgs: [id],
             );
-            debugPrint('🟡 Deleted oldest item: $id');
             return id;
           }
         }
         return null;
       } catch (e) {
-        debugPrint('❌ Database insert failed: $e');
         throw DatabaseException('Failed to insert item', e);
       }
     });
@@ -477,9 +461,7 @@ class DatabaseHelper implements IDatabaseHelper {
             '${DatabaseConfig.columnIsFavorite} = 0 AND ${DatabaseConfig.columnTime} < ?',
         whereArgs: [expirationDate.toString()],
       );
-    } catch (e) {
-      debugPrint('Cleanup expired items failed: $e');
-    }
+    } catch (e) {}
   }
 
   @override
@@ -515,7 +497,6 @@ class DatabaseHelper implements IDatabaseHelper {
       }
       return 0.0;
     } catch (e) {
-      debugPrint('Get database size failed: $e');
       return 0.0;
     }
   }
@@ -525,9 +506,7 @@ class DatabaseHelper implements IDatabaseHelper {
     try {
       final db = await database;
       await db.execute('VACUUM');
-      debugPrint('Database optimized');
     } catch (e) {
-      debugPrint('Optimize database failed: $e');
       rethrow;
     }
   }
@@ -550,8 +529,6 @@ class DatabaseHelper implements IDatabaseHelper {
         await file.delete();
         debugPrint('✅ Database file deleted successfully');
       }
-    } catch (e) {
-      debugPrint('❌ Failed to delete database: $e');
-    }
+    } catch (e) {}
   }
 }

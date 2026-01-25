@@ -564,9 +564,7 @@ class AboutTile extends StatelessWidget {
       if (!await launchUrl(url)) {
         throw Exception('Could not launch $url');
       }
-    } catch (e) {
-      debugPrint('Error launching URL: $e');
-    }
+    } catch (e) {}
   }
 
   @override

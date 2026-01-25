@@ -19,7 +19,6 @@ class AppSourceService {
     try {
       return await _channel.invokeMethod<String>('getFrontmostApp');
     } catch (e) {
-      debugPrint('Failed to fetch frontmost app: $e');
       return null;
     }
   }
@@ -43,7 +42,6 @@ class AppSourceService {
       return data;
     }).catchError((e) {
       _iconInFlight.remove(bundleId);
-      debugPrint('Failed to fetch app icon: $e');
       return null;
     });
 

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
@@ -152,7 +151,6 @@ class PboardProvider extends ChangeNotifier {
         hasMore: items.length >= _state.pageSize,
       ));
     } catch (e) {
-      developer.log('初始化失败: $e', error: e);
       _isInitialized = false; // 允许重试
     }
   }
@@ -182,7 +180,6 @@ class PboardProvider extends ChangeNotifier {
 
   void _handleError(String operation, dynamic error) {
     final errorMessage = '$operation失败: $error';
-    developer.log(errorMessage, error: error);
     _updateState(_state.copyWith(
       error: errorMessage,
       isLoading: false,
@@ -191,11 +188,9 @@ class PboardProvider extends ChangeNotifier {
 
   Future<T> _withLoading<T>(Future<T> Function() operation) async {
     if (_state.isLoading) {
-      developer.log('操作已在进行中，等待完成...');
       // 等待一小段时间后重试，而不是直接抛出错误
       await Future.delayed(const Duration(milliseconds: 100));
       if (_state.isLoading) {
-        developer.log('操作仍在进行中，跳过此次请求');
         throw '操作正在进行中';
       }
     }
@@ -282,36 +277,23 @@ class PboardProvider extends ChangeNotifier {
   }
 
   Future<Result<void>> addItem(ClipboardItemModel model) async {
-    debugPrint(
-        '🔵 PboardProvider.addItem called: ${model.ptype}, id: ${model.id}');
     try {
       // 插入逻辑移交给 Service (自动处理缩略图生成)
-      debugPrint('🔵 Calling service.processAndInsert...');
       final deletedItemId = await _service.processAndInsert(model);
-      debugPrint(
-          '🔵 processAndInsert completed, deletedItemId: $deletedItemId');
 
       // 更新内存状态 (内存中可以保留 bytes 减少重复拉取)
       List<ClipboardItemModel> nextAllItems = [model, ..._state.allItems];
-      debugPrint(
-          '🔵 Current allItems count: ${_state.allItems.length}, new count will be: ${nextAllItems.length}');
 
       if (deletedItemId != null) {
         nextAllItems =
             nextAllItems.where((item) => item.id != deletedItemId).toList();
-        debugPrint(
-            '🔵 Removed deleted item, final count: ${nextAllItems.length}');
       }
 
       _updateState(_state.copyWith(allItems: nextAllItems));
-      debugPrint('🔵 State updated with new allItems');
       _applyFiltersAndSearch();
-      debugPrint(
-          '✅ addItem completed successfully, filteredItems count: ${_state.filteredItems.length}');
 
       return const Result.success(null);
     } catch (e) {
-      debugPrint('❌ addItem failed: $e');
       _handleError('添加', e);
       return Result.failure(e.toString());
     }

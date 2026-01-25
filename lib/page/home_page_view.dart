@@ -52,28 +52,15 @@ class _MyHomePageState extends State<MyHomePage>
   }
 
   void _setupClipboardListener() {
-    debugPrint('🔧 Setting up clipboard listener...');
     _superClipboard.setClipboardListener((value) {
-      debugPrint(
-          '📋 Clipboard event received: ${value?.ptype}, value length: ${value?.pvalue.length}');
       if (value != null) {
         _handlePboardUpdate(value);
-      } else {
-        debugPrint('⚠️ Clipboard value is null');
       }
     });
-    debugPrint('✅ Clipboard listener setup complete');
   }
 
   void _handlePboardUpdate(ClipboardItemModel model) {
-    debugPrint(
-        '💾 Attempting to add item to provider: ${model.ptype}, value: ${model.pvalue.substring(0, model.pvalue.length > 50 ? 50 : model.pvalue.length)}...');
-    if (_pboardProvider == null) {
-      debugPrint('❌ ERROR: _pboardProvider is null!');
-      return;
-    }
     _pboardProvider.addItem(model);
-    debugPrint('✅ Item added to provider');
   }
 
   void _handleClear() {

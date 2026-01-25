@@ -23,7 +23,6 @@ void main() async {
   // 启动 Bonjour 广播 (根据设置)
   final prefs = await SharedPreferenceHelper.instance;
   if (prefs.getBonjourEnabled()) {
-    debugPrint('Starting Bonjour service per user settings...');
     await BonjourManager.instance.startService(
         attributes: {'portal_url': SyncPortalService.instance.portalUrl ?? ''});
   }

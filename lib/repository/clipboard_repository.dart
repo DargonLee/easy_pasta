@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'package:easy_pasta/db/database_helper.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
@@ -90,10 +89,7 @@ class ClipboardRepository {
 
   /// 插入新项 (Repository 层暂不处理图片压缩，由 Service 处理)
   Future<String?> insertItem(ClipboardItemModel item) async {
-    debugPrint('🟠 ClipboardRepository.insertItem called for ${item.id}');
-    final result = await _db.insertPboardItem(item);
-    debugPrint('🟠 insertPboardItem returned: $result');
-    return result;
+    return await _db.insertPboardItem(item);
   }
 
   /// 删除项

@@ -44,7 +44,6 @@ class ThemeProvider extends ChangeNotifier {
       _themeMode = mode;
       notifyListeners();
     } catch (e) {
-      debugPrint('设置主题失败: $e');
       // 可以在这里添加错误处理逻辑
     }
   }

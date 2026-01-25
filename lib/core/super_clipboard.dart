@@ -29,7 +29,6 @@ class SuperClipboard {
   void _startPollingTimer() {
     _pollingTimer?.cancel();
     _pollingTimer = Timer.periodic(_pollingInterval, (_) => _pollClipboard());
-    debugPrint('Clipboard polling started.');
   }
 
   /// Polls clipboard content for changes
@@ -46,7 +45,6 @@ class SuperClipboard {
 
       await _processClipboardContent(reader);
     } catch (e) {
-      debugPrint('Clipboard polling error: $e');
     } finally {
       _isPolling = false;
     }
