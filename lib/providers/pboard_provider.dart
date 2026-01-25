@@ -281,8 +281,12 @@ class PboardProvider extends ChangeNotifier {
       // 插入逻辑移交给 Service (自动处理缩略图生成)
       final deletedItemId = await _service.processAndInsert(model);
 
-      // 更新内存状态 (内存中可以保留 bytes 减少重复拉取)
-      List<ClipboardItemModel> nextAllItems = [model, ..._state.allItems];
+      // 更新内存状态 (内存中不保留原始 bytes 以节省系统内存，仅保留缩略图)
+      final memorySafeModel = model.copyWith(bytes: null);
+      List<ClipboardItemModel> nextAllItems = [
+        memorySafeModel,
+        ..._state.allItems
+      ];
 
       if (deletedItemId != null) {
         nextAllItems =

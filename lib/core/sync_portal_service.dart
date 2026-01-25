@@ -125,6 +125,7 @@ class SyncPortalService {
     await _server?.close(force: true);
     _server = null;
     isRunning.value = false;
+    _currentItem = null;
   }
 
   /// 推送内容到手机

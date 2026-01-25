@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:crypto/crypto.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
@@ -19,7 +20,8 @@ class SuperClipboard {
 
   final SystemClipboard? _clipboard = SystemClipboard.instance;
   ValueChanged<ClipboardItemModel?>? _onClipboardChanged;
-  ClipboardItemModel? _lastContent;
+  String? _lastContentHash; // 改为存储哈希值，而不是完整的 model
+  Set<DataFormat>? _lastFormats; // 存储上次检测到的格式标识符
   Timer? _pollingTimer;
   bool _isPolling = false;
 
@@ -43,6 +45,26 @@ class SuperClipboard {
         return;
       }
 
+      // 性能优化：检查我们关心的核心格式是否发生变化
+      final supportedFormats = <DataFormat>[
+        Formats.plainText,
+        Formats.htmlText,
+        Formats.png,
+        Formats.fileUri,
+      ];
+      final currentFormats =
+          supportedFormats.where((f) => reader.canProvide(f)).toSet();
+
+      final formatsIdentical = _lastFormats != null &&
+          _lastFormats!.length == currentFormats.length &&
+          _lastFormats!.every(currentFormats.contains);
+
+      if (formatsIdentical && _lastContentHash != null) {
+        _isPolling = false;
+        return;
+      }
+
+      _lastFormats = currentFormats;
       await _processClipboardContent(reader);
     } catch (e) {
     } finally {
@@ -147,10 +169,14 @@ class SuperClipboard {
   /// Handles content changes and notifies listeners
   void _handleContentChange(String content, ClipboardType? type,
       {Uint8List? bytes, String? sourceAppId}) {
-    final contentModel = _createContentModel(content, type, bytes, sourceAppId);
+    // 为内容生成哈希值
+    final bytesToHash = bytes ?? Uint8List.fromList(utf8.encode(content));
+    final contentHash = sha256.convert(bytesToHash).toString();
 
-    if (contentModel != _lastContent) {
-      _lastContent = contentModel;
+    if (contentHash != _lastContentHash) {
+      _lastContentHash = contentHash;
+      final contentModel =
+          _createContentModel(content, type, bytes, sourceAppId);
       _onClipboardChanged?.call(contentModel);
     }
   }
@@ -213,6 +239,7 @@ class SuperClipboard {
     _pollingTimer?.cancel();
     _pollingTimer = null;
     _onClipboardChanged = null;
-    _lastContent = null;
+    _lastContentHash = null;
+    _lastFormats = null;
   }
 }

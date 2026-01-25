@@ -41,12 +41,14 @@ class ClipboardRepository {
     }
 
     // 构建 SQL
-    // 注意: 这里不 SELECT columnBytes，而是 SELECT columnThumbnail
+    // 注意: 这里不 SELECT columnBytes，而是 SELECT 必要的元数据与 columnThumbnail
+    const columns =
+        't.id, t.time, t.type, t.value, t.isFavorite, t.thumbnail, t.sourceAppId';
     String sql;
     if (searchQuery != null && searchQuery.trim().isNotEmpty) {
       // 使用 FTS5 全文搜索
       sql = '''
-        SELECT t.* 
+        SELECT $columns
         FROM ${DatabaseConfig.tableName} t
         JOIN ${DatabaseConfig.ftsTableName} f ON t.${DatabaseConfig.columnId} = f.${DatabaseConfig.columnId}
         WHERE f.${DatabaseConfig.columnValue} MATCH ? $whereClause
@@ -56,7 +58,7 @@ class ClipboardRepository {
       whereArgs.insert(0, '$searchQuery*'); // FTS5 通配符
     } else {
       sql = '''
-        SELECT * FROM ${DatabaseConfig.tableName}
+        SELECT ${columns.replaceAll('t.', '')} FROM ${DatabaseConfig.tableName}
         WHERE 1=1 $whereClause
         ORDER BY ${DatabaseConfig.columnTime} DESC
         LIMIT ? OFFSET ?

@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:easy_pasta/db/database_helper.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
@@ -51,13 +52,12 @@ class ClipboardService {
     );
   }
 
-  /// 生成缩略图逻辑 (使用 image 库)
-  Future<Uint8List?> _generateThumbnail(Uint8List original) async {
+  /// 生成缩略图逻辑 (在 Isolate 中执行)
+  static Uint8List? _generateThumbnailSync(Uint8List original) {
     try {
       final image = img.decodeImage(original);
       if (image == null) return null;
 
-      // 缩放到最大 200px 宽度/高度，保持长宽比
       final thumbnail = img.copyResize(
         image,
         width: image.width > image.height ? 200 : null,
@@ -69,6 +69,10 @@ class ClipboardService {
     } catch (e) {
       return null;
     }
+  }
+
+  Future<Uint8List?> _generateThumbnail(Uint8List original) async {
+    return compute(_generateThumbnailSync, original);
   }
 
   // 代理 Repository 的简单方法
