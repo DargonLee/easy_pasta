@@ -5,7 +5,9 @@ import 'package:crypto/crypto.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
+import 'package:easy_pasta/model/content_classification.dart';
 import 'package:easy_pasta/core/app_source_service.dart';
+import 'package:easy_pasta/core/content_classifier.dart';
 
 /// A singleton class that manages system clipboard operations and monitoring
 class SuperClipboard {
@@ -126,21 +128,23 @@ class SuperClipboard {
       // 确认变化后，才获取一次 sourceAppId (最省性能)
       final sourceAppId = await AppSourceService().getFrontmostAppBundleId();
 
-      final contentModel =
-          _createContentModel(content, type, bytes, sourceAppId);
+      final baseModel = ClipboardItemModel(
+        ptype: type ?? ClipboardType.text,
+        pvalue: content,
+        bytes: bytes,
+        sourceAppId: sourceAppId,
+      );
+
+      // 智能识别：获取分类结果 (不包含图片，因为 classifier 只处理文本/HTML)
+      ContentClassification? classification;
+      if (baseModel.ptype == ClipboardType.text ||
+          baseModel.ptype == ClipboardType.html) {
+        classification = await ContentClassifier.classify(baseModel);
+      }
+
+      final contentModel = baseModel.copyWith(classification: classification);
       _onClipboardChanged?.call(contentModel);
     }
-  }
-
-  /// Creates a content model based on the clipboard type
-  ClipboardItemModel _createContentModel(String content, ClipboardType? type,
-      Uint8List? bytes, String? sourceAppId) {
-    return ClipboardItemModel(
-      ptype: type ?? ClipboardType.text,
-      pvalue: content,
-      bytes: bytes,
-      sourceAppId: sourceAppId,
-    );
   }
 
   /// Sets clipboard change listener
