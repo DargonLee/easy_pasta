@@ -8,24 +8,22 @@ import 'package:easy_pasta/core/startup_service.dart';
 import 'package:easy_pasta/providers/theme_provider.dart';
 import 'package:easy_pasta/model/app_theme.dart';
 import 'package:easy_pasta/core/auto_paste_service.dart';
-import 'package:easy_pasta/core/sync_portal_service.dart';
-import 'package:easy_pasta/core/bonsoir_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:easy_pasta/db/shared_preference_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 启动移动端同步服务
-  await SyncPortalService.instance.start();
+  // // 启动移动端同步服务
+  // await SyncPortalService.instance.start();
 
-  // 启动 Bonjour 广播 (根据设置)
-  final prefs = await SharedPreferenceHelper.instance;
-  if (prefs.getBonjourEnabled()) {
-    await BonjourManager.instance.startService(
-        attributes: {'portal_url': SyncPortalService.instance.portalUrl ?? ''});
-  }
+  // // 启动 Bonjour 广播 (根据设置)
+  // final prefs = await SharedPreferenceHelper.instance;
+
+  // if (prefs.getBonjourEnabled()) {
+  //   await BonjourManager.instance.startService(
+  //       attributes: {'portal_url': SyncPortalService.instance.portalUrl ?? ''});
+  // }
 
   // 添加错误处理
   FlutterError.onError = (FlutterErrorDetails details) {
@@ -33,13 +31,20 @@ void main() async {
     debugPrint('Stack trace: ${details.stack}');
   };
 
-  WindowService();
-  TrayService();
-  HotkeyService();
-  StartupService();
+  // 修复：等待所有服务初始化完成后再启动应用
+  // 这些服务的构造函数会调用 init()，但不会等待完成
+  // 我们需要显式等待它们的初始化
+  try {
+    await WindowService().init();
+    await TrayService().init();
+    await HotkeyService().init();
+    // StartupService 没有异步初始化，直接调用
+    StartupService();
+  } catch (e) {
+    debugPrint('Service initialization error: $e');
+  }
 
   runApp(const MyApp());
-  // runApp(MyTextApp());
 }
 
 class MyTextApp extends StatelessWidget {

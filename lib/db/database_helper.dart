@@ -33,6 +33,7 @@ class DatabaseConfig {
   static const String columnBytes = 'bytes';
   static const String columnThumbnail = 'thumbnail'; // 新增缩略图字段
   static const String columnSourceAppId = 'sourceAppId';
+  static const String columnClassification = 'classification'; // 新增分类存储字段
 }
 
 /// Abstract interface for database operations
@@ -70,7 +71,7 @@ class DatabaseHelper implements IDatabaseHelper {
   /// Returns database instance, initializing if necessary
   Future<Database> get database async {
     // 如果已初始化，直接返回
-    if (_db != null) {
+    if (_db != null && _db!.isOpen) {
       return _db!;
     }
 
@@ -87,6 +88,9 @@ class DatabaseHelper implements IDatabaseHelper {
       final result = await _initFuture!;
       _db = result; // 关键：保存初始化结果
       return result;
+    } catch (e) {
+      debugPrint('Database initialization failed: $e');
+      rethrow;
     } finally {
       _isInitializing = false;
       _initFuture = null;
@@ -116,6 +120,7 @@ class DatabaseHelper implements IDatabaseHelper {
       );
 
       _isInitializing = false;
+      await _optimizeDb(db);
       return db;
     } catch (e) {
       _isInitializing = false;
@@ -146,7 +151,8 @@ class DatabaseHelper implements IDatabaseHelper {
           ${DatabaseConfig.columnIsFavorite} INTEGER DEFAULT 0,
           ${DatabaseConfig.columnBytes} BLOB,
           ${DatabaseConfig.columnThumbnail} BLOB,
-          ${DatabaseConfig.columnSourceAppId} TEXT
+          ${DatabaseConfig.columnSourceAppId} TEXT,
+          ${DatabaseConfig.columnClassification} TEXT
         )
       ''');
 
@@ -195,8 +201,27 @@ class DatabaseHelper implements IDatabaseHelper {
     });
   }
 
-  /// Handles database upgrades (No-op since we reset to v1)
-  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {}
+  /// Handles database upgrades
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute(
+          'ALTER TABLE ${DatabaseConfig.tableName} ADD COLUMN ${DatabaseConfig.columnClassification} TEXT');
+    }
+  }
+
+  /// Internal database performance optimization
+  Future<void> _optimizeDb(Database db) async {
+    try {
+      // Periodic maintenance
+      await db.execute('PRAGMA optimize;');
+      // Vacuum if too large or on specific intervals
+      // await db.execute('VACUUM;');
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Database optimization failed: $e');
+      }
+    }
+  }
 
   @override
   Future<int> getMaxCount() async {
@@ -400,48 +425,50 @@ class DatabaseHelper implements IDatabaseHelper {
     final maxCount = await getMaxCount();
     final retentionDays = await getRetentionDays();
 
-    return await db.transaction((txn) async {
-      try {
-        if (retentionDays > 0) {
-          final expirationDate =
-              DateTime.now().subtract(Duration(days: retentionDays));
-          await txn.delete(
-            DatabaseConfig.tableName,
-            where:
-                '${DatabaseConfig.columnIsFavorite} = 0 AND ${DatabaseConfig.columnTime} < ?',
-            whereArgs: [expirationDate.toString()],
-          );
-        }
+    // 先检查是否需要清理，在事务外执行以减少锁定时间
+    if (retentionDays > 0) {
+      final expirationDate =
+          DateTime.now().subtract(Duration(days: retentionDays));
+      await db.delete(
+        DatabaseConfig.tableName,
+        where:
+            '${DatabaseConfig.columnIsFavorite} = 0 AND ${DatabaseConfig.columnTime} < ?',
+        whereArgs: [expirationDate.toString()],
+      );
+    }
 
-        await txn.insert(DatabaseConfig.tableName, model.toMap());
+    // 快速插入，不在事务中查询 COUNT
+    try {
+      await db.insert(DatabaseConfig.tableName, model.toMap());
+    } catch (e) {
+      throw DatabaseException('Failed to insert item', e);
+    }
 
-        final result = await txn
-            .rawQuery('SELECT COUNT(*) FROM ${DatabaseConfig.tableName}');
-        final count = result.isNotEmpty ? result.first.values.first as int : 0;
-        if (count > maxCount) {
-          final oldestItems = await txn.query(
-            DatabaseConfig.tableName,
-            columns: [DatabaseConfig.columnId],
-            where: '${DatabaseConfig.columnIsFavorite} = 0',
-            orderBy: '${DatabaseConfig.columnTime} ASC',
-            limit: 1,
-          );
+    // 异步检查是否超过最大数量，不阻塞插入
+    final countResult =
+        await db.rawQuery('SELECT COUNT(*) FROM ${DatabaseConfig.tableName}');
+    final count =
+        countResult.isNotEmpty ? countResult.first.values.first as int : 0;
+    if (count > maxCount) {
+      final oldestItems = await db.query(
+        DatabaseConfig.tableName,
+        columns: [DatabaseConfig.columnId],
+        where: '${DatabaseConfig.columnIsFavorite} = 0',
+        orderBy: '${DatabaseConfig.columnTime} ASC',
+        limit: 1,
+      );
 
-          if (oldestItems.isNotEmpty) {
-            final id = oldestItems.first[DatabaseConfig.columnId] as String;
-            await txn.delete(
-              DatabaseConfig.tableName,
-              where: '${DatabaseConfig.columnId} = ?',
-              whereArgs: [id],
-            );
-            return id;
-          }
-        }
-        return null;
-      } catch (e) {
-        throw DatabaseException('Failed to insert item', e);
+      if (oldestItems.isNotEmpty) {
+        final id = oldestItems.first[DatabaseConfig.columnId] as String;
+        await db.delete(
+          DatabaseConfig.tableName,
+          where: '${DatabaseConfig.columnId} = ?',
+          whereArgs: [id],
+        );
+        return id;
       }
-    });
+    }
+    return null;
   }
 
   @override
@@ -505,12 +532,8 @@ class DatabaseHelper implements IDatabaseHelper {
 
   @override
   Future<void> optimizeDatabase() async {
-    try {
-      final db = await database;
-      await db.execute('VACUUM');
-    } catch (e) {
-      rethrow;
-    }
+    final db = await database;
+    await _optimizeDb(db);
   }
 
   /// Closes the database connection

@@ -1,15 +1,24 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart';
+
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/widget/cards/file_card.dart';
 import 'package:easy_pasta/widget/cards/text_card.dart';
 import 'package:easy_pasta/widget/cards/footer_card.dart';
 import 'package:easy_pasta/widget/cards/html_card.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
+import 'package:easy_pasta/model/content_classification.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
 import 'package:easy_pasta/model/grid_density.dart';
 import 'package:easy_pasta/widget/source_app_badge.dart';
+import 'package:easy_pasta/widget/cards/url_card.dart';
+import 'package:easy_pasta/widget/cards/command_card.dart';
+import 'package:easy_pasta/widget/cards/json_card.dart';
 
 class NewPboardItemCard extends StatefulWidget {
   final ClipboardItemModel model;
@@ -23,7 +32,7 @@ class NewPboardItemCard extends StatefulWidget {
   final bool enableHover;
   final bool showFocus;
   final String? highlight;
-  final int? badgeIndex; // 新增：显示数字快捷键角标
+  final int? badgeIndex;
 
   const NewPboardItemCard({
     super.key,
@@ -47,49 +56,111 @@ class NewPboardItemCard extends StatefulWidget {
 
 class _NewPboardItemCardState extends State<NewPboardItemCard> {
   bool _isHovered = false;
-  bool _showPulse = false; // 新增脉冲状态
+  bool _showPulse = false;
+
+  static const _pulseDuration = Duration(milliseconds: 400);
 
   void _triggerPulse() {
     if (!mounted) return;
     setState(() => _showPulse = true);
-    Future.delayed(const Duration(milliseconds: 400), () {
+    Future.delayed(_pulseDuration, () {
       if (mounted) setState(() => _showPulse = false);
     });
   }
 
-  @override
-  void didUpdateWidget(covariant NewPboardItemCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!widget.enableHover && _isHovered) {
-      // 必须调用 setState，否则状态更改不会反映到 UI [FIXED]
-      setState(() => _isHovered = false);
-    }
+  void _handleHoverChange(bool isHovered) {
+    if (!widget.enableHover || _isHovered == isHovered) return;
+    setState(() => _isHovered = isHovered);
   }
 
   @override
   Widget build(BuildContext context) {
     final isSelected = widget.selectedId == widget.model.id;
+    final isElevated = (widget.enableHover && _isHovered) || isSelected;
+
+    final card = _CardContainer(
+      isSelected: isSelected,
+      isElevated: isElevated,
+      showPulse: _showPulse,
+      model: widget.model,
+      density: widget.density,
+      highlight: widget.highlight,
+      showFocus: widget.showFocus,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        widget.onTap(widget.model);
+      },
+      onDoubleTap: () {
+        HapticFeedback.mediumImpact();
+        _triggerPulse();
+        widget.onDoubleTap(widget.model);
+      },
+      onCopy: widget.onCopy,
+      onFavorite: widget.onFavorite,
+      onDelete: widget.onDelete,
+      onSuccess: _triggerPulse,
+    );
+
+    if (!widget.enableHover) {
+      return card;
+    }
+
+    return MouseRegion(
+      onEnter: (_) => _handleHoverChange(true),
+      onExit: (_) => _handleHoverChange(false),
+      child: card,
+    );
+  }
+}
+
+// ============================================================================
+// 卡片容器 - 独立渲染单元
+// ============================================================================
+
+class _CardContainer extends StatelessWidget {
+  final bool isSelected;
+  final bool isElevated;
+  final bool showPulse;
+  final ClipboardItemModel model;
+  final GridDensity density;
+  final String? highlight;
+  final bool showFocus;
+  final VoidCallback onTap;
+  final VoidCallback onDoubleTap;
+  final Function(ClipboardItemModel) onCopy;
+  final Function(ClipboardItemModel) onFavorite;
+  final Function(ClipboardItemModel) onDelete;
+  final VoidCallback onSuccess;
+
+  const _CardContainer({
+    required this.isSelected,
+    required this.isElevated,
+    required this.showPulse,
+    required this.model,
+    required this.density,
+    required this.highlight,
+    required this.showFocus,
+    required this.onTap,
+    required this.onDoubleTap,
+    required this.onCopy,
+    required this.onFavorite,
+    required this.onDelete,
+    required this.onSuccess,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final spec = widget.density.spec;
-    final isHovered = widget.enableHover && _isHovered;
-    final isElevated = isHovered || isSelected;
-    final showFocus = widget.showFocus;
-    final sourceAppId = widget.model.sourceAppId;
-    final showSourceBadge =
-        sourceAppId != null && sourceAppId.trim().isNotEmpty;
-    final badgeSize = widget.density == GridDensity.compact
-        ? 16.0
-        : widget.density == GridDensity.spacious
-            ? 20.0
-            : 18.0;
     final borderColor = isSelected
         ? AppColors.primary
         : (isDark ? AppColors.darkFrostedBorder : AppColors.lightFrostedBorder);
+
     final focusRingColor =
         AppColors.primary.withValues(alpha: isDark ? 0.4 : 0.25);
     final baseShadows = isDark
         ? (isElevated ? AppShadows.darkSm : AppShadows.none)
         : (isElevated ? AppShadows.md : AppShadows.sm);
+
     final shadows = <BoxShadow>[
       ...baseShadows,
       if (showFocus)
@@ -100,8 +171,7 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
         ),
     ];
 
-    // [CRITICAL FIX] 条件渲染：键盘模式下完全移除 MouseRegion
-    final child = RepaintBoundary(
+    return RepaintBoundary(
       child: AnimatedScale(
         scale: isElevated ? 1.01 : 1.0,
         duration: AppDurations.fast,
@@ -110,6 +180,9 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
           duration: AppDurations.fast,
           curve: AppCurves.standard,
           decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.darkCardBackground
+                : AppColors.lightCardBackground,
             gradient: isDark
                 ? AppGradients.darkCardSheen
                 : AppGradients.lightCardSheen,
@@ -124,117 +197,153 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(AppRadius.card),
-              onTap: () {
-                HapticFeedback.selectionClick();
-                widget.onTap(widget.model);
-              },
-              onDoubleTap: () {
-                HapticFeedback.mediumImpact();
-                _triggerPulse();
-                widget.onDoubleTap(widget.model);
-              },
-              child: Stack(
-                children: [
-                  // 背景脉冲阴影动画
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.easeOut,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(AppRadius.card),
-                      boxShadow: [
-                        if (_showPulse)
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.4),
-                            blurRadius: 12,
-                            spreadRadius: 4,
-                          ),
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(spec.cardPadding),
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(child: _buildContent(context)),
-                              const SizedBox(height: AppSpacing.xs),
-                              _buildFooter(
-                                context,
-                                showActions: true,
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (showSourceBadge)
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            child: IgnorePointer(
-                              child: SourceAppBadge(
-                                bundleId: sourceAppId,
-                                size: badgeSize,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  // 前景脉冲边框动画
-                  if (_showPulse)
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 400),
-                          opacity: _showPulse ? 0 : 1,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.card),
-                              border: Border.all(
-                                color: AppColors.primary.withValues(alpha: 0.5),
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
+              onTap: onTap,
+              onDoubleTap: onDoubleTap,
+              child: _CardContentLayout(
+                model: model,
+                density: density,
+                highlight: highlight,
+                isElevated: isElevated,
+                showPulse: showPulse,
+                onCopy: onCopy,
+                onFavorite: onFavorite,
+                onDelete: onDelete,
+                onSuccess: onSuccess,
               ),
             ),
           ),
         ),
       ),
     );
+  }
+}
 
-    // 键盘模式下完全不使用 MouseRegion
-    if (!widget.enableHover) {
-      return child;
-    }
+// ============================================================================
+// 内容布局组件
+// ============================================================================
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: child,
+class _CardContentLayout extends StatelessWidget {
+  final ClipboardItemModel model;
+  final GridDensity density;
+  final String? highlight;
+  final bool isElevated;
+  final bool showPulse;
+  final Function(ClipboardItemModel) onCopy;
+  final Function(ClipboardItemModel) onFavorite;
+  final Function(ClipboardItemModel) onDelete;
+  final VoidCallback onSuccess;
+
+  const _CardContentLayout({
+    required this.model,
+    required this.density,
+    required this.highlight,
+    required this.isElevated,
+    required this.showPulse,
+    required this.onCopy,
+    required this.onFavorite,
+    required this.onDelete,
+    required this.onSuccess,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final spec = density.spec;
+    final sourceAppId = model.sourceAppId;
+    final showSourceBadge =
+        sourceAppId != null && sourceAppId.trim().isNotEmpty;
+
+    final badgeSize = density == GridDensity.compact
+        ? 16.0
+        : density == GridDensity.spacious
+            ? 20.0
+            : 18.0;
+
+    return Stack(
+      children: [
+        Padding(
+          padding: EdgeInsets.all(spec.cardPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: RepaintBoundary(
+                  child: _ContentArea(
+                    model: model,
+                    density: density,
+                    highlight: highlight,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              FooterContent(
+                model: model,
+                onCopy: onCopy,
+                onFavorite: onFavorite,
+                onDelete: onDelete,
+                showActions: isElevated,
+                compact: density == GridDensity.compact,
+                onSuccess: onSuccess,
+              ),
+            ],
+          ),
+        ),
+        if (showSourceBadge)
+          Positioned(
+            top: 4,
+            right: 4,
+            child: IgnorePointer(
+              child: SourceAppBadge(
+                bundleId: sourceAppId,
+                size: badgeSize,
+              ),
+            ),
+          ),
+        if (showPulse)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppRadius.card),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
+}
 
-  Widget _buildContent(BuildContext context) {
-    final density = widget.density;
+// ============================================================================
+// 内容核心区域 - 隔离频繁变化的逻辑
+// ============================================================================
+
+class _ContentArea extends StatelessWidget {
+  final ClipboardItemModel model;
+  final GridDensity density;
+  final String? highlight;
+
+  const _ContentArea({
+    required this.model,
+    required this.density,
+    required this.highlight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final contentPadding = density == GridDensity.compact ? 2.0 : 4.0;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableHeight =
             (constraints.maxHeight - (contentPadding * 2)).clamp(0.0, 10000.0);
+
         return Container(
           padding: EdgeInsets.symmetric(vertical: contentPadding),
-          child: _buildContentByType(
-            context,
-            availableHeight: availableHeight,
-          ),
+          child: _buildContentByType(context, availableHeight),
         );
       },
     );
@@ -242,83 +351,126 @@ class _NewPboardItemCardState extends State<NewPboardItemCard> {
 
   int _calculateMaxLines(TextStyle style, double height) {
     final fontSize = style.fontSize ?? 13;
-    final lineHeight = fontSize * (style.height ?? 1.0);
+    final lineHeight = fontSize * (style.height ?? 1.2);
     if (lineHeight <= 0) return 1;
     final lines = (height / lineHeight).floor();
     return lines < 1 ? 1 : lines;
   }
 
-  Widget _buildContentByType(BuildContext context,
-      {required double availableHeight}) {
+  Widget _buildContentByType(BuildContext context, double availableHeight) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final baseStyle = isDark ? AppTypography.darkBody : AppTypography.lightBody;
     final textLines = _calculateMaxLines(baseStyle, availableHeight);
-    final htmlLines = _calculateMaxLines(
-      baseStyle.copyWith(height: 1.5),
-      availableHeight,
-    );
-    switch (widget.model.ptype) {
+
+    switch (model.ptype) {
       case ClipboardType.image:
-        return _ImagePreview(model: widget.model);
+        return _ImagePreview(model: model);
+
       case ClipboardType.file:
         return FileContent(
-          fileName: widget.model.pvalue,
-          fileUri:
-              widget.model.bytesToString(widget.model.bytes ?? Uint8List(0)),
+          fileName: model.pvalue,
+          fileUri: model.bytesToString(model.bytes ?? Uint8List(0)),
         );
+
       case ClipboardType.html:
-        return HtmlContent(
-          htmlData:
-              widget.model.bytesToString(widget.model.bytes ?? Uint8List(0)),
-          maxLines: htmlLines,
-        );
-      case ClipboardType.unknown:
-        return TextContent(
-          text: 'Unknown',
-          style: baseStyle,
-          highlight: widget.highlight,
-          maxLines: textLines,
-        );
+        return _buildHtmlContent(baseStyle, textLines, availableHeight);
+
+      case ClipboardType.text:
+        return _buildTextContent(baseStyle, textLines);
+
       default:
         return TextContent(
-          text: widget.model.pvalue,
+          text: model.pvalue,
           style: baseStyle,
-          highlight: widget.highlight,
+          highlight: highlight,
           maxLines: textLines,
         );
     }
   }
 
-  Widget _buildFooter(BuildContext context, {required bool showActions}) {
-    return FooterContent(
-      model: widget.model,
-      onCopy: widget.onCopy,
-      onFavorite: widget.onFavorite,
-      onDelete: widget.onDelete,
-      showActions: showActions,
-      compact: widget.density == GridDensity.compact,
-      onSuccess: _triggerPulse,
+  Widget _buildHtmlContent(
+      TextStyle baseStyle, int textLines, double availableHeight) {
+    final classification = model.classification;
+
+    if (classification?.kind == ContentKind.url) {
+      return _buildUrlContent(classification);
+    }
+
+    if (classification?.kind == ContentKind.command) {
+      return CommandContent(
+        commandText: model.pvalue,
+        maxLines: textLines,
+      );
+    }
+
+    final htmlLines = _calculateMaxLines(
+      baseStyle.copyWith(height: 1.5),
+      availableHeight,
+    );
+
+    return HtmlContent(
+      htmlData: model.bytesToString(model.bytes ?? Uint8List(0)),
+      fallbackText: model.pvalue,
+      maxLines: htmlLines,
+    );
+  }
+
+  Widget _buildTextContent(TextStyle baseStyle, int textLines) {
+    final classification = model.classification;
+
+    if (classification?.kind == ContentKind.url) {
+      return _buildUrlContent(classification);
+    }
+
+    if (classification?.kind == ContentKind.json) {
+      return JsonCardContent(
+        jsonText: model.pvalue,
+        rootType: classification?.metadata?['jsonRoot'] as String?,
+        maxLines: textLines,
+      );
+    }
+
+    if (classification?.kind == ContentKind.command) {
+      return CommandContent(
+        commandText: model.pvalue,
+        maxLines: textLines,
+      );
+    }
+
+    return TextContent(
+      text: model.pvalue,
+      style: baseStyle,
+      highlight: highlight,
+      maxLines: textLines,
+    );
+  }
+
+  Widget _buildUrlContent(ContentClassification? classification) {
+    final normalized = classification?.metadata?['normalizedUrl'];
+    return UrlContent(
+      urlText: model.pvalue,
+      normalizedUrl:
+          normalized is String && normalized.isNotEmpty ? normalized : null,
     );
   }
 }
 
+// ============================================================================
+// 图片预览 - 独立并优化
+// ============================================================================
+
 class _ImagePreview extends StatelessWidget {
   final ClipboardItemModel model;
-
   const _ImagePreview({required this.model});
+
+  static const _fallbackIconSize = 48.0;
+  static const _cacheWidth = 800;
 
   @override
   Widget build(BuildContext context) {
-    // 根据用户要求，直接使用完整字节以显示高清图片
     final imageData = model.bytes;
-
-    if (imageData == null) {
-      return Center(
-        child: Icon(
-          Icons.broken_image_outlined,
-          color: Theme.of(context).disabledColor,
-        ),
-      );
+    if (imageData == null || imageData.isEmpty) {
+      return _buildFallbackIcon(context);
     }
 
     return Image.memory(
@@ -326,8 +478,20 @@ class _ImagePreview extends StatelessWidget {
       fit: BoxFit.cover,
       width: double.infinity,
       height: double.infinity,
-      // 保持 cacheWidth 以防止极高分辨率图片爆内存，但增加宽度以保证清晰度
-      cacheWidth: 800,
+      cacheWidth: _cacheWidth,
+      gaplessPlayback: true,
+      filterQuality: FilterQuality.medium,
+      errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(context),
+    );
+  }
+
+  Widget _buildFallbackIcon(BuildContext context) {
+    return Center(
+      child: Icon(
+        Icons.broken_image_outlined,
+        size: _fallbackIconSize,
+        color: Theme.of(context).disabledColor,
+      ),
     );
   }
 }

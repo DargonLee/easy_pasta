@@ -5,7 +5,6 @@ import 'package:crypto/crypto.dart';
 import 'package:super_clipboard/super_clipboard.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
-import 'package:easy_pasta/core/html_processor.dart';
 import 'package:easy_pasta/core/app_source_service.dart';
 
 /// A singleton class that manages system clipboard operations and monitoring
@@ -18,11 +17,13 @@ class SuperClipboard {
   final SystemClipboard? _clipboard = SystemClipboard.instance;
   ValueChanged<ClipboardItemModel?>? _onClipboardChanged;
   String? _lastContentHash; // 改为存储哈希值，而不是完整的 model
-  Set<DataFormat>? _lastFormats; // 存储上次检测到的格式标识符
+  String? _lastFastHash;
+  DateTime? _lastImageAttemptAt;
   Timer? _pollingTimer;
   bool _isPolling = false;
 
   static const Duration _pollingInterval = Duration(seconds: 1);
+  static const Duration _imageAttemptCooldown = Duration(seconds: 6);
 
   /// Starts monitoring clipboard changes
   void _startPollingTimer() {
@@ -47,31 +48,29 @@ class SuperClipboard {
     try {
       final reader = await _clipboard?.read();
       if (reader == null) {
-        _isPolling = false;
         return;
       }
 
-      // 性能优化：检查我们关心的核心格式是否发生变化
-      final supportedFormats = <DataFormat>[
-        Formats.plainText,
-        Formats.htmlText,
-        Formats.png,
-        Formats.fileUri,
-      ];
-      final currentFormats =
-          supportedFormats.where((f) => reader.canProvide(f)).toSet();
-
-      final formatsIdentical = _lastFormats != null &&
-          _lastFormats!.length == currentFormats.length &&
-          _lastFormats!.every(currentFormats.contains);
-
-      if (formatsIdentical && _lastContentHash != null) {
-        _isPolling = false;
+      final fastHash = await _computeFastHash(reader);
+      if (fastHash != null &&
+          fastHash == _lastFastHash &&
+          _lastContentHash != null) {
         return;
       }
 
-      _lastFormats = currentFormats;
-      await _processClipboardContent(reader);
+      // 如果只有图片且近期已尝试过，延迟重试以避免重度重复解码
+      final isImageOnly = reader.canProvide(Formats.png) &&
+          !reader.canProvide(Formats.plainText) &&
+          !reader.canProvide(Formats.htmlText) &&
+          !reader.canProvide(Formats.fileUri);
+      if (isImageOnly &&
+          _lastImageAttemptAt != null &&
+          DateTime.now().difference(_lastImageAttemptAt!) <
+              _imageAttemptCooldown) {
+        return;
+      }
+
+      await _processClipboardContent(reader, fastHash: fastHash);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Clipboard polling failed: $e');
@@ -82,108 +81,37 @@ class SuperClipboard {
   }
 
   /// Processes different types of clipboard content
-  Future<void> _processClipboardContent(ClipboardReader reader) async {
-    final sourceAppId = await AppSourceService().getFrontmostAppBundleId();
-    if (await _processHtmlContent(reader, sourceAppId)) return;
-    if (await _processFileContent(reader, sourceAppId)) return;
-    if (await _processTextContent(reader, sourceAppId)) return;
-    if (await _processImageContent(reader, sourceAppId)) return;
-  }
-
-  /// Processes HTML content from clipboard
-  Future<bool> _processHtmlContent(
-      ClipboardReader reader, String? sourceAppId) async {
-    if (!reader.canProvide(Formats.htmlText)) return false;
-
-    final html = await reader.readValue(Formats.htmlText);
-    final htmlPlainText = await reader.readValue(Formats.plainText);
-
-    if (html != null) {
-      final processedHtml = HtmlProcessor.processHtml(html.toString());
-      await _handleContentChange(htmlPlainText.toString(), ClipboardType.html,
-          bytes: Uint8List.fromList(utf8.encode(processedHtml)),
-          sourceAppId: sourceAppId);
-      return true;
-    }
-    return false;
-  }
-
-  /// Processes file URI content from clipboard
-  Future<bool> _processFileContent(
-      ClipboardReader reader, String? sourceAppId) async {
-    if (!reader.canProvide(Formats.fileUri)) return false;
-
-    final fileUri = await reader.readValue(Formats.fileUri);
-    final fileUriString = await reader.readValue(Formats.plainText);
-
-    if (fileUri != null) {
-      await _handleContentChange(fileUriString.toString(), ClipboardType.file,
-          bytes: Uint8List.fromList(utf8.encode(fileUri.toString())),
-          sourceAppId: sourceAppId);
-      return true;
-    }
-    return false;
-  }
-
-  /// Processes plain text content from clipboard
-  Future<bool> _processTextContent(
-      ClipboardReader reader, String? sourceAppId) async {
-    if (!reader.canProvide(Formats.plainText)) return false;
+  Future<void> _processClipboardContent(
+    ClipboardReader reader, {
+    String? fastHash,
+  }) async {
+    // 极致简方案：仅处理文本，且限制最大长度
+    if (!reader.canProvide(Formats.plainText)) return;
 
     final text = await reader.readValue(Formats.plainText);
-    if (text != null) {
-      await _handleContentChange(text.toString(), ClipboardType.text,
-          sourceAppId: sourceAppId);
-      return true;
+    if (text == null) return;
+
+    final content = text.toString();
+    // 超过 50KB 的内容不进入后续识别，直接作为普通文本
+    if (content.length > 50000) {
+      await _handleContentChange(
+          content.substring(0, 50000), ClipboardType.text,
+          fastHash: fastHash);
+      return;
     }
-    return false;
-  }
 
-  /// Processes image content from clipboard
-  Future<bool> _processImageContent(
-      ClipboardReader reader, String? sourceAppId) async {
-    if (!reader.canProvide(Formats.png)) return false;
-
-    try {
-      final completer = Completer<bool>();
-
-      reader.getFile(Formats.png, (file) async {
-        try {
-          final stream = file.getStream();
-          final bytesList = await stream.toList();
-          final imageData = bytesList.expand((x) => x).toList();
-
-          if (imageData.isNotEmpty) {
-            await _handleContentChange('', ClipboardType.image,
-                bytes: Uint8List.fromList(imageData), sourceAppId: sourceAppId);
-          }
-          if (!completer.isCompleted) completer.complete(true);
-        } catch (e) {
-          debugPrint('Error processing image: $e');
-          if (!completer.isCompleted) completer.complete(false);
-        }
-      });
-
-      // 设置一个超时，防止 getFile 回调永远不执行
-      return await completer.future.timeout(
-        const Duration(seconds: 5),
-        onTimeout: () => false,
-      );
-    } catch (e) {
-      debugPrint('Error accessing image file: $e');
-      return false;
-    }
+    await _handleContentChange(content, ClipboardType.text, fastHash: fastHash);
   }
 
   /// Handles content changes and notifies listeners
   Future<void> _handleContentChange(String content, ClipboardType? type,
-      {Uint8List? bytes, String? sourceAppId}) async {
+      {Uint8List? bytes, String? fastHash}) async {
     // 为内容生成哈希值 - 移动到 background isolate 如果字节较大
     final bytesToHash = bytes ?? Uint8List.fromList(utf8.encode(content));
 
     String contentHash;
-    if (bytesToHash.length > 1024 * 50) {
-      // 大于 50KB 则在 isolate 中计算哈希
+    if (bytesToHash.length > 1024 * 10) {
+      // 大于 10KB 则在 isolate 中计算哈希
       contentHash = await compute(
           (Uint8List b) => sha256.convert(b).toString(), bytesToHash);
     } else {
@@ -192,6 +120,12 @@ class SuperClipboard {
 
     if (contentHash != _lastContentHash) {
       _lastContentHash = contentHash;
+      // 复用 contentHash 作为 fastHash，避免重复计算
+      _lastFastHash = fastHash ?? contentHash;
+
+      // 确认变化后，才获取一次 sourceAppId (最省性能)
+      final sourceAppId = await AppSourceService().getFrontmostAppBundleId();
+
       final contentModel =
           _createContentModel(content, type, bytes, sourceAppId);
       _onClipboardChanged?.call(contentModel);
@@ -202,9 +136,9 @@ class SuperClipboard {
   ClipboardItemModel _createContentModel(String content, ClipboardType? type,
       Uint8List? bytes, String? sourceAppId) {
     return ClipboardItemModel(
-      ptype: type,
+      ptype: type ?? ClipboardType.text,
       pvalue: content,
-      bytes: type == ClipboardType.text ? null : bytes,
+      bytes: bytes,
       sourceAppId: sourceAppId,
     );
   }
@@ -261,6 +195,45 @@ class SuperClipboard {
     _stopPollingTimer();
     _onClipboardChanged = null;
     _lastContentHash = null;
-    _lastFormats = null;
+    _lastFastHash = null;
+    _lastImageAttemptAt = null;
+  }
+
+  Future<String?> _computeFastHash(ClipboardReader reader) async {
+    try {
+      if (reader.canProvide(Formats.plainText)) {
+        final text = await reader.readValue(Formats.plainText);
+        if (text != null) {
+          final str = text.toString();
+          // 限制最大 10KB，避免超大文本阻塞
+          final limitedStr = str.length > 10240 ? str.substring(0, 10240) : str;
+          return _hashString(limitedStr);
+        }
+      }
+      if (reader.canProvide(Formats.htmlText)) {
+        final html = await reader.readValue(Formats.htmlText);
+        if (html != null) {
+          final str = html.toString();
+          final limitedStr = str.length > 10240 ? str.substring(0, 10240) : str;
+          return _hashString(limitedStr);
+        }
+      }
+      if (reader.canProvide(Formats.fileUri)) {
+        final fileUri = await reader.readValue(Formats.fileUri);
+        if (fileUri != null) {
+          return _hashString(fileUri.toString());
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Failed to compute clipboard fast hash: $e');
+      }
+    }
+    return null;
+  }
+
+  /// 计算字符串哈希（同步，但已限制长度）
+  String _hashString(String input) {
+    return sha256.convert(utf8.encode(input)).toString();
   }
 }

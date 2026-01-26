@@ -7,6 +7,7 @@ import 'package:easy_pasta/model/time_filter.dart';
 import 'package:easy_pasta/service/clipboard_service.dart';
 import 'package:easy_pasta/core/sync_portal_service.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
+import 'package:easy_pasta/core/content_classifier.dart';
 import 'package:uuid/uuid.dart';
 
 @immutable
@@ -87,7 +88,6 @@ class PboardProvider extends ChangeNotifier {
   String get searchQuery => _state.searchQuery;
   TimeFilter get timeFilter => _state.timeFilter;
 
-  bool _isInitialized = false;
   bool _isDisposed = false;
 
   PboardProvider({ClipboardService? service})
@@ -99,12 +99,8 @@ class PboardProvider extends ChangeNotifier {
           isLoading: false,
           maxItems: 50,
         ) {
-    // 延迟初始化，避免与其他服务冲突
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (!_isInitialized && !_isDisposed) {
-        _initializeState();
-      }
-    });
+    // 移除构造函数中的直接初始化，交由页面或 PostFrameCallback 触发以便更精确控制
+    // _initializeState();
 
     // 监听移动端同步推送
     _mobileUploadSubscription =
@@ -133,34 +129,15 @@ class PboardProvider extends ChangeNotifier {
     await addItem(model);
   }
 
-  Future<void> _initializeState() async {
-    if (_isInitialized) return;
-    _isInitialized = true;
-
-    try {
-      // 1. 加载分页项 (服务层会自动处理 FTS 或普通拉取，并仅拉取缩略图)
-      final items = await _service.getFilteredItems(
-        limit: _state.pageSize,
-        offset: 0,
-        filterType: _state.filterType.toString().split('.').last,
-      );
-
-      _updateState(_state.copyWith(
-        allItems: items,
-        filteredItems: items,
-        searchQuery: '',
-        currentPage: 0,
-        hasMore: items.length >= _state.pageSize,
-      ));
-    } catch (e) {
-      _isInitialized = false; // 允许重试
-    }
-  }
-
   void _updateState(PboardState newState) {
     if (_isDisposed) return;
     _state = newState;
     notifyListeners();
+  }
+
+  void _setStateSilent(PboardState newState) {
+    if (_isDisposed) return;
+    _state = newState;
   }
 
   /// 确保项具有完整 bytes (Lazy Loading)
@@ -174,7 +151,7 @@ class PboardProvider extends ChangeNotifier {
     if (index != -1) {
       final newItems = List<ClipboardItemModel>.from(_state.allItems);
       newItems[index] = updated;
-      _updateState(_state.copyWith(allItems: newItems));
+      _setStateSilent(_state.copyWith(allItems: newItems));
       _applyFiltersAndSearch();
     }
 
@@ -191,11 +168,7 @@ class PboardProvider extends ChangeNotifier {
 
   Future<T> _withLoading<T>(Future<T> Function() operation) async {
     if (_state.isLoading) {
-      // 等待一小段时间后重试，而不是直接抛出错误
-      await Future.delayed(const Duration(milliseconds: 100));
-      if (_state.isLoading) {
-        throw '操作正在进行中';
-      }
+      throw '操作正在进行中';
     }
 
     _updateState(_state.copyWith(
@@ -281,11 +254,13 @@ class PboardProvider extends ChangeNotifier {
 
   Future<Result<void>> addItem(ClipboardItemModel model) async {
     try {
+      final classification = await ContentClassifier.classify(model);
+      final classifiedModel = model.copyWith(classification: classification);
       // 插入逻辑移交给 Service (自动处理缩略图生成)
-      final deletedItemId = await _service.processAndInsert(model);
+      final deletedItemId = await _service.processAndInsert(classifiedModel);
 
       // 更新内存状态 (内存中不保留原始 bytes 以节省系统内存，仅保留缩略图)
-      final memorySafeModel = model.copyWith(bytes: null);
+      final memorySafeModel = classifiedModel.copyWith(bytes: null);
       List<ClipboardItemModel> nextAllItems = [
         memorySafeModel,
         ..._state.allItems
@@ -296,7 +271,7 @@ class PboardProvider extends ChangeNotifier {
             nextAllItems.where((item) => item.id != deletedItemId).toList();
       }
 
-      _updateState(_state.copyWith(allItems: nextAllItems));
+      _setStateSilent(_state.copyWith(allItems: nextAllItems));
       _applyFiltersAndSearch();
 
       return const Result.success(null);
@@ -307,6 +282,11 @@ class PboardProvider extends ChangeNotifier {
   }
 
   Future<Result<void>> loadItems() async {
+    // 防止重复加载
+    if (_state.isLoading) {
+      return const Result.success(null);
+    }
+
     return await _withLoading(() async {
       try {
         final items = await _service.getFilteredItems(
@@ -317,7 +297,7 @@ class PboardProvider extends ChangeNotifier {
           filterType: _state.filterType.toString().split('.').last,
         );
 
-        _updateState(_state.copyWith(
+        _setStateSilent(_state.copyWith(
           allItems: items,
           filteredItems: items,
           currentPage: 0,
@@ -343,7 +323,7 @@ class PboardProvider extends ChangeNotifier {
       final newAllItems = List<ClipboardItemModel>.from(_state.allItems);
       newAllItems[index] = newModel;
 
-      _updateState(_state.copyWith(allItems: newAllItems));
+      _setStateSilent(_state.copyWith(allItems: newAllItems));
       _applyFiltersAndSearch();
 
       await _service.toggleFavorite(newModel);
@@ -359,7 +339,7 @@ class PboardProvider extends ChangeNotifier {
       final newAllItems =
           _state.allItems.where((item) => item.id != model.id).toList();
 
-      _updateState(_state.copyWith(allItems: newAllItems));
+      _setStateSilent(_state.copyWith(allItems: newAllItems));
       _applyFiltersAndSearch();
 
       await _service.delete(model);
@@ -375,7 +355,7 @@ class PboardProvider extends ChangeNotifier {
     if (type == _state.filterType) return const Result.success(null);
 
     try {
-      _updateState(_state.copyWith(filterType: type));
+      _setStateSilent(_state.copyWith(filterType: type));
       _applyFiltersAndSearch();
       return const Result.success(null);
     } catch (e) {
@@ -446,7 +426,7 @@ class PboardProvider extends ChangeNotifier {
 
       final updatedAllItems = [..._state.allItems, ...newItems];
 
-      _updateState(_state.copyWith(
+      _setStateSilent(_state.copyWith(
         allItems: updatedAllItems,
         currentPage: nextPage,
         hasMore: newItems.length >= _state.pageSize,

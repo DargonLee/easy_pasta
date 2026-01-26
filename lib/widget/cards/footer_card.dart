@@ -1,12 +1,16 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:easy_pasta/core/icon_service.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import 'package:easy_pasta/model/clipboard_type.dart';
+import 'package:easy_pasta/model/content_classification.dart';
+import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter/foundation.dart';
+import 'package:easy_pasta/core/icon_service.dart';
 import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/core/sync_portal_service.dart';
 
@@ -17,7 +21,7 @@ class FooterContent extends StatelessWidget {
   final Function(ClipboardItemModel) onDelete;
   final bool showActions;
   final bool compact;
-  final VoidCallback? onSuccess; // 新增成功回调
+  final VoidCallback? onSuccess;
 
   const FooterContent({
     super.key,
@@ -41,11 +45,12 @@ class FooterContent extends StatelessWidget {
       padding: const EdgeInsets.only(top: AppSpacing.xs),
       child: Row(
         children: [
-          // 类型图标
+          // 类型图标 (高性能版: 依赖预计算分类)
           Icon(
             TypeIconHelper.getTypeIcon(
               model.ptype ?? ClipboardType.unknown,
               pvalue: model.pvalue,
+              model: model,
             ),
             size: typeIconSize,
             color: AppColors.primary,
@@ -67,6 +72,7 @@ class FooterContent extends StatelessWidget {
 
           const Spacer(),
 
+          // 操作按钮组 (带滑入滑出动画)
           AnimatedOpacity(
             opacity: showActions ? 1 : 0,
             duration: AppDurations.fast,
@@ -79,7 +85,6 @@ class FooterContent extends StatelessWidget {
                 offset: showActions ? Offset.zero : const Offset(0.1, 0),
                 child: Row(
                   children: [
-                    // 复制按钮
                     _ActionButton(
                       icon: Icons.copy,
                       tooltip: '复制',
@@ -90,10 +95,7 @@ class FooterContent extends StatelessWidget {
                         onSuccess?.call();
                       },
                     ),
-
                     SizedBox(width: spacing),
-
-                    // 收藏按钮
                     _ActionButton(
                       icon: model.isFavorite ? Icons.star : Icons.star_border,
                       tooltip: model.isFavorite ? '取消收藏' : '收藏',
@@ -104,10 +106,7 @@ class FooterContent extends StatelessWidget {
                         onFavorite(model);
                       },
                     ),
-
                     SizedBox(width: spacing),
-
-                    // 删除按钮
                     _ActionButton(
                       icon: Icons.delete_outline,
                       tooltip: '删除',
@@ -117,10 +116,7 @@ class FooterContent extends StatelessWidget {
                         onDelete(model);
                       },
                     ),
-
                     SizedBox(width: spacing),
-
-                    // 同步到手机
                     _ActionButton(
                       icon: Icons.mobile_screen_share,
                       tooltip: '同步到手机',
@@ -128,16 +124,10 @@ class FooterContent extends StatelessWidget {
                       onPressed: () async {
                         HapticFeedback.selectionClick();
                         try {
-                          if (kDebugMode) {
-                            print(
-                                'SyncPortal: Fetching full data for item ${model.id}');
-                          }
                           final pboardProvider = context.read<PboardProvider>();
                           final fullModel =
                               await pboardProvider.ensureBytes(model);
-
                           SyncPortalService.instance.pushItem(fullModel);
-
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -147,9 +137,6 @@ class FooterContent extends StatelessWidget {
                             );
                           }
                         } catch (e) {
-                          if (kDebugMode) {
-                            print('SyncPortal ERROR in UI: $e');
-                          }
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
@@ -162,6 +149,50 @@ class FooterContent extends StatelessWidget {
                         }
                       },
                     ),
+
+                    // 智能 URL
+                    if (model.classification?.kind == ContentKind.url) ...[
+                      SizedBox(width: spacing),
+                      _ActionButton(
+                        icon: Icons.open_in_new,
+                        tooltip: '打开链接',
+                        iconSize: actionIconSize,
+                        color: AppColors.primary,
+                        onPressed: () async {
+                          final url = model.classification
+                                  ?.metadata?['normalizedUrl'] as String? ??
+                              model.pvalue;
+                          final uri = Uri.tryParse(url);
+                          if (uri != null) await launchUrl(uri);
+                        },
+                      ),
+                    ],
+
+                    // 智能 JSON
+                    if (model.classification?.kind == ContentKind.json) ...[
+                      SizedBox(width: spacing),
+                      _ActionButton(
+                        icon: Icons.format_align_left,
+                        tooltip: '格式化 JSON',
+                        iconSize: actionIconSize,
+                        color: AppColors.primary,
+                        onPressed: () {
+                          try {
+                            final decoded = jsonDecode(model.pvalue);
+                            final formatted = const JsonEncoder.withIndent('  ')
+                                .convert(decoded);
+                            Clipboard.setData(ClipboardData(text: formatted));
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('已格式化并复制到剪贴板'),
+                                    duration: Duration(seconds: 1)),
+                              );
+                            }
+                          } catch (_) {}
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -175,35 +206,15 @@ class FooterContent extends StatelessWidget {
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
-
-    if (difference.inMinutes < 1) {
-      return '刚刚';
-    } else if (difference.inHours < 1) {
-      return '${difference.inMinutes}分钟前';
-    } else if (difference.inDays < 1) {
-      return '${difference.inHours}小时前';
-    } else if (difference.inDays < 30) {
-      return '${difference.inDays}天前';
-    } else {
-      return '${timestamp.month}月${timestamp.day}日';
-    }
-  }
-
-  String getDetailedTime(DateTime timestamp) {
-    return '${timestamp.year}年${timestamp.month}月${timestamp.day}日 '
-        '${timestamp.hour.toString().padLeft(2, '0')}:'
-        '${timestamp.minute.toString().padLeft(2, '0')}';
-  }
-
-  bool isToday(DateTime timestamp) {
-    final now = DateTime.now();
-    return timestamp.year == now.year &&
-        timestamp.month == now.month &&
-        timestamp.day == now.day;
+    if (difference.inMinutes < 1) return '刚刚';
+    if (difference.inHours < 1) return '${difference.inMinutes}分钟前';
+    if (difference.inDays < 1) return '${difference.inHours}小时前';
+    if (difference.inDays < 30) return '${difference.inDays}天前';
+    return '${timestamp.month}月${timestamp.day}日';
   }
 }
 
-/// 操作按钮组件
+/// 轻量级操作按钮 - 无 Ripple，无 Material 消耗
 class _ActionButton extends StatefulWidget {
   final IconData icon;
   final String tooltip;
@@ -229,37 +240,31 @@ class _ActionButtonState extends State<_ActionButton> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final effectiveColor = widget.color ??
+    final baseColor = widget.color ??
         (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary);
+    final activeColor = widget.color ??
+        (isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary);
 
-    return Tooltip(
-      message: widget.tooltip,
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: GestureDetector(
-          onTap: widget.onPressed,
-          child: AnimatedContainer(
-            duration: AppDurations.fast,
-            curve: AppCurves.standard,
-            padding: const EdgeInsets.all(AppSpacing.xs),
-            decoration: BoxDecoration(
-              color: _isHovered
-                  ? (isDark
-                      ? AppColors.darkSecondaryBackground
-                      : AppColors.lightSecondaryBackground)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppRadius.xs),
-            ),
-            child: Icon(
-              widget.icon,
-              size: widget.iconSize,
-              color: _isHovered
-                  ? (isDark
-                      ? AppColors.darkTextPrimary
-                      : AppColors.lightTextPrimary)
-                  : effectiveColor,
-            ),
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onPressed,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.xs),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? (isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.black.withOpacity(0.05))
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.xs),
+          ),
+          child: Icon(
+            widget.icon,
+            size: widget.iconSize,
+            color: _isHovered ? activeColor : baseColor,
           ),
         ),
       ),

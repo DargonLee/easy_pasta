@@ -49,29 +49,16 @@ class MainFlutterWindow: NSWindow {
         appSourceChannel.setMethodCallHandler { [weak self] call, result in
             switch call.method {
             case "getFrontmostApp":
-                if let sourceId = self?.pasteboardSourceBundleId() {
-                    if sourceId != Bundle.main.bundleIdentifier {
-                        self?.lastExternalBundleId = sourceId
-                    }
-                    result(sourceId)
-                    return
+                // 极致简方案：直接取最前面的应用，避开对剪贴板元数据的深度扫描以防潜在挂起
+                let frontmostApp = NSWorkspace.shared.frontmostApplication
+                let bundleId = frontmostApp?.bundleIdentifier
+                
+                if let bundleId, bundleId != Bundle.main.bundleIdentifier {
+                    self?.lastExternalBundleId = bundleId
+                    result(bundleId)
+                } else {
+                    result(self?.lastExternalBundleId)
                 }
-                let selfBundleId = Bundle.main.bundleIdentifier
-                let frontmostId = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-                if let frontmostId, frontmostId != selfBundleId {
-                    self?.lastExternalBundleId = frontmostId
-                    result(frontmostId)
-                    return
-                }
-                if let cached = self?.lastExternalBundleId {
-                    result(cached)
-                    return
-                }
-                let fallbackId = WindowInfo.appOwningFrontmostWindow()?.bundleIdentifier
-                if let fallbackId, fallbackId != selfBundleId {
-                    self?.lastExternalBundleId = fallbackId
-                }
-                result(fallbackId)
             case "getAppIcon":
                 guard let bundleId = call.arguments as? String else {
                     result(FlutterError(code: "invalid_args", message: "bundleId required", details: nil))

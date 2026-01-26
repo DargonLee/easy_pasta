@@ -37,12 +37,10 @@ class _SourceAppBadgeState extends State<SourceAppBadge> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final background = isDark
-        ? AppColors.darkFrostedSurface
-        : AppColors.lightFrostedSurface;
-    final border = isDark
-        ? AppColors.darkFrostedBorder
-        : AppColors.lightFrostedBorder;
+    final background =
+        isDark ? AppColors.darkFrostedSurface : AppColors.lightFrostedSurface;
+    final border =
+        isDark ? AppColors.darkFrostedBorder : AppColors.lightFrostedBorder;
     final fallbackColor =
         isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
     final containerSize = widget.size + 8;

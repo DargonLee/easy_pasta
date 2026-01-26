@@ -1,15 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
-import 'package:easy_pasta/core/content_processor.dart';
 
 class TextContent extends StatelessWidget {
-  static final _urlPattern = RegExp(
-    r'(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})',
-    caseSensitive: false,
-  );
-
   final String text;
   final double fontSize;
   final TextStyle? style;
@@ -35,37 +28,7 @@ class TextContent extends StatelessWidget {
     final textStyle =
         style ?? (isDark ? AppTypography.darkBody : AppTypography.lightBody);
 
-    // 清理文本内容
-    final cleanedText = ContentProcessor.cleanText(text);
-
-    // 检查是否为URL
-    return _urlPattern.hasMatch(cleanedText)
-        ? _buildUrlText(cleanedText, textStyle, isDark)
-        : _buildNormalText(cleanedText, textStyle);
-  }
-
-  Widget _buildUrlText(String urlText, TextStyle baseStyle, bool isDark) {
-    final effectiveLines = maxLines ?? 3;
-    final urlLines = effectiveLines < 3 ? effectiveLines : 3;
-    return InkWell(
-      onTap: () => _launchURL(urlText),
-      borderRadius: BorderRadius.circular(AppRadius.xs),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xs),
-        child: Text(
-          urlText.length > 500 ? '${urlText.substring(0, 497)}...' : urlText,
-          textAlign: textAlign,
-          softWrap: true,
-          maxLines: urlLines,
-          overflow: TextOverflow.ellipsis,
-          style: baseStyle.copyWith(
-            color: AppColors.primary,
-            decoration: TextDecoration.underline,
-            decorationColor: AppColors.primary,
-          ),
-        ),
-      ),
-    );
+    return _buildNormalText(text, textStyle);
   }
 
   Widget _buildNormalText(String displayText, TextStyle style) {
@@ -89,18 +52,25 @@ class TextContent extends StatelessWidget {
 
     final lowerText = displayText.toLowerCase();
     final lowerHighlight = highlight!.toLowerCase();
+
+    // 对于超长文本，仅对前 5000 字符进行高亮处理以保证性能
+    final isTooLong = displayText.length > 5000;
+    final processText =
+        isTooLong ? displayText.substring(0, 5000) : displayText;
+    final processLower = isTooLong ? lowerText.substring(0, 5000) : lowerText;
+
     final spells = <TextSpan>[];
     int start = 0;
     int indexOfHighlight;
 
-    while (
-        (indexOfHighlight = lowerText.indexOf(lowerHighlight, start)) != -1) {
+    while ((indexOfHighlight = processLower.indexOf(lowerHighlight, start)) !=
+        -1) {
       if (indexOfHighlight > start) {
         spells.add(
-            TextSpan(text: displayText.substring(start, indexOfHighlight)));
+            TextSpan(text: processText.substring(start, indexOfHighlight)));
       }
       spells.add(TextSpan(
-        text: displayText.substring(
+        text: processText.substring(
             indexOfHighlight, indexOfHighlight + highlight!.length),
         style: style.copyWith(
           color: AppColors.primary,
@@ -111,8 +81,12 @@ class TextContent extends StatelessWidget {
       start = indexOfHighlight + highlight!.length;
     }
 
-    if (start < displayText.length) {
-      spells.add(TextSpan(text: displayText.substring(start)));
+    if (start < processText.length) {
+      spells.add(TextSpan(text: processText.substring(start)));
+    }
+
+    if (isTooLong) {
+      spells.add(TextSpan(text: displayText.substring(5000)));
     }
 
     return Text.rich(
@@ -122,19 +96,6 @@ class TextContent extends StatelessWidget {
       maxLines: maxLines,
       overflow: TextOverflow.fade,
     );
-  }
-
-  /// 打开URL
-  Future<void> _launchURL(String url) async {
-    // Ensure the URL has a scheme; default to https if missing
-    String fixedUrl = url.trim();
-    if (!fixedUrl.contains('://')) {
-      fixedUrl = 'https://$fixedUrl';
-    }
-    final uri = Uri.parse(fixedUrl);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
   }
 
   /// 获取文本的预览内容

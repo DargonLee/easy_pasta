@@ -48,7 +48,6 @@ class PasteboardGridView extends StatefulWidget {
 class _PasteboardGridViewState extends State<PasteboardGridView>
     with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
-  ClipboardItemModel? _hoveredItem;
   bool _isScrolling = false;
   Timer? _scrollEndTimer;
 
@@ -66,14 +65,14 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   }
 
   void _handleScroll() {
-    if (!_isScrolling || _hoveredItem != null) {
-      _isScrolling = true;
-      _hoveredItem = null;
+    if (!_isScrolling) {
+      setState(() => _isScrolling = true);
     }
+
     _scrollEndTimer?.cancel();
     _scrollEndTimer = Timer(const Duration(milliseconds: 120), () {
       if (!mounted) return;
-      _isScrolling = false;
+      setState(() => _isScrolling = false);
       RendererBinding.instance.mouseTracker.updateAllDevices();
     });
 
@@ -159,45 +158,20 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   }
 
   Widget _buildCardContent(ClipboardItemModel model) {
-    return MouseRegion(
-      onEnter: (_) {
-        if (_isScrolling) return;
-        _updateHoveredItem(model, true);
-      },
-      onHover: (_) {
-        if (_isScrolling) return;
-        if (_hoveredItem?.id != model.id) _updateHoveredItem(model, true);
-      },
-      onExit: (_) {
-        if (_isScrolling) return;
-        _updateHoveredItem(model, false);
-      },
-      child: NewPboardItemCard(
-        model: model,
-        selectedId: widget.selectedId,
-        highlight: widget.highlight,
-        density: widget.density,
-        enableHover: !_isScrolling,
-        showFocus: false,
-        badgeIndex: null,
-        onTap: (item) {
-          widget.onItemTap(item);
-        },
-        onDoubleTap: (item) {
-          widget.onItemDoubleTap(item);
-        },
-        onCopy: widget.onCopy,
-        onFavorite: widget.onFavorite,
-        onDelete: widget.onDelete,
-      ),
+    return NewPboardItemCard(
+      model: model,
+      selectedId: widget.selectedId,
+      highlight: widget.highlight,
+      density: widget.density,
+      enableHover: !_isScrolling,
+      showFocus: false,
+      badgeIndex: null,
+      onTap: widget.onItemTap,
+      onDoubleTap: widget.onItemDoubleTap,
+      onCopy: widget.onCopy,
+      onFavorite: widget.onFavorite,
+      onDelete: widget.onDelete,
     );
-  }
-
-  void _updateHoveredItem(ClipboardItemModel? model, bool isHovered) {
-    if (!mounted) return;
-    setState(() {
-      _hoveredItem = isHovered ? model : null;
-    });
   }
 
   @override

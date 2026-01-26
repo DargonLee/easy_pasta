@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:easy_pasta/core/content_processor.dart';
+import 'package:easy_pasta/core/string_utils.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
 
@@ -21,7 +21,7 @@ class FileContent extends StatelessWidget {
   });
 
   /// 获取文件列表
-  List<String> get _fileList => ContentProcessor.extractFileList(fileUri);
+  List<String> get _fileList => StringUtils.extractFileList(fileUri);
 
   @override
   Widget build(BuildContext context) {
@@ -36,8 +36,8 @@ class FileContent extends StatelessWidget {
 
   /// 构建单文件显示
   Widget _buildSingleFile(BuildContext context) {
-    final decodedPath = ContentProcessor.decodeFilePath(fileUri);
-    final displayName = ContentProcessor.extractFileName(decodedPath);
+    final decodedPath = StringUtils.decodeFilePath(fileUri);
+    final displayName = StringUtils.extractFileName(decodedPath);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -111,7 +111,7 @@ class FileContent extends StatelessWidget {
         const SizedBox(height: AppSpacing.xs),
         // 文件列表预览
         ...displayFiles.map((file) {
-          final name = ContentProcessor.extractFileName(file);
+          final name = StringUtils.extractFileName(file);
           return Padding(
             padding: const EdgeInsets.symmetric(
               vertical: AppSpacing.xxs,
@@ -202,18 +202,18 @@ class FileContent extends StatelessWidget {
   }
 
   IconData _getFileIconForPath(String path) {
-    if (ContentProcessor.isDirectory(path)) {
+    if (StringUtils.isDirectory(path)) {
       return Icons.folder_rounded;
     }
-    final extension = ContentProcessor.getFileExtension(path);
+    final extension = StringUtils.getFileExtension(path);
     return _fileIconMap[extension] ?? Icons.insert_drive_file_rounded;
   }
 
   Color _getIconColorForPath(String path) {
-    if (ContentProcessor.isDirectory(path)) {
+    if (StringUtils.isDirectory(path)) {
       return AppFileColors.folder;
     }
-    final extension = ContentProcessor.getFileExtension(path);
+    final extension = StringUtils.getFileExtension(path);
     return _fileColorMap[extension] ?? AppFileColors.generic;
   }
 

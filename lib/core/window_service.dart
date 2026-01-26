@@ -5,13 +5,14 @@ import 'package:flutter/material.dart';
 class WindowService {
   static final WindowService _instance = WindowService._internal();
   factory WindowService() => _instance;
-  WindowService._internal() {
-    init();
-  }
+  WindowService._internal();
 
   static const Size _windowSize = Size(950, 680);
+  bool _isInitialized = false;
 
   Future<void> init() async {
+    if (_isInitialized) return;
+    
     await windowManager.ensureInitialized();
 
     WindowOptions windowOptions = const WindowOptions(
@@ -22,6 +23,8 @@ class WindowService {
       windowButtonVisibility: false,
     );
     windowManager.waitUntilReadyToShow(windowOptions, () async {});
+    
+    _isInitialized = true;
   }
 
   /// 显示窗口，并将其居中显示在鼠标当前所在的屏幕上

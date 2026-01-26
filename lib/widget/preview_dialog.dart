@@ -5,7 +5,7 @@ import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
-import 'package:easy_pasta/core/content_processor.dart';
+import 'package:easy_pasta/core/string_utils.dart';
 
 class PreviewDialog extends StatelessWidget {
   final ClipboardItemModel model;
@@ -256,7 +256,7 @@ class PreviewDialog extends StatelessWidget {
   Widget _buildHtmlContent(bool isDark) {
     // 从 HTML 中提取纯文本
     final htmlString = model.bytesToString(model.bytes ?? Uint8List(0));
-    final plainText = ContentProcessor.extractTextFromHtml(htmlString);
+    final plainText = StringUtils.stripHtmlTags(htmlString);
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -280,7 +280,7 @@ class PreviewDialog extends StatelessWidget {
   /// 构建文件内容
   Widget _buildFileContent(bool isDark) {
     final fileUri = model.bytesToString(model.bytes ?? Uint8List(0));
-    final fileList = ContentProcessor.extractFileList(fileUri);
+    final fileList = StringUtils.extractFileList(fileUri);
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -312,9 +312,9 @@ class PreviewDialog extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
           // 文件列表
           ...fileList.map((filePath) {
-            final fileName = ContentProcessor.extractFileName(filePath);
-            final isDir = ContentProcessor.isDirectory(filePath);
-            final extension = ContentProcessor.getFileExtension(filePath);
+            final fileName = StringUtils.extractFileName(filePath);
+            final isDir = StringUtils.isDirectory(filePath);
+            final extension = StringUtils.getFileExtension(filePath);
 
             return Container(
               margin: const EdgeInsets.only(bottom: AppSpacing.sm),

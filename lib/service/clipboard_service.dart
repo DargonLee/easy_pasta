@@ -3,6 +3,7 @@ import 'package:easy_pasta/db/database_helper.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:easy_pasta/repository/clipboard_repository.dart';
+import 'package:easy_pasta/core/content_classifier.dart';
 import 'package:image/image.dart' as img;
 
 class ClipboardService {
@@ -16,11 +17,13 @@ class ClipboardService {
     ClipboardItemModel processedItem = item;
 
     if (item.ptype == ClipboardType.image && item.bytes != null) {
-      // 直接在主线程处理图片，不使用 Isolate
       final thumbnail = await _generateThumbnail(item.bytes!);
       processedItem = item.copyWith(thumbnail: thumbnail);
     }
 
+    // 将数据库插入放到后台线程，避免阻塞 UI
+    // 注意：这里不能用 compute，因为 Database 实例不能跨 Isolate
+    // 所以我们直接调用，但确保数据库操作尽可能快
     return await _repository.insertItem(processedItem);
   }
 
@@ -41,7 +44,7 @@ class ClipboardService {
     String? searchQuery,
     String? filterType,
   }) async {
-    return await _repository.getItems(
+    final rawItems = await _repository.getItems(
       limit: limit,
       offset: offset,
       startTime: startTime,
@@ -49,6 +52,18 @@ class ClipboardService {
       searchQuery: searchQuery,
       filterType: filterType,
     );
+
+    // 使用 Future.wait 并行执行分类，提高效率
+    final items = await Future.wait(rawItems.map((item) async {
+      if (item.classification != null) {
+        return item;
+      } else {
+        final classification = await ContentClassifier.classify(item);
+        return item.copyWith(classification: classification);
+      }
+    }));
+
+    return items;
   }
 
   /// 生成缩略图逻辑 (在 Isolate 中执行)

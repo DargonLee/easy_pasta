@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:easy_pasta/db/database_helper.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
+import 'package:easy_pasta/model/content_classification.dart';
 
 /// 剪贴板数据模型
 class ClipboardItemModel {
@@ -15,6 +16,7 @@ class ClipboardItemModel {
   final Uint8List? bytes;
   final Uint8List? thumbnail; // 新增缩略图
   final String? sourceAppId;
+  final ContentClassification? classification;
 
   /// 创建剪贴板数据模型
   ClipboardItemModel({
@@ -26,11 +28,23 @@ class ClipboardItemModel {
     this.bytes,
     this.thumbnail,
     this.sourceAppId,
+    this.classification,
   })  : id = id ?? const Uuid().v4(),
         time = time ?? DateTime.now().toString();
 
   /// 从数据库映射创建模型
   factory ClipboardItemModel.fromMapObject(Map<String, dynamic> map) {
+    ContentClassification? classification;
+    final classificationStr = map['classification'] as String?;
+    if (classificationStr != null && classificationStr.isNotEmpty) {
+      try {
+        classification =
+            ContentClassification.fromMap(jsonDecode(classificationStr));
+      } catch (_) {
+        // Silently ignore malformed classification
+      }
+    }
+
     return ClipboardItemModel(
       id: map['id'],
       time: map['time'],
@@ -40,6 +54,7 @@ class ClipboardItemModel {
       bytes: map[DatabaseConfig.columnBytes],
       thumbnail: map[DatabaseConfig.columnThumbnail],
       sourceAppId: map[DatabaseConfig.columnSourceAppId],
+      classification: classification,
     );
   }
 
@@ -54,6 +69,8 @@ class ClipboardItemModel {
       DatabaseConfig.columnBytes: bytes,
       DatabaseConfig.columnThumbnail: thumbnail,
       DatabaseConfig.columnSourceAppId: sourceAppId,
+      'classification':
+          classification != null ? jsonEncode(classification!.toMap()) : null,
     };
   }
 
@@ -88,6 +105,7 @@ class ClipboardItemModel {
     Uint8List? bytes,
     Uint8List? thumbnail,
     String? sourceAppId,
+    ContentClassification? classification,
   }) {
     return ClipboardItemModel(
       id: id ?? this.id,
@@ -98,6 +116,7 @@ class ClipboardItemModel {
       bytes: bytes ?? this.bytes,
       thumbnail: thumbnail ?? this.thumbnail,
       sourceAppId: sourceAppId ?? this.sourceAppId,
+      classification: classification ?? this.classification,
     );
   }
 
@@ -132,5 +151,5 @@ class ClipboardItemModel {
 
   @override
   String toString() =>
-      'ClipboardItemModel(id: $id, time: $time, type: $ptype, value: $pvalue, isFavorite: $isFavorite, sourceAppId: $sourceAppId)';
+      'ClipboardItemModel(id: $id, time: $time, type: $ptype, value: $pvalue, isFavorite: $isFavorite, sourceAppId: $sourceAppId, classification: $classification)';
 }
