@@ -18,7 +18,7 @@ class JsonCardContent extends StatelessWidget {
   String _formatJsonSnippet(String json) {
     try {
       final decoded = jsonDecode(json);
-      final encoder = const JsonEncoder.withIndent('  ');
+      const encoder = JsonEncoder.withIndent('  ');
       final formatted = encoder.convert(decoded);
       return formatted;
     } catch (_) {
@@ -76,8 +76,8 @@ class JsonCardContent extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.xs),
             decoration: BoxDecoration(
               color: isDark
-                  ? Colors.black.withOpacity(0.2)
-                  : Colors.grey.withOpacity(0.05),
+                  ? Colors.black.withValues(alpha: 0.2)
+                  : Colors.grey.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(

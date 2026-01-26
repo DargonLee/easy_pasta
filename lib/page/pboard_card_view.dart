@@ -1,9 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/foundation.dart';
 
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/widget/cards/file_card.dart';

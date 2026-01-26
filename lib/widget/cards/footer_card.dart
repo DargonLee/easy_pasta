@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -256,8 +255,8 @@ class _ActionButtonState extends State<_ActionButton> {
           decoration: BoxDecoration(
             color: _isHovered
                 ? (isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.black.withOpacity(0.05))
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.black.withValues(alpha: 0.05))
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(AppRadius.xs),
           ),
