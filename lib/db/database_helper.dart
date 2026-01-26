@@ -65,36 +65,19 @@ class DatabaseHelper implements IDatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._();
 
   Database? _db;
-  bool _isInitializing = false;
   Future<Database>? _initFuture;
 
   /// Returns database instance, initializing if necessary
-  Future<Database> get database async {
-    // 如果已初始化，直接返回
-    if (_db != null && _db!.isOpen) {
-      return _db!;
-    }
+  Future<Database> get database {
+    final existing = _db;
+    if (existing != null && existing.isOpen) return Future.value(existing);
 
-    // 如果正在初始化，等待完成
-    if (_isInitializing && _initFuture != null) {
-      return _initFuture!;
-    }
-
-    // 开始初始化
-    _isInitializing = true;
-    _initFuture = _initDatabase();
-
-    try {
-      final result = await _initFuture!;
-      _db = result; // 关键：保存初始化结果
-      return result;
-    } catch (e) {
-      debugPrint('Database initialization failed: $e');
-      rethrow;
-    } finally {
-      _isInitializing = false;
+    return _initFuture ??= _initDatabase().then((db) {
+      _db = db;
+      return db;
+    }).whenComplete(() {
       _initFuture = null;
-    }
+    });
   }
 
   @override
@@ -119,11 +102,9 @@ class DatabaseHelper implements IDatabaseHelper {
         ),
       );
 
-      _isInitializing = false;
       await _optimizeDb(db);
       return db;
     } catch (e) {
-      _isInitializing = false;
       throw DatabaseException('Failed to initialize database', e);
     }
   }

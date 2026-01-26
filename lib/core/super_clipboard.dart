@@ -120,23 +120,11 @@ class SuperClipboard {
     ClipboardReader reader, {
     String? fastHash,
   }) async {
-    // Priority order: Image > HTML > File > Text
+    // Priority order: Image > File > Text (incl. HTML)
     // Process only the highest priority format available
 
     if (reader.canProvide(Formats.png)) {
       await _processImage(reader, fastHash);
-      return;
-    }
-
-    if (reader.canProvide(Formats.htmlText)) {
-      final html = await reader.readValue(Formats.htmlText);
-      if (html != null && !_isDisposed) {
-        await _handleContentChange(
-          html,
-          ClipboardType.html,
-          fastHash: fastHash,
-        );
-      }
       return;
     }
 
@@ -152,7 +140,8 @@ class SuperClipboard {
       return;
     }
 
-    if (reader.canProvide(Formats.plainText)) {
+    if (reader.canProvide(Formats.plainText) ||
+        reader.canProvide(Formats.htmlText)) {
       await _processText(reader, fastHash);
     }
   }
@@ -185,7 +174,14 @@ class SuperClipboard {
   }
 
   Future<void> _processText(ClipboardReader reader, String? fastHash) async {
-    final text = await reader.readValue(Formats.plainText);
+    // Try plain text first, then HTML as fallback
+    String? text;
+    if (reader.canProvide(Formats.plainText)) {
+      text = await reader.readValue(Formats.plainText);
+    } else if (reader.canProvide(Formats.htmlText)) {
+      text = await reader.readValue(Formats.htmlText);
+    }
+
     if (text == null || _isDisposed) return;
 
     final limited = _limitContentLength(text);
@@ -278,7 +274,7 @@ class SuperClipboard {
   }
 
   bool _shouldClassifyContent(ClipboardType type) {
-    return type == ClipboardType.text || type == ClipboardType.html;
+    return type == ClipboardType.text;
   }
 
   /* ================================
@@ -325,17 +321,11 @@ class SuperClipboard {
 
     switch (model.ptype) {
       case ClipboardType.text:
+      case ClipboardType.html: // Support existing HTML type for writing
         item.add(Formats.plainText(model.pvalue));
-        break;
-
-      case ClipboardType.html:
-        item.add(Formats.plainText(model.pvalue));
-        final htmlContent = model.bytesToString(model.bytes ?? Uint8List(0));
-        item.add(Formats.htmlText(htmlContent));
         break;
 
       case ClipboardType.file:
-        item.add(Formats.plainText(model.pvalue));
         final uriString = model.bytesToString(model.bytes ?? Uint8List(0));
         item.add(Formats.fileUri(Uri.parse(uriString)));
         break;
@@ -357,20 +347,13 @@ class SuperClipboard {
 
   Future<String?> _computeFastHash(ClipboardReader reader) async {
     try {
-      // Try text first (most common case)
+      // Try text (most common case) or HTML fallback
       if (reader.canProvide(Formats.plainText)) {
         final text = await reader.readValue(Formats.plainText);
-        if (text != null) {
-          return _hashLimitedString(text);
-        }
-      }
-
-      // Try HTML
-      if (reader.canProvide(Formats.htmlText)) {
+        if (text != null) return _hashLimitedString(text);
+      } else if (reader.canProvide(Formats.htmlText)) {
         final html = await reader.readValue(Formats.htmlText);
-        if (html != null) {
-          return _hashLimitedString(html);
-        }
+        if (html != null) return _hashLimitedString(html);
       }
 
       // Try file URI
