@@ -139,7 +139,7 @@ class SuperClipboard {
       ContentClassification? classification;
       if (baseModel.ptype == ClipboardType.text ||
           baseModel.ptype == ClipboardType.html) {
-        classification = await ContentClassifier.classify(baseModel);
+        classification = await baseModel.classify();
       }
 
       final contentModel = baseModel.copyWith(classification: classification);

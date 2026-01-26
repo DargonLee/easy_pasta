@@ -58,7 +58,7 @@ class ClipboardService {
       if (item.classification != null) {
         return item;
       } else {
-        final classification = await ContentClassifier.classify(item);
+        final classification = await item.classify();
         return item.copyWith(classification: classification);
       }
     }));
