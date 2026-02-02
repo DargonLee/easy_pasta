@@ -2,7 +2,10 @@
 
 <div align="center">
   <img src="README.assets/HomePage.png" alt="EasyPasta 主界面" width="800"/>
-  <img src="README.assets/HomePageDark.png" alt="EasyPasta 主界面" width="800"/>
+  <img src="README.assets/HomePageDark.png" alt="EasyPasta 暗黑模式" width="800"/>
+  <p>📱 <b>手机同步</b> - 扫码或 Bonjour 自动发现</p>
+  <img src="README.assets/Bonjour.png" alt="Bonjour 手机同步" width="400"/>
+  <img src="README.assets/Bonjour_phone.jpg" alt="手机端界面" width="200"/>
 </div>
 
 <p align="center">
