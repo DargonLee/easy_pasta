@@ -131,12 +131,25 @@ class SyncPortalService {
   /// 释放资源（仅在应用退出时调用）
   Future<void> dispose() async {
     await stop();
-    if (!_syncController.isClosed) {
-      await _syncController.close();
+
+    // 安全地关闭流控制器，防止重复关闭导致的异常
+    try {
+      if (!_syncController.isClosed) {
+        await _syncController.close();
+      }
+    } catch (e) {
+      if (kDebugMode) print('关闭 _syncController 时出错: $e');
     }
-    if (!_receivedItemsController.isClosed) {
-      await _receivedItemsController.close();
+
+    try {
+      if (!_receivedItemsController.isClosed) {
+        await _receivedItemsController.close();
+      }
+    } catch (e) {
+      if (kDebugMode) print('关闭 _receivedItemsController 时出错: $e');
     }
+
+    // 释放 ValueNotifier
     isRunning.dispose();
     lastError.dispose();
   }
@@ -240,8 +253,10 @@ class SyncPortalService {
         print('SyncPortal: Sending initial state to new member');
       }
       if (!controller.isClosed) {
-        controller.add(utf8.encode(
-            'data: ${jsonEncode({'update': true, 'id': _currentItem!.id})}\n\n'));
+        controller.add(utf8.encode('data: ${jsonEncode({
+              'update': true,
+              'id': _currentItem!.id
+            })}\n\n'));
       }
     }
 

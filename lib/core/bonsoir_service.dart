@@ -153,13 +153,14 @@ class BonjourManager {
   /// 停止设备发现
   Future<void> stopDiscovery() async {
     try {
+      // 先取消订阅，再停止发现服务
+      await _discoverySubscription?.cancel();
+      _discoverySubscription = null;
+
       if (_discovery != null) {
         await _discovery!.stop();
         _discovery = null;
       }
-
-      await _discoverySubscription?.cancel();
-      _discoverySubscription = null;
 
       _discoveredServices.clear();
       _resolvedServices.clear();
@@ -260,12 +261,24 @@ class BonjourManager {
   Future<void> dispose() async {
     await stopService();
     await stopDiscovery();
+
+    // 清除所有回调引用以防止内存泄漏
     onServicesFound = null;
     onServicesResolved = null;
     onServiceLost = null;
     onError = null;
     onServiceStateChanged = null;
     onDiscoveryStateChanged = null;
+
+    // 清理发现的服务缓存
+    _discoveredServices.clear();
+    _resolvedServices.clear();
+
+    // 释放 ValueNotifier
+    isRunningNotifier.dispose();
+
+    // 清除单例引用以允许垃圾回收
+    _instance = null;
   }
 }
 

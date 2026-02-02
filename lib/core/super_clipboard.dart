@@ -394,10 +394,21 @@ class SuperClipboard {
     if (_isDisposed) return;
 
     _isDisposed = true;
+
+    // 停止轮询定时器
     _stopPollingTimer();
+
+    // 清除所有回调和状态引用
     _onClipboardChanged = null;
     _lastContentHash = null;
     _lastFastHash = null;
     _lastImageAttemptAt = null;
+
+    // 重置轮询标志
+    _isPolling = false;
+
+    if (kDebugMode) {
+      debugPrint('[$runtimeType] Clipboard service disposed');
+    }
   }
 }

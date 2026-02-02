@@ -39,6 +39,9 @@ class _StickyGroupHeaderDelegate extends SliverPersistentHeaderDelegate {
     return Container(
       decoration: BoxDecoration(
         color: backgroundColor,
+        borderRadius: const BorderRadius.all(
+          Radius.circular(12.0),
+        ),
         boxShadow: [
           BoxShadow(
             color: isDarkMode
@@ -52,7 +55,7 @@ class _StickyGroupHeaderDelegate extends SliverPersistentHeaderDelegate {
       margin: EdgeInsets.symmetric(
         horizontal: gridPadding,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 14.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       alignment: Alignment.centerLeft,
       child: Text(
         title,
@@ -62,9 +65,7 @@ class _StickyGroupHeaderDelegate extends SliverPersistentHeaderDelegate {
             .copyWith(
           fontSize: 15,
           fontWeight: FontWeight.w700,
-          color: isDarkMode
-              ? AppColors.darkTextPrimary.withValues(alpha: 0.9)
-              : AppColors.lightTextPrimary.withValues(alpha: 0.9),
+          color: Colors.white,
         ),
       ),
     );

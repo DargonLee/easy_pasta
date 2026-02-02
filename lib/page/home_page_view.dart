@@ -131,7 +131,7 @@ class _MyHomePageState extends State<MyHomePage>
           const _HomeBackground(),
           Padding(
             padding: const EdgeInsets.only(
-              top: CustomAppBar.height + AppSpacing.sm,
+              top: CustomAppBar.height,
             ),
             child: Consumer<PboardProvider>(
               builder: (context, provider, child) {
@@ -241,11 +241,24 @@ class _MyHomePageState extends State<MyHomePage>
 
   @override
   void dispose() {
+    // 取消搜索防抖定时器
     _searchDebounce?.cancel();
+    _searchDebounce = null;
+
+    // 释放搜索控制器
     _searchController.dispose();
-    _superClipboard.setClipboardListener(null);
+
+    // 安全地移除剪贴板监听器
+    try {
+      _superClipboard.setClipboardListener(null);
+    } catch (e) {
+      debugPrint('移除剪贴板监听器时出错: $e');
+    }
+
+    // 移除托盘和窗口监听器
     trayManager.removeListener(this);
     windowManager.removeListener(this);
+
     super.dispose();
   }
 

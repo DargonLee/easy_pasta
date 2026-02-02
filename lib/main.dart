@@ -8,6 +8,9 @@ import 'package:easy_pasta/core/startup_service.dart';
 import 'package:easy_pasta/providers/theme_provider.dart';
 import 'package:easy_pasta/model/app_theme.dart';
 import 'package:easy_pasta/core/auto_paste_service.dart';
+import 'package:easy_pasta/core/super_clipboard.dart';
+import 'package:easy_pasta/core/bonsoir_service.dart';
+import 'package:easy_pasta/core/sync_portal_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -43,6 +46,9 @@ void main() async {
   } catch (e) {
     debugPrint('Service initialization error: $e');
   }
+
+  // 注册应用生命周期回调，确保退出时清理资源
+  WidgetsBinding.instance.addObserver(_AppLifecycleObserver());
 
   runApp(const MyApp());
 }
@@ -86,5 +92,29 @@ class MyApp extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+/// 应用生命周期监听器，确保应用在退出时清理资源
+class _AppLifecycleObserver extends WidgetsBindingObserver {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached) {
+      // 应用即将退出，清理所有资源
+      _cleanupResources();
+    }
+  }
+
+  void _cleanupResources() {
+    // 清理剪贴板服务
+    SuperClipboard.instance.dispose();
+
+    // 清理 Bonjour 服务
+    BonjourManager.instance.dispose();
+
+    // 清理同步 Portal 服务
+    SyncPortalService.instance.dispose();
+
+    debugPrint('应用退出，所有资源已清理');
   }
 }
