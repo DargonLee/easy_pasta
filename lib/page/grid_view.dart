@@ -9,16 +9,18 @@ import 'package:easy_pasta/page/empty_view.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
 
-/// 粘性分组标题代理
+/// 粘性分组 header 代理 - 每个分组一个，依次吸顶
 class _StickyGroupHeaderDelegate extends SliverPersistentHeaderDelegate {
   final String title;
-  final double extent;
   final bool isDarkMode;
+  final double gridPadding;
+  final double extent;
 
   _StickyGroupHeaderDelegate({
     required this.title,
     required this.isDarkMode,
-    this.extent = 48.0,
+    required this.gridPadding,
+    required this.extent,
   });
 
   @override
@@ -35,8 +37,22 @@ class _StickyGroupHeaderDelegate extends SliverPersistentHeaderDelegate {
         : AppColors.lightSecondaryBackground.withValues(alpha: 1.0);
 
     return Container(
-      color: backgroundColor,
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: isDarkMode
+                ? Colors.black.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      margin: EdgeInsets.symmetric(
+        horizontal: gridPadding,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14.0),
       alignment: Alignment.centerLeft,
       child: Text(
         title,
@@ -57,8 +73,9 @@ class _StickyGroupHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant _StickyGroupHeaderDelegate oldDelegate) {
     return title != oldDelegate.title ||
-        extent != oldDelegate.extent ||
-        isDarkMode != oldDelegate.isDarkMode;
+        isDarkMode != oldDelegate.isDarkMode ||
+        gridPadding != oldDelegate.gridPadding ||
+        extent != oldDelegate.extent;
   }
 }
 
@@ -138,8 +155,7 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     }
   }
 
-  int _calculateMaxColumns(double maxWidth) {
-    final spec = widget.density.spec;
+  int _calculateMaxColumns(double maxWidth, GridDensitySpec spec) {
     final effectiveWidth = maxWidth - (spec.gridPadding * 2);
     return (effectiveWidth / spec.minCrossAxisExtent)
         .floor()
@@ -157,31 +173,33 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final spec = widget.density.spec;
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final spec = widget.density.spec;
-        final maxColumns = _calculateMaxColumns(constraints.maxWidth);
+        final maxColumns = _calculateMaxColumns(constraints.maxWidth, spec);
         final aspectRatio = _calculateAspectRatio();
 
         return CustomScrollView(
           controller: _scrollController,
           physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics()),
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
           slivers: [
             for (final entry in widget.groups.entries)
               // 使用 SliverMainAxisGroup 包裹每个分组的 header 和内容
-              // 这样只有当前分组的 header 会吸顶，而不是所有分组都吸顶
+              // 这样 header 会依次吸顶，实现分组切换效果
               SliverMainAxisGroup(
                 slivers: [
-                  // 粘性分组标题
+                  // 分组标题 header - 吸顶
                   SliverPersistentHeader(
                     pinned: true,
                     floating: false,
                     delegate: _StickyGroupHeaderDelegate(
                       title: entry.key,
                       isDarkMode: isDark,
-                      extent: 48.0,
+                      gridPadding: spec.gridPadding,
+                      extent: 52.0,
                     ),
                   ),
                   // 分组内容
