@@ -31,8 +31,8 @@ class _StickyGroupHeaderDelegate extends SliverPersistentHeaderDelegate {
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     final backgroundColor = isDarkMode
-        ? AppColors.darkSecondaryBackground.withOpacity(1.0)
-        : AppColors.lightSecondaryBackground.withOpacity(1.0);
+        ? AppColors.darkSecondaryBackground.withValues(alpha: 1.0)
+        : AppColors.lightSecondaryBackground.withValues(alpha: 1.0);
 
     return Container(
       color: backgroundColor,
@@ -47,8 +47,8 @@ class _StickyGroupHeaderDelegate extends SliverPersistentHeaderDelegate {
           fontSize: 15,
           fontWeight: FontWeight.w700,
           color: isDarkMode
-              ? AppColors.darkTextPrimary.withOpacity(0.9)
-              : AppColors.lightTextPrimary.withOpacity(0.9),
+              ? AppColors.darkTextPrimary.withValues(alpha: 0.9)
+              : AppColors.lightTextPrimary.withValues(alpha: 0.9),
         ),
       ),
     );
