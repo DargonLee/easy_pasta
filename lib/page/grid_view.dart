@@ -65,7 +65,9 @@ class _StickyGroupHeaderDelegate extends SliverPersistentHeaderDelegate {
             .copyWith(
           fontSize: 15,
           fontWeight: FontWeight.w700,
-          color: Colors.white,
+          color: isDarkMode
+              ? AppColors.darkTextPrimary
+              : AppColors.lightTextPrimary,
         ),
       ),
     );
