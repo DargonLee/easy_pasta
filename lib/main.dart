@@ -11,22 +11,23 @@ import 'package:easy_pasta/core/auto_paste_service.dart';
 import 'package:easy_pasta/core/super_clipboard.dart';
 import 'package:easy_pasta/core/bonsoir_service.dart';
 import 'package:easy_pasta/core/sync_portal_service.dart';
+import 'package:easy_pasta/db/shared_preference_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // // 启动移动端同步服务
-  // await SyncPortalService.instance.start();
+  // 启动移动端同步服务
+  await SyncPortalService.instance.start();
 
-  // // 启动 Bonjour 广播 (根据设置)
-  // final prefs = await SharedPreferenceHelper.instance;
+  // 启动 Bonjour 广播 (根据设置)
+  final prefs = await SharedPreferenceHelper.instance;
 
-  // if (prefs.getBonjourEnabled()) {
-  //   await BonjourManager.instance.startService(
-  //       attributes: {'portal_url': SyncPortalService.instance.portalUrl ?? ''});
-  // }
+  if (prefs.getBonjourEnabled()) {
+    await BonjourManager.instance.startService(
+        attributes: {'portal_url': SyncPortalService.instance.portalUrl ?? ''});
+  }
 
   // 添加错误处理
   FlutterError.onError = (FlutterErrorDetails details) {
