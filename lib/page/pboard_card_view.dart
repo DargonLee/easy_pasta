@@ -464,7 +464,8 @@ class _ImagePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageData = model.bytes;
+    // 优先使用 bytes，如果没有则使用 thumbnail
+    final imageData = model.bytes ?? model.thumbnail;
     if (imageData == null || imageData.isEmpty) {
       return _buildFallbackIcon(context);
     }
