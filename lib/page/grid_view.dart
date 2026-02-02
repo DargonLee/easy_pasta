@@ -119,7 +119,7 @@ class PasteboardGridView extends StatefulWidget {
 class _PasteboardGridViewState extends State<PasteboardGridView>
     with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
-  bool _isScrolling = false;
+  final ValueNotifier<bool> _isScrollingNotifier = ValueNotifier<bool>(false);
   Timer? _scrollEndTimer;
 
   @override
@@ -132,18 +132,20 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   void dispose() {
     _scrollController.dispose();
     _scrollEndTimer?.cancel();
+    _isScrollingNotifier.dispose();
     super.dispose();
   }
 
   void _handleScroll() {
-    if (!_isScrolling) {
-      setState(() => _isScrolling = true);
+    // 只在状态变化时更新 ValueNotifier，避免不必要的重建
+    if (!_isScrollingNotifier.value) {
+      _isScrollingNotifier.value = true;
     }
 
     _scrollEndTimer?.cancel();
     _scrollEndTimer = Timer(const Duration(milliseconds: 120), () {
       if (!mounted) return;
-      setState(() => _isScrolling = false);
+      _isScrollingNotifier.value = false;
       RendererBinding.instance.mouseTracker.updateAllDevices();
     });
 
@@ -217,6 +219,9 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
                         (context, index) =>
                             _buildCardContent(entry.value[index]),
                         childCount: entry.value.length,
+                        addAutomaticKeepAlives: true,
+                        addRepaintBoundaries: true,
+                        addSemanticIndexes: false,
                       ),
                     ),
                   ),
@@ -230,19 +235,27 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
   }
 
   Widget _buildCardContent(ClipboardItemModel model) {
-    return NewPboardItemCard(
-      model: model,
-      selectedId: widget.selectedId,
-      highlight: widget.highlight,
-      density: widget.density,
-      enableHover: !_isScrolling,
-      showFocus: false,
-      badgeIndex: null,
-      onTap: widget.onItemTap,
-      onDoubleTap: widget.onItemDoubleTap,
-      onCopy: widget.onCopy,
-      onFavorite: widget.onFavorite,
-      onDelete: widget.onDelete,
+    // 使用 RepaintBoundary 隔离绘制边界，提升滚动性能
+    return RepaintBoundary(
+      child: ValueListenableBuilder<bool>(
+        valueListenable: _isScrollingNotifier,
+        builder: (context, isScrolling, child) {
+          return NewPboardItemCard(
+            model: model,
+            selectedId: widget.selectedId,
+            highlight: widget.highlight,
+            density: widget.density,
+            enableHover: !isScrolling,
+            showFocus: false,
+            badgeIndex: null,
+            onTap: widget.onItemTap,
+            onDoubleTap: widget.onItemDoubleTap,
+            onCopy: widget.onCopy,
+            onFavorite: widget.onFavorite,
+            onDelete: widget.onDelete,
+          );
+        },
+      ),
     );
   }
 
