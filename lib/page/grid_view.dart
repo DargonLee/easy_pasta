@@ -9,6 +9,59 @@ import 'package:easy_pasta/page/empty_view.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
 
+/// 粘性分组标题代理
+class _StickyGroupHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final String title;
+  final double extent;
+  final bool isDarkMode;
+
+  _StickyGroupHeaderDelegate({
+    required this.title,
+    required this.isDarkMode,
+    this.extent = 48.0,
+  });
+
+  @override
+  double get minExtent => extent;
+
+  @override
+  double get maxExtent => extent;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final backgroundColor = isDarkMode
+        ? AppColors.darkSecondaryBackground.withOpacity(1.0)
+        : AppColors.lightSecondaryBackground.withOpacity(1.0);
+
+    return Container(
+      color: backgroundColor,
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        title,
+        style: (isDarkMode
+                ? AppTypography.darkHeadline
+                : AppTypography.lightHeadline)
+            .copyWith(
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: isDarkMode
+              ? AppColors.darkTextPrimary.withOpacity(0.9)
+              : AppColors.lightTextPrimary.withOpacity(0.9),
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _StickyGroupHeaderDelegate oldDelegate) {
+    return title != oldDelegate.title ||
+        extent != oldDelegate.extent ||
+        isDarkMode != oldDelegate.isDarkMode;
+  }
+}
+
 class PasteboardGridView extends StatefulWidget {
   static const int _kMaxColumns = 4;
 
@@ -103,6 +156,8 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
       return EmptyStateView(category: widget.currentCategory);
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final spec = widget.density.spec;
@@ -114,42 +169,40 @@ class _PasteboardGridViewState extends State<PasteboardGridView>
           physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics()),
           slivers: [
-            for (final entry in widget.groups.entries) ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(spec.gridPadding + AppSpacing.sm,
-                      AppSpacing.xl, spec.gridPadding, AppSpacing.md),
-                  child: Text(
-                    entry.key,
-                    style: (Theme.of(context).brightness == Brightness.dark
-                            ? AppTypography.darkHeadline
-                            : AppTypography.lightHeadline)
-                        .copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.darkTextPrimary.withValues(alpha: 0.9)
-                          : AppColors.lightTextPrimary.withValues(alpha: 0.9),
+            for (final entry in widget.groups.entries)
+              // 使用 SliverMainAxisGroup 包裹每个分组的 header 和内容
+              // 这样只有当前分组的 header 会吸顶，而不是所有分组都吸顶
+              SliverMainAxisGroup(
+                slivers: [
+                  // 粘性分组标题
+                  SliverPersistentHeader(
+                    pinned: true,
+                    floating: false,
+                    delegate: _StickyGroupHeaderDelegate(
+                      title: entry.key,
+                      isDarkMode: isDark,
+                      extent: 48.0,
                     ),
                   ),
-                ),
-              ),
-              SliverPadding(
-                padding: EdgeInsets.symmetric(horizontal: spec.gridPadding),
-                sliver: SliverGrid(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: maxColumns,
-                    mainAxisSpacing: spec.gridSpacing,
-                    crossAxisSpacing: spec.gridSpacing,
-                    childAspectRatio: aspectRatio,
+                  // 分组内容
+                  SliverPadding(
+                    padding: EdgeInsets.symmetric(horizontal: spec.gridPadding),
+                    sliver: SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: maxColumns,
+                        mainAxisSpacing: spec.gridSpacing,
+                        crossAxisSpacing: spec.gridSpacing,
+                        childAspectRatio: aspectRatio,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) =>
+                            _buildCardContent(entry.value[index]),
+                        childCount: entry.value.length,
+                      ),
+                    ),
                   ),
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => _buildCardContent(entry.value[index]),
-                    childCount: entry.value.length,
-                  ),
-                ),
+                ],
               ),
-            ],
             const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxxl)),
           ],
         );
