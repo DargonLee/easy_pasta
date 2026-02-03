@@ -259,6 +259,10 @@ class BonjourManager {
 
   /// 清理资源
   Future<void> dispose() async {
+    // 先取消订阅再停止服务，避免事件处理中的竞态
+    await _discoverySubscription?.cancel();
+    _discoverySubscription = null;
+
     await stopService();
     await stopDiscovery();
 
@@ -277,8 +281,8 @@ class BonjourManager {
     // 释放 ValueNotifier
     isRunningNotifier.dispose();
 
-    // 清除单例引用以允许垃圾回收
-    _instance = null;
+    // 注意：不清除 _instance，因为单例应该保持生命周期
+    // 如果需要完全重置，由调用方自行管理
   }
 }
 

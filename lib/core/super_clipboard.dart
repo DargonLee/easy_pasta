@@ -28,7 +28,7 @@ class SuperClipboard {
   bool _isPolling = false;
   bool _isDisposed = false;
 
-  static const Duration _pollingInterval = Duration(seconds: 1);
+  static const Duration _pollingInterval = Duration(seconds: 2);
   static const Duration _imageAttemptCooldown = Duration(seconds: 6);
   static const int _maxContentLength = 50000;
   static const int _fastHashLength = 10240;
