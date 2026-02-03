@@ -74,12 +74,12 @@ class ClipboardService {
 
       final thumbnail = img.copyResize(
         image,
-        width: image.width > image.height ? 200 : null,
-        height: image.height >= image.width ? 200 : null,
-        interpolation: img.Interpolation.linear,
+        width: image.width > image.height ? 400 : null,
+        height: image.height >= image.width ? 400 : null,
+        interpolation: img.Interpolation.cubic,
       );
 
-      return Uint8List.fromList(img.encodeJpg(thumbnail, quality: 75));
+      return Uint8List.fromList(img.encodeJpg(thumbnail, quality: 90));
     } catch (e) {
       return null;
     }
