@@ -123,6 +123,36 @@ class FooterContent extends StatelessWidget {
                       onPressed: () async {
                         HapticFeedback.selectionClick();
                         try {
+                          // 检查是否有活跃的手机连接
+                          if (!SyncPortalService
+                              .instance.hasActiveConnections) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text('请先在手机浏览器中打开同步页面'),
+                                  backgroundColor:
+                                      Theme.of(context).colorScheme.primary,
+                                  duration: const Duration(seconds: 3),
+                                  action: SnackBarAction(
+                                    label: '查看帮助',
+                                    textColor: Colors.white,
+                                    onPressed: () {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content:
+                                              Text('请在主界面点击「同步到手机」图标查看二维码'),
+                                          duration: Duration(seconds: 3),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            }
+                            return;
+                          }
+
                           final pboardProvider = context.read<PboardProvider>();
                           final fullModel =
                               await pboardProvider.ensureBytes(model);
