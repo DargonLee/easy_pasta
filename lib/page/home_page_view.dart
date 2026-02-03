@@ -63,19 +63,13 @@ class _MyHomePageState extends State<MyHomePage>
 
   void _handleClear() {
     _searchDebounce?.cancel();
-    _pboardProvider.search(''); // 重置 Provider 内部搜索状态
-    _pboardProvider.loadItems(); // 重新加载完整列表
+    _pboardProvider.search(''); // search() 内部已调用 loadItems()
   }
 
   void _handleSearch(String value) {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 150), () {
-      if (value.isEmpty) {
-        _pboardProvider.search('');
-        _pboardProvider.loadItems();
-      } else {
-        _pboardProvider.search(value);
-      }
+      _pboardProvider.search(value); // search() 内部已调用 loadItems()
     });
   }
 

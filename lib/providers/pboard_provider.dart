@@ -254,7 +254,8 @@ class PboardProvider extends ChangeNotifier {
 
   Future<Result<void>> addItem(ClipboardItemModel model) async {
     try {
-      final classification = await model.classify();
+      // 如果模型已有分类，直接使用，避免重复计算
+      final classification = model.classification ?? await model.classify();
       final classifiedModel = model.copyWith(classification: classification);
       // 插入逻辑移交给 Service (自动处理缩略图生成)
       final deletedItemId = await _service.processAndInsert(classifiedModel);

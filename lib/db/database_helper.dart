@@ -67,6 +67,10 @@ class DatabaseHelper implements IDatabaseHelper {
   Database? _db;
   Future<Database>? _initFuture;
 
+  // 性能优化：避免每次插入都做 COUNT(*) 查询
+  int _insertCountSinceLastCheck = 0;
+  int _lastKnownCount = 0;
+
   /// Returns database instance, initializing if necessary
   Future<Database> get database {
     final existing = _db;
@@ -425,30 +429,43 @@ class DatabaseHelper implements IDatabaseHelper {
       throw DatabaseException('Failed to insert item', e);
     }
 
-    // 异步检查是否超过最大数量，不阻塞插入
-    final countResult =
-        await db.rawQuery('SELECT COUNT(*) FROM ${DatabaseConfig.tableName}');
-    final count =
-        countResult.isNotEmpty ? countResult.first.values.first as int : 0;
-    if (count > maxCount) {
+    // 使用近似值检查数量，避免每次插入都做 COUNT(*)
+    // 只在 count % 10 == 0 时做精确统计，降低 90% 的查询开销
+    _insertCountSinceLastCheck++;
+    if (_insertCountSinceLastCheck >= 10) {
+      _insertCountSinceLastCheck = 0;
+      final countResult =
+          await db.rawQuery('SELECT COUNT(*) FROM ${DatabaseConfig.tableName}');
+      _lastKnownCount =
+          countResult.isNotEmpty ? countResult.first.values.first as int : 0;
+    }
+
+    // 使用近似值判断是否需要清理（基于上次统计）
+    if (_lastKnownCount > maxCount ||
+        (_insertCountSinceLastCheck == 0 && _lastKnownCount > maxCount * 0.9)) {
       final oldestItems = await db.query(
         DatabaseConfig.tableName,
         columns: [DatabaseConfig.columnId],
         where: '${DatabaseConfig.columnIsFavorite} = 0',
         orderBy: '${DatabaseConfig.columnTime} ASC',
-        limit: 1,
+        limit: (_lastKnownCount - maxCount).clamp(1, 10),
       );
 
       if (oldestItems.isNotEmpty) {
-        final id = oldestItems.first[DatabaseConfig.columnId] as String;
+        final ids = oldestItems
+            .map((item) => item[DatabaseConfig.columnId] as String)
+            .toList();
         await db.delete(
           DatabaseConfig.tableName,
-          where: '${DatabaseConfig.columnId} = ?',
-          whereArgs: [id],
+          where:
+              '${DatabaseConfig.columnId} IN (${List.filled(ids.length, '?').join(',')})',
+          whereArgs: ids,
         );
-        return id;
+        _lastKnownCount -= ids.length;
+        return ids.first;
       }
     }
+    _lastKnownCount++;
     return null;
   }
 
