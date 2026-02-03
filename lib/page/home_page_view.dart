@@ -176,8 +176,42 @@ class _MyHomePageState extends State<MyHomePage>
 
   /// 构建内容区域
   Widget _buildContent(PboardProvider provider, {Key? key}) {
-    // 显示搜索空状态（有搜索条件但无结果）
+    // 显示真实错误状态
     if (provider.error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 48,
+              color: Theme.of(context).colorScheme.error,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '出错了',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              provider.error!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _pboardProvider.loadItems(),
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 显示搜索空状态（有搜索条件但无结果）
+    if (provider.items.isEmpty && provider.searchQuery.isNotEmpty) {
       return SearchEmptyState(
         key: key,
         searchQuery: _searchController.text,

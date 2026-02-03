@@ -223,17 +223,14 @@ class PboardProvider extends ChangeNotifier {
     }
 
     // 区分两种空状态：
-    // 1. 有搜索条件但无结果 -> error = '未找到相关内容'
-    // 2. 无数据或筛选后无数据 -> error = null（显示分类空状态）
-    String? errorMessage;
-    if (filteredItems.isEmpty && hasSearch) {
-      errorMessage = '未找到相关内容';
-    }
+    // 1. 有搜索条件但无结果 -> 在UI层通过 items.isEmpty && searchQuery.isNotEmpty 判断
+    // 2. 真实错误 -> error 字段保留用于真实错误信息
+    // 注意：不再将 "未找到相关内容" 存入 error，避免与真实错误混淆
 
     _updateState(_state.copyWith(
       filteredItems: filteredItems,
       groupedItems: _performGrouping(filteredItems), // 触发预计算
-      error: errorMessage,
+      // error 保留原有值，不覆盖为 "未找到相关内容"
     ));
   }
 
