@@ -289,12 +289,15 @@ class PboardProvider extends ChangeNotifier {
 
     return await _withLoading(() async {
       try {
+        final timeRange = _state.timeFilter.range;
         final items = await _service.getFilteredItems(
           limit: _state.pageSize,
           offset: 0,
           searchQuery:
               _state.searchQuery.isNotEmpty ? _state.searchQuery : null,
           filterType: _state.filterType.toString().split('.').last,
+          startTime: timeRange.start,
+          endTime: timeRange.end,
         );
 
         _setStateSilent(_state.copyWith(
@@ -412,11 +415,14 @@ class PboardProvider extends ChangeNotifier {
       final nextPage = _state.currentPage + 1;
       final offset = nextPage * _state.pageSize;
 
+      final timeRange = _state.timeFilter.range;
       final newItems = await _service.getFilteredItems(
         limit: _state.pageSize,
         offset: offset,
         searchQuery: _state.searchQuery.isNotEmpty ? _state.searchQuery : null,
         filterType: _state.filterType.toString().split('.').last,
+        startTime: timeRange.start,
+        endTime: timeRange.end,
       );
 
       if (newItems.isEmpty) {

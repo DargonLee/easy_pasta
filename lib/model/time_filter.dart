@@ -42,21 +42,22 @@ enum TimeFilter {
   ({DateTime? start, DateTime? end}) get range {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
 
     switch (this) {
       case TimeFilter.all:
         return (start: null, end: null);
       case TimeFilter.today:
-        return (start: today, end: null);
+        return (start: today, end: tomorrow);
       case TimeFilter.yesterday:
-        return (start: today.subtract(const Duration(days: 1)), end: today);
+        final yesterday = today.subtract(const Duration(days: 1));
+        return (start: yesterday, end: today);
       case TimeFilter.last3Days:
-        return (
-          start: today.subtract(const Duration(days: 2)),
-          end: null
-        ); // Includes today + 2 previous days
+        final threeDaysAgo = today.subtract(const Duration(days: 2));
+        return (start: threeDaysAgo, end: tomorrow);
       case TimeFilter.older:
-        return (start: null, end: today.subtract(const Duration(days: 2)));
+        final threeDaysAgo = today.subtract(const Duration(days: 2));
+        return (start: null, end: threeDaysAgo);
     }
   }
 
