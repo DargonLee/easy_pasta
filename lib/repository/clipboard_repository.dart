@@ -24,8 +24,17 @@ class ClipboardRepository {
 
     // 处理时间过滤
     if (startTime != null && endTime != null) {
+      // 同时有开始和结束时间
       whereClause += ' AND ${DatabaseConfig.columnTime} BETWEEN ? AND ?';
       whereArgs.add(startTime.toString());
+      whereArgs.add(endTime.toString());
+    } else if (startTime != null) {
+      // 只有开始时间（开始时间之后的数据）
+      whereClause += ' AND ${DatabaseConfig.columnTime} >= ?';
+      whereArgs.add(startTime.toString());
+    } else if (endTime != null) {
+      // 只有结束时间（结束时间之前的数据）
+      whereClause += ' AND ${DatabaseConfig.columnTime} < ?';
       whereArgs.add(endTime.toString());
     }
 
