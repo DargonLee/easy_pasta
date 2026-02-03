@@ -227,7 +227,9 @@ class SyncPortalService {
 
     StreamSubscription<ClipboardItemModel?>? subscription;
     Timer? timer;
+    Timer? timeoutTimer;
     bool didCleanup = false;
+    DateTime lastActivity = DateTime.now();
     late final StreamController<List<int>> controller;
 
     void cleanup() {
@@ -235,17 +237,29 @@ class SyncPortalService {
       didCleanup = true;
       subscription?.cancel();
       timer?.cancel();
+      timeoutTimer?.cancel();
       if (!controller.isClosed) {
         controller.close();
       }
       // 减少活跃连接计数
       _activeConnections--;
       if (kDebugMode) {
-        print('SyncPortal: Active connections: $_activeConnections');
+        print('SyncPortal: Connection cleaned up, active: $_activeConnections');
       }
     }
 
-    controller = StreamController<List<int>>(onCancel: cleanup);
+    controller = StreamController<List<int>>(
+      onCancel: cleanup,
+      onListen: () {
+        // 启动连接超时检测
+        timeoutTimer = Timer.periodic(const Duration(seconds: 30), (t) {
+          final inactiveDuration = DateTime.now().difference(lastActivity);
+          if (inactiveDuration > const Duration(seconds: 60)) {
+            cleanup();
+          }
+        });
+      },
+    );
 
     // 发送初始状态
     if (_currentItem != null) {
@@ -257,6 +271,7 @@ class SyncPortalService {
               'update': true,
               'id': _currentItem!.id
             })}\n\n'));
+        lastActivity = DateTime.now();
       }
     }
 
@@ -267,6 +282,7 @@ class SyncPortalService {
       }
       controller.add(utf8
           .encode('data: ${jsonEncode({'update': true, 'id': item?.id})}\n\n'));
+      lastActivity = DateTime.now();
     });
 
     // 定期发送 ping 以保持连接活跃并检测死连接
@@ -274,6 +290,7 @@ class SyncPortalService {
       if (!controller.isClosed) {
         controller.add(utf8.encode(
             'event: ping\ndata: {"time": ${DateTime.now().millisecondsSinceEpoch}}\n\n'));
+        lastActivity = DateTime.now();
       }
     });
 
