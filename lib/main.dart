@@ -1,6 +1,5 @@
 import 'package:easy_pasta/providers/pboard_provider.dart';
 import 'package:easy_pasta/page/home_page_view.dart';
-import 'package:easy_pasta/page/bonsoir_page.dart';
 import 'package:easy_pasta/core/tray_service.dart';
 import 'package:easy_pasta/core/window_service.dart';
 import 'package:easy_pasta/core/hotkey_service.dart';
@@ -52,21 +51,6 @@ void main() async {
   WidgetsBinding.instance.addObserver(_AppLifecycleObserver());
 
   runApp(const MyApp());
-}
-
-class MyTextApp extends StatelessWidget {
-  const MyTextApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Bonsoir Test',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const BonjourTestPage(),
-    );
-  }
 }
 
 class MyApp extends StatelessWidget {

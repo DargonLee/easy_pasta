@@ -225,18 +225,9 @@ class _MobileSyncButton extends StatelessWidget {
   void _showNoConnectionSnack(BuildContext context) {
     _showSnack(
       context,
-      '请先在手机浏览器中打开同步页面',
+      '请点击右上角「同步」按钮，使用手机扫描二维码打开同步页面后 [再次点击]',
       duration: const Duration(seconds: 3),
       backgroundColor: Theme.of(context).colorScheme.primary,
-      action: SnackBarAction(
-        label: '查看帮助',
-        textColor: Colors.white,
-        onPressed: () => _showSnack(
-          context,
-          '请在主界面点击「同步到手机」图标查看二维码',
-          duration: const Duration(seconds: 3),
-        ),
-      ),
     );
   }
 
@@ -247,6 +238,7 @@ class _MobileSyncButton extends StatelessWidget {
     Color? backgroundColor,
     SnackBarAction? action,
   }) {
+    if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),

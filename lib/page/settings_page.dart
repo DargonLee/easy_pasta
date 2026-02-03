@@ -13,7 +13,6 @@ import 'package:easy_pasta/widget/settting_page_widgets.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
 import 'package:easy_pasta/core/animation_helper.dart';
-import 'package:easy_pasta/page/bonsoir_page.dart';
 import 'package:easy_pasta/core/auto_paste_service.dart';
 import 'package:easy_pasta/core/bonsoir_service.dart';
 
@@ -320,12 +319,6 @@ class _SettingsPageState extends State<SettingsPage> {
               value: isRunning,
               onChanged: (bool value) async {
                 await _settingsService.setBonjourEnabled(value);
-              },
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const BonjourTestPage()),
-                );
               },
             );
           },
