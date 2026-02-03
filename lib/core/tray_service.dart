@@ -10,7 +10,7 @@ class TrayService {
 
   Future<void> init() async {
     if (_isInitialized) return;
-
+    // 设置初始图标
     await _updateTrayIcon();
     _isInitialized = true;
   }
@@ -22,7 +22,7 @@ class TrayService {
       // Windows 使用 .ico 格式
       iconPath = 'assets/images/tray_icon_original.ico';
     } else if (Platform.isMacOS) {
-      // macOS 使用固定图标
+      // macOS 根据主题选择图标
       iconPath = 'assets/images/tray_icon_original_dart.png';
     } else {
       // Linux 或其他平台

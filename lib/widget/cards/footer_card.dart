@@ -36,15 +36,15 @@ class FooterContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final typeIconSize = compact ? 12.0 : 14.0;
-    final actionIconSize = compact ? 12.0 : 14.0;
     final spacing = compact ? AppSpacing.xs / 2 : AppSpacing.xs;
+    final timeColor =
+        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final typeIconSize = compact ? 12.0 : 14.0;
 
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.xs),
       child: Row(
         children: [
-          // 类型图标 (高性能版: 依赖预计算分类)
           Icon(
             TypeIconHelper.getTypeIcon(
               model.ptype ?? ClipboardType.unknown,
@@ -55,177 +55,23 @@ class FooterContent extends StatelessWidget {
             color: AppColors.primary,
           ),
           SizedBox(width: spacing),
-
-          // 时间戳
           Text(
             _formatTimestamp(DateTime.parse(model.time)),
             style: (isDark
                     ? AppTypography.darkCaption
                     : AppTypography.lightCaption)
-                .copyWith(
-              color: isDark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.lightTextSecondary,
-            ),
+                .copyWith(color: timeColor),
           ),
-
           const Spacer(),
-
-          // 操作按钮组 (带滑入滑出动画)
-          AnimatedOpacity(
-            opacity: showActions ? 1 : 0,
-            duration: AppDurations.fast,
-            curve: AppCurves.standard,
-            child: IgnorePointer(
-              ignoring: !showActions,
-              child: AnimatedSlide(
-                duration: AppDurations.fast,
-                curve: AppCurves.standard,
-                offset: showActions ? Offset.zero : const Offset(0.1, 0),
-                child: Row(
-                  children: [
-                    _ActionButton(
-                      icon: Icons.copy,
-                      tooltip: '复制',
-                      iconSize: actionIconSize,
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        onCopy(model);
-                        onSuccess?.call();
-                      },
-                    ),
-                    SizedBox(width: spacing),
-                    _ActionButton(
-                      icon: model.isFavorite ? Icons.star : Icons.star_border,
-                      tooltip: model.isFavorite ? '取消收藏' : '收藏',
-                      iconSize: actionIconSize,
-                      color: model.isFavorite ? AppColors.favorite : null,
-                      onPressed: () {
-                        HapticFeedback.selectionClick();
-                        onFavorite(model);
-                      },
-                    ),
-                    SizedBox(width: spacing),
-                    _ActionButton(
-                      icon: Icons.delete_outline,
-                      tooltip: '删除',
-                      iconSize: actionIconSize,
-                      onPressed: () {
-                        HapticFeedback.mediumImpact();
-                        onDelete(model);
-                      },
-                    ),
-                    SizedBox(width: spacing),
-                    _ActionButton(
-                      icon: Icons.mobile_screen_share,
-                      tooltip: '同步到手机',
-                      iconSize: actionIconSize,
-                      onPressed: () async {
-                        HapticFeedback.selectionClick();
-                        try {
-                          // 检查是否有活跃的手机连接
-                          if (!SyncPortalService
-                              .instance.hasActiveConnections) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('请先在手机浏览器中打开同步页面'),
-                                  backgroundColor:
-                                      Theme.of(context).colorScheme.primary,
-                                  duration: const Duration(seconds: 3),
-                                  action: SnackBarAction(
-                                    label: '查看帮助',
-                                    textColor: Colors.white,
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content:
-                                              Text('请在主界面点击「同步到手机」图标查看二维码'),
-                                          duration: Duration(seconds: 3),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              );
-                            }
-                            return;
-                          }
-
-                          final pboardProvider = context.read<PboardProvider>();
-                          final fullModel =
-                              await pboardProvider.ensureBytes(model);
-                          SyncPortalService.instance.pushItem(fullModel);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('已发送到手机 Portal'),
-                                duration: Duration(seconds: 1),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('发送失败: $e'),
-                                backgroundColor:
-                                    Theme.of(context).colorScheme.error,
-                              ),
-                            );
-                          }
-                        }
-                      },
-                    ),
-
-                    // 智能 URL
-                    if (model.classification?.kind == ContentKind.url) ...[
-                      SizedBox(width: spacing),
-                      _ActionButton(
-                        icon: Icons.open_in_new,
-                        tooltip: '打开链接',
-                        iconSize: actionIconSize,
-                        color: AppColors.primary,
-                        onPressed: () async {
-                          final url = model.classification
-                                  ?.metadata?['normalizedUrl'] as String? ??
-                              model.pvalue;
-                          final uri = Uri.tryParse(url);
-                          if (uri != null) await launchUrl(uri);
-                        },
-                      ),
-                    ],
-
-                    // 智能 JSON
-                    if (model.classification?.kind == ContentKind.json) ...[
-                      SizedBox(width: spacing),
-                      _ActionButton(
-                        icon: Icons.format_align_left,
-                        tooltip: '格式化 JSON',
-                        iconSize: actionIconSize,
-                        color: AppColors.primary,
-                        onPressed: () {
-                          try {
-                            final decoded = jsonDecode(model.pvalue);
-                            final formatted = const JsonEncoder.withIndent('  ')
-                                .convert(decoded);
-                            Clipboard.setData(ClipboardData(text: formatted));
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text('已格式化并复制到剪贴板'),
-                                    duration: Duration(seconds: 1)),
-                              );
-                            }
-                          } catch (_) {}
-                        },
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
+          _ActionButtons(
+            model: model,
+            showActions: showActions,
+            compact: compact,
+            spacing: spacing,
+            onCopy: onCopy,
+            onFavorite: onFavorite,
+            onDelete: onDelete,
+            onSuccess: onSuccess,
           ),
         ],
       ),
@@ -233,17 +79,245 @@ class FooterContent extends StatelessWidget {
   }
 
   String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-    if (difference.inMinutes < 1) return '刚刚';
-    if (difference.inHours < 1) return '${difference.inMinutes}分钟前';
-    if (difference.inDays < 1) return '${difference.inHours}小时前';
-    if (difference.inDays < 30) return '${difference.inDays}天前';
-    return '${timestamp.month}月${timestamp.day}日';
+    final diff = DateTime.now().difference(timestamp);
+    return switch (diff) {
+      Duration(inMinutes: < 1) => '刚刚',
+      Duration(inHours: < 1) => '${diff.inMinutes}分钟前',
+      Duration(inDays: < 1) => '${diff.inHours}小时前',
+      Duration(inDays: < 30) => '${diff.inDays}天前',
+      _ => '${timestamp.month}月${timestamp.day}日',
+    };
   }
 }
 
-/// 轻量级操作按钮 - 无 Ripple，无 Material 消耗
+class _ActionButtons extends StatelessWidget {
+  final ClipboardItemModel model;
+  final bool showActions;
+  final bool compact;
+  final double spacing;
+  final Function(ClipboardItemModel) onCopy;
+  final Function(ClipboardItemModel) onFavorite;
+  final Function(ClipboardItemModel) onDelete;
+  final VoidCallback? onSuccess;
+
+  const _ActionButtons({
+    required this.model,
+    required this.showActions,
+    required this.compact,
+    required this.spacing,
+    required this.onCopy,
+    required this.onFavorite,
+    required this.onDelete,
+    this.onSuccess,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      opacity: showActions ? 1 : 0,
+      duration: AppDurations.fast,
+      curve: AppCurves.standard,
+      child: IgnorePointer(
+        ignoring: !showActions,
+        child: AnimatedSlide(
+          duration: AppDurations.fast,
+          curve: AppCurves.standard,
+          offset: showActions ? Offset.zero : const Offset(0.1, 0),
+          child: Row(
+            children: [
+              _buildIconButton(
+                icon: Icons.copy,
+                tooltip: '复制',
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  onCopy(model);
+                  onSuccess?.call();
+                },
+              ),
+              _spacer,
+              _buildIconButton(
+                icon: model.isFavorite ? Icons.star : Icons.star_border,
+                tooltip: model.isFavorite ? '取消收藏' : '收藏',
+                color: model.isFavorite ? AppColors.favorite : null,
+                onPressed: () {
+                  HapticFeedback.selectionClick();
+                  onFavorite(model);
+                },
+              ),
+              _spacer,
+              _buildIconButton(
+                icon: Icons.delete_outline,
+                tooltip: '删除',
+                onPressed: () {
+                  HapticFeedback.mediumImpact();
+                  onDelete(model);
+                },
+              ),
+              _spacer,
+              _MobileSyncButton(model: model),
+              if (model.classification?.kind == ContentKind.url) ...[
+                _spacer,
+                _UrlButton(model: model),
+              ],
+              if (model.classification?.kind == ContentKind.json) ...[
+                _spacer,
+                _JsonButton(model: model),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  SizedBox get _spacer => SizedBox(width: spacing);
+
+  Widget _buildIconButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onPressed,
+    Color? color,
+  }) {
+    return _ActionButton(
+      icon: icon,
+      tooltip: tooltip,
+      iconSize: compact ? 12.0 : 14.0,
+      color: color,
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _MobileSyncButton extends StatelessWidget {
+  final ClipboardItemModel model;
+  const _MobileSyncButton({required this.model});
+
+  @override
+  Widget build(BuildContext context) {
+    return _ActionButton(
+      icon: Icons.mobile_screen_share,
+      tooltip: '同步到手机',
+      onPressed: () => _handleSync(context),
+    );
+  }
+
+  Future<void> _handleSync(BuildContext context) async {
+    HapticFeedback.selectionClick();
+
+    if (!SyncPortalService.instance.hasActiveConnections) {
+      _showNoConnectionSnack(context);
+      return;
+    }
+
+    try {
+      final fullModel = await context.read<PboardProvider>().ensureBytes(model);
+      SyncPortalService.instance.pushItem(fullModel);
+      if (context.mounted) {
+        _showSnack(context, '已发送到手机 Portal');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        _showErrorSnack(context, '发送失败: $e');
+      }
+    }
+  }
+
+  void _showNoConnectionSnack(BuildContext context) {
+    _showSnack(
+      context,
+      '请先在手机浏览器中打开同步页面',
+      duration: const Duration(seconds: 3),
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      action: SnackBarAction(
+        label: '查看帮助',
+        textColor: Colors.white,
+        onPressed: () => _showSnack(
+          context,
+          '请在主界面点击「同步到手机」图标查看二维码',
+          duration: const Duration(seconds: 3),
+        ),
+      ),
+    );
+  }
+
+  void _showSnack(
+    BuildContext context,
+    String message, {
+    Duration duration = const Duration(seconds: 1),
+    Color? backgroundColor,
+    SnackBarAction? action,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: duration,
+        backgroundColor: backgroundColor,
+        action: action,
+      ),
+    );
+  }
+
+  void _showErrorSnack(BuildContext context, String message) {
+    _showSnack(
+      context,
+      message,
+      backgroundColor: Theme.of(context).colorScheme.error,
+    );
+  }
+}
+
+class _UrlButton extends StatelessWidget {
+  final ClipboardItemModel model;
+  const _UrlButton({required this.model});
+
+  @override
+  Widget build(BuildContext context) {
+    return _ActionButton(
+      icon: Icons.open_in_new,
+      tooltip: '打开链接',
+      color: AppColors.primary,
+      onPressed: () async {
+        final url =
+            model.classification?.metadata?['normalizedUrl'] as String? ??
+                model.pvalue;
+        final uri = Uri.tryParse(url);
+        if (uri != null) await launchUrl(uri);
+      },
+    );
+  }
+}
+
+class _JsonButton extends StatelessWidget {
+  final ClipboardItemModel model;
+  const _JsonButton({required this.model});
+
+  @override
+  Widget build(BuildContext context) {
+    return _ActionButton(
+      icon: Icons.format_align_left,
+      tooltip: '格式化 JSON',
+      color: AppColors.primary,
+      onPressed: () => _formatAndCopy(context),
+    );
+  }
+
+  void _formatAndCopy(BuildContext context) {
+    try {
+      final decoded = jsonDecode(model.pvalue);
+      final formatted = const JsonEncoder.withIndent('  ').convert(decoded);
+      Clipboard.setData(ClipboardData(text: formatted));
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('已格式化并复制到剪贴板'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (_) {}
+  }
+}
+
 class _ActionButton extends StatefulWidget {
   final IconData icon;
   final String tooltip;
