@@ -11,7 +11,7 @@ class ModernCounter extends StatefulWidget {
     this.onChanged,
     this.minValue = 10,
     this.maxValue = 2000,
-    this.defaultValue = 500,
+    this.defaultValue = 100,
   });
 
   @override

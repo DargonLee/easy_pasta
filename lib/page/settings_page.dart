@@ -29,7 +29,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _autoPasteEnabled = false;
   bool _isAccessibilityTrusted = false;
   double _dbSizeMb = 0.0;
-  int _maxItems = 500;
+  int _maxItems = 100;
   int _retentionDays = 7;
   HotKey? _hotKey;
 

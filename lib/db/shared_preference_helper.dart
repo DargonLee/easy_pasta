@@ -29,7 +29,7 @@ class SharedPreferenceHelper {
   static const String autoPasteEnabledKey = '${_keyPrefix}AutoPasteEnabledKey';
 
   /// 默认值常量
-  static const int defaultMaxItems = 500;
+  static const int defaultMaxItems = 100;
   static const bool defaultLoginInLaunch = false;
   static const bool defaultBonjourEnabled = true;
   static const int defaultRetentionDays = 7;
