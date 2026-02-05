@@ -297,8 +297,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
         childAspectRatio: 1.8,
-        crossAxisSpacing: 20,
-        mainAxisSpacing: 20,
+        mainAxisSpacing: 10,
       ),
       delegate: SliverChildListDelegate([
         FutureBuilder<int>(
@@ -921,7 +920,7 @@ class _ChartContainer extends StatelessWidget {
             child: Container(
               width: 200,
               height: 200,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [

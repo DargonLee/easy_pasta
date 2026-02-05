@@ -45,4 +45,7 @@ class AutoPasteService {
       return false;
     }
   }
+
+  /// 预留释放入口（当前无持有资源）
+  void dispose() {}
 }
