@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/clipboard_analytics.dart';
+import 'package:easy_pasta/service/analytics_service.dart';
 
 // ==================== 重复内容列表 ====================
 
 class DuplicateListWidget extends StatefulWidget {
-  const DuplicateListWidget({super.key});
+  final TimePeriod period;
+
+  const DuplicateListWidget({
+    super.key,
+    required this.period,
+  });
 
   @override
   State<DuplicateListWidget> createState() => _DuplicateListWidgetState();
@@ -13,34 +19,13 @@ class DuplicateListWidget extends StatefulWidget {
 class _DuplicateListWidgetState extends State<DuplicateListWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  late Future<List<DuplicateItem>> _duplicatesFuture;
 
-  final List<DuplicateItem> _duplicates = [
-    DuplicateItem(
-      content: 'console.log(',
-      count: 47,
-      suggestion: '创建代码片段',
-    ),
-    DuplicateItem(
-      content: 'import React from "react"',
-      count: 38,
-      suggestion: '模板化导入',
-    ),
-    DuplicateItem(
-      content: '139****8765',
-      count: 23,
-      suggestion: '保存到通讯录',
-    ),
-    DuplicateItem(
-      content: 'https://api.example.com/',
-      count: 19,
-      suggestion: '环境变量管理',
-    ),
-    DuplicateItem(
-      content: 'docker-compose up -d',
-      count: 15,
-      suggestion: '创建别名',
-    ),
-  ];
+  Future<List<DuplicateItem>> _loadDuplicates() {
+    return ClipboardAnalyticsService.instance.getDuplicateItems(
+      period: widget.period,
+    );
+  }
 
   @override
   void initState() {
@@ -49,6 +34,7 @@ class _DuplicateListWidgetState extends State<DuplicateListWidget>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     )..forward();
+    _duplicatesFuture = _loadDuplicates();
   }
 
   @override
@@ -58,17 +44,75 @@ class _DuplicateListWidgetState extends State<DuplicateListWidget>
   }
 
   @override
+  void didUpdateWidget(covariant DuplicateListWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.period != widget.period) {
+      _controller.reset();
+      _controller.forward();
+      setState(() {
+        _duplicatesFuture = _loadDuplicates();
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: _duplicates.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        return _DuplicateCard(
-          item: _duplicates[index],
-          delay: index * 100,
-          animation: _controller,
+    return FutureBuilder<List<DuplicateItem>>(
+      future: _duplicatesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              '加载重复内容失败',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textMuted,
+              ),
+            ),
+          );
+        }
+
+        final duplicates = snapshot.data ?? [];
+        if (duplicates.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Text(
+              '暂无重复内容',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textMuted,
+              ),
+            ),
+          );
+        }
+
+        return ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: duplicates.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final delay = (index * 100).clamp(0, 700).toInt();
+            return _DuplicateCard(
+              item: duplicates[index],
+              delay: delay,
+              animation: _controller,
+            );
+          },
         );
       },
     );
@@ -502,18 +546,6 @@ class _InsightCardState extends State<_InsightCard> {
 }
 
 // ==================== 数据模型 ====================
-
-class DuplicateItem {
-  final String content;
-  final int count;
-  final String suggestion;
-
-  DuplicateItem({
-    required this.content,
-    required this.count,
-    required this.suggestion,
-  });
-}
 
 class InsightData {
   final String icon;

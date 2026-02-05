@@ -123,7 +123,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
                   SliverToBoxAdapter(
                     child: _buildSection(
                       title: '重复内容检测',
-                      child: const DuplicateListWidget(),
+                      child: DuplicateListWidget(period: _selectedPeriod),
                     ),
                   ),
 

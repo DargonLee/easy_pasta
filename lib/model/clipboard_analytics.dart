@@ -175,6 +175,19 @@ class DuplicateContentGroup {
   }
 }
 
+/// 重复内容列表展示模型
+class DuplicateItem {
+  final String content;
+  final int count;
+  final String suggestion;
+
+  DuplicateItem({
+    required this.content,
+    required this.count,
+    required this.suggestion,
+  });
+}
+
 /// 应用流转数据
 class AppFlowData {
   final String sourceApp;

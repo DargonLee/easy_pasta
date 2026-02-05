@@ -476,6 +476,109 @@ class ClipboardAnalyticsService {
     return result.first['count'] as int? ?? 0;
   }
 
+  /// 获取重复内容列表（基于相同 value 的条目数）
+  Future<List<DuplicateItem>> getDuplicateItems({
+    TimePeriod period = TimePeriod.week,
+    int minOccurrences = 2,
+    int limit = 20,
+  }) async {
+    final db = await DatabaseHelper.instance.database;
+    final now = DateTime.now();
+    DateTime start;
+
+    switch (period) {
+      case TimePeriod.day:
+        start = DateTime(now.year, now.month, now.day);
+        break;
+      case TimePeriod.week:
+        start = now.subtract(const Duration(days: 7));
+        break;
+      case TimePeriod.month:
+        start = DateTime(now.year, now.month - 1, now.day);
+        break;
+    }
+
+    final results = await db.rawQuery('''
+      SELECT 
+        ${DatabaseConfig.columnValue} as value,
+        COUNT(*) as count,
+        MAX(${DatabaseConfig.columnTime}) as lastTime
+      FROM ${DatabaseConfig.tableName}
+      WHERE ${DatabaseConfig.columnTime} >= ?
+        AND ${DatabaseConfig.columnValue} IS NOT NULL
+        AND length(${DatabaseConfig.columnValue}) > 0
+      GROUP BY ${DatabaseConfig.columnValue}
+      HAVING COUNT(*) >= ?
+      ORDER BY count DESC, lastTime DESC
+      LIMIT ?
+    ''', [start.toString(), minOccurrences, limit]);
+
+    return results.map((row) {
+      final rawValue = row['value']?.toString() ?? '';
+      final count = row['count'] as int? ?? 0;
+      final content = _formatDuplicateContent(rawValue);
+      final purpose = _inferPurposeFromText(rawValue);
+      final suggestion = _suggestionForPurpose(purpose);
+
+      return DuplicateItem(
+        content: content,
+        count: count,
+        suggestion: suggestion,
+      );
+    }).toList();
+  }
+
+  String _formatDuplicateContent(String value) {
+    final collapsed = value.replaceAll(RegExp(r'\s+'), ' ').trim();
+    if (collapsed.length <= 120) return collapsed;
+    return '${collapsed.substring(0, 120)}…';
+  }
+
+  ContentPurpose _inferPurposeFromText(String value) {
+    final text = value.toLowerCase();
+
+    if (_isUrl(text)) return ContentPurpose.url;
+    if (_isCommand(text)) return ContentPurpose.command;
+    if (_isPersonalInfo(text)) return ContentPurpose.personal;
+    if (_isCode(text)) return ContentPurpose.code;
+
+    return ContentPurpose.text;
+  }
+
+  bool _isUrl(String value) {
+    return RegExp(r'^https?://').hasMatch(value);
+  }
+
+  bool _isCommand(String value) {
+    return RegExp(r'^(cd|ls|mkdir|git|docker|npm|yarn|pip|brew)\s')
+        .hasMatch(value);
+  }
+
+  bool _isPersonalInfo(String value) {
+    return RegExp(r'(路|街|号|单元|室|电话|手机|@)').hasMatch(value) ||
+        RegExp(r'\d{11}').hasMatch(value);
+  }
+
+  bool _isCode(String value) {
+    final codePatterns = [
+      RegExp(r'^(const|let|var|function|class|import|export|def|class)\s'),
+      RegExp(r'[{};]\s*\n.*[{};]'),
+      RegExp(r'^(https?://|git@|npm|pip|brew)\s'),
+    ];
+    return codePatterns.any((p) => p.hasMatch(value));
+  }
+
+  String _suggestionForPurpose(ContentPurpose purpose) {
+    if (purpose == ContentPurpose.personal) {
+      return '这是您的个人信息，建议保存到地址簿或密码管理器';
+    } else if (purpose == ContentPurpose.code) {
+      return '这段代码被频繁使用，建议保存为代码片段或创建快捷键';
+    } else if (purpose == ContentPurpose.url) {
+      return '这个链接经常被访问，建议添加到浏览器书签';
+    }
+    return '这段文本被频繁复制，建议保存为快捷短语';
+  }
+
   /// 获取效率评分（基于复制频率和活跃时段计算）
   Future<double> getProductivityScore(
       {TimePeriod period = TimePeriod.week}) async {
