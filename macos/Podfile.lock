@@ -5,7 +5,7 @@ PODS:
   - device_info_plus (0.0.1):
     - FlutterMacOS
   - FlutterMacOS (1.0.0)
-  - HotKey (0.2.0)
+  - HotKey (0.2.1)
   - hotkey_manager_macos (0.0.1):
     - FlutterMacOS
     - HotKey
@@ -75,7 +75,7 @@ SPEC CHECKSUMS:
   bonsoir_darwin: 29c7ccf356646118844721f36e1de4b61f6cbd0e
   device_info_plus: 4fb280989f669696856f8b129e4a5e3cd6c48f76
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  HotKey: e96d8a2ddbf4591131e2bb3f54e69554d90cdca6
+  HotKey: 400beb7caa29054ea8d864c96f5ba7e5b4852277
   hotkey_manager_macos: a4317849af96d2430fa89944d3c58977ca089fbe
   irondash_engine_context: 893c7d96d20ce361d7e996f39d360c4c2f9869ba
   package_info_plus: f0052d280d17aa382b932f399edf32507174e870

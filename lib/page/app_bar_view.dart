@@ -22,6 +22,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final TimeFilter selectedTimeFilter;
   final ValueChanged<TimeFilter> onTimeFilterChanged;
   final VoidCallback onSettingsTap;
+  final VoidCallback? onAnalyticsTap;
   final GridDensity density;
   final ValueChanged<GridDensity> onDensityChanged;
 
@@ -35,6 +36,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.selectedTimeFilter,
     required this.onTimeFilterChanged,
     required this.onSettingsTap,
+    this.onAnalyticsTap,
     required this.density,
     required this.onDensityChanged,
   });
@@ -108,6 +110,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
               const SizedBox(width: AppSpacing.md),
               _SyncButton(),
               const SizedBox(width: AppSpacing.md),
+              if (onAnalyticsTap != null)
+                _AnalyticsButton(onTap: onAnalyticsTap!),
+              if (onAnalyticsTap != null)
+                const SizedBox(width: AppSpacing.md),
               _SettingsButton(onTap: onSettingsTap),
             ],
           ),
@@ -582,6 +588,21 @@ class _SyncButton extends StatelessWidget {
           return StatusIndicator(isActive: isRunning);
         },
       ),
+    );
+  }
+}
+
+class _AnalyticsButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _AnalyticsButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBarIconButton(
+      icon: Icons.insights,
+      tooltip: '数据分析',
+      onTap: onTap,
     );
   }
 }

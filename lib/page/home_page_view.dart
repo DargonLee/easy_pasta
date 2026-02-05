@@ -15,8 +15,10 @@ import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/grid_density.dart';
 import 'package:easy_pasta/model/time_filter.dart';
 import 'package:easy_pasta/widget/search_empty_state.dart';
+import 'package:easy_pasta/service/analytics_service.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:easy_pasta/page/analytics_page.dart' hide AppColors;
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
@@ -59,6 +61,12 @@ class _MyHomePageState extends State<MyHomePage>
 
   void _handlePboardUpdate(ClipboardItemModel model) {
     _pboardProvider.addItem(model);
+
+    // 记录数据分析事件
+    ClipboardAnalyticsService.instance.recordClipboardEvent(
+      model,
+      model.sourceAppId ?? 'Unknown',
+    );
   }
 
   void _handleClear() {
@@ -117,6 +125,7 @@ class _MyHomePageState extends State<MyHomePage>
         selectedTimeFilter: _selectedTimeFilter,
         onTimeFilterChanged: _handleTimeFilterChanged,
         onSettingsTap: () => _navigateToSettings(),
+        onAnalyticsTap: _showAnalyticsPage,
         density: _density,
         onDensityChanged: _handleDensityChanged,
       ),
@@ -245,6 +254,13 @@ class _MyHomePageState extends State<MyHomePage>
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const SettingsPage()),
+    );
+  }
+
+  void _showAnalyticsPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ClipboardAnalyticsPage()),
     );
   }
 
