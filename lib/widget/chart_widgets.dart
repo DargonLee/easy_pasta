@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:easy_pasta/model/clipboard_analytics.dart';
 
 // ==================== 饼图组件 ====================
 
@@ -58,9 +57,9 @@ class _PurposeChartWidgetState extends State<PurposeChartWidget>
             ),
           ),
         ),
-        
+
         const SizedBox(height: 24),
-        
+
         // Legend
         Wrap(
           spacing: 16,
@@ -76,7 +75,7 @@ class _PurposeChartWidgetState extends State<PurposeChartWidget>
 
   Widget _buildLegendItem(ChartData data, int index) {
     final isHovered = _hoveredIndex == index;
-    
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hoveredIndex = index),
       onExit: (_) => setState(() => _hoveredIndex = null),
@@ -84,7 +83,9 @@ class _PurposeChartWidgetState extends State<PurposeChartWidget>
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isHovered ? data.color.withOpacity(0.1) : Colors.transparent,
+          color: isHovered
+              ? data.color.withValues(alpha: 0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(6),
         ),
         child: Row(
@@ -104,7 +105,8 @@ class _PurposeChartWidgetState extends State<PurposeChartWidget>
               style: TextStyle(
                 fontFamily: 'JetBrainsMono',
                 fontSize: 11,
-                color: isHovered ? AppColors.textPrimary : AppColors.textSecondary,
+                color:
+                    isHovered ? AppColors.textPrimary : AppColors.textSecondary,
                 fontWeight: isHovered ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -192,7 +194,8 @@ class DonutChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(DonutChartPainter oldDelegate) =>
-      progress != oldDelegate.progress || hoveredIndex != oldDelegate.hoveredIndex;
+      progress != oldDelegate.progress ||
+      hoveredIndex != oldDelegate.hoveredIndex;
 }
 
 // ==================== 趋势图组件 ====================
@@ -259,7 +262,9 @@ class _TrendChartWidgetState extends State<TrendChartWidget>
 
   int? _getIndexFromPosition(Offset position) {
     // Simple approximation
-    final index = (position.dx / (MediaQuery.of(context).size.width / _data.length)).floor();
+    final index =
+        (position.dx / (MediaQuery.of(context).size.width / _data.length))
+            .floor();
     if (index >= 0 && index < _data.length) {
       return index;
     }
@@ -304,7 +309,8 @@ class TrendChartPainter extends CustomPainter {
     _drawLabels(canvas, size, padding, chartHeight);
   }
 
-  void _drawGrid(Canvas canvas, Size size, double padding, double chartHeight, double maxValue) {
+  void _drawGrid(Canvas canvas, Size size, double padding, double chartHeight,
+      double maxValue) {
     final gridPaint = Paint()
       ..color = AppColors.borderColor
       ..strokeWidth = 1;
@@ -332,19 +338,26 @@ class TrendChartPainter extends CustomPainter {
 
     for (var i = 0; i < data.length; i++) {
       final x = padding + i * stepX;
-      final y = padding + chartHeight - (data[i].value / maxValue * chartHeight * progress);
-      
+      final y = padding +
+          chartHeight -
+          (data[i].value / maxValue * chartHeight * progress);
+
       if (i == 0) {
         path.lineTo(x, y);
       } else {
         final prevX = padding + (i - 1) * stepX;
-        final prevY = padding + chartHeight - (data[i - 1].value / maxValue * chartHeight * progress);
+        final prevY = padding +
+            chartHeight -
+            (data[i - 1].value / maxValue * chartHeight * progress);
         final controlX = (prevX + x) / 2;
-        
+
         path.cubicTo(
-          controlX, prevY,
-          controlX, y,
-          x, y,
+          controlX,
+          prevY,
+          controlX,
+          y,
+          x,
+          y,
         );
       }
     }
@@ -363,7 +376,9 @@ class TrendChartPainter extends CustomPainter {
 
     canvas.drawPath(
       path,
-      Paint()..shader = gradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
+      Paint()
+        ..shader =
+            gradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height)),
     );
   }
 
@@ -376,22 +391,29 @@ class TrendChartPainter extends CustomPainter {
     double stepX,
   ) {
     final path = Path();
-    
+
     for (var i = 0; i < data.length; i++) {
       final x = padding + i * stepX;
-      final y = padding + chartHeight - (data[i].value / maxValue * chartHeight * progress);
-      
+      final y = padding +
+          chartHeight -
+          (data[i].value / maxValue * chartHeight * progress);
+
       if (i == 0) {
         path.moveTo(x, y);
       } else {
         final prevX = padding + (i - 1) * stepX;
-        final prevY = padding + chartHeight - (data[i - 1].value / maxValue * chartHeight * progress);
+        final prevY = padding +
+            chartHeight -
+            (data[i - 1].value / maxValue * chartHeight * progress);
         final controlX = (prevX + x) / 2;
-        
+
         path.cubicTo(
-          controlX, prevY,
-          controlX, y,
-          x, y,
+          controlX,
+          prevY,
+          controlX,
+          y,
+          x,
+          y,
         );
       }
     }
@@ -415,7 +437,9 @@ class TrendChartPainter extends CustomPainter {
   ) {
     for (var i = 0; i < data.length; i++) {
       final x = padding + i * stepX;
-      final y = padding + chartHeight - (data[i].value / maxValue * chartHeight * progress);
+      final y = padding +
+          chartHeight -
+          (data[i].value / maxValue * chartHeight * progress);
       final isHovered = hoveredIndex == i;
 
       // Glow
@@ -445,14 +469,15 @@ class TrendChartPainter extends CustomPainter {
     }
   }
 
-  void _drawLabels(Canvas canvas, Size size, double padding, double chartHeight) {
+  void _drawLabels(
+      Canvas canvas, Size size, double padding, double chartHeight) {
     final textPainter = TextPainter(
       textDirection: TextDirection.ltr,
     );
 
     for (var i = 0; i < data.length; i++) {
       final x = padding + i * ((size.width - padding * 2) / (data.length - 1));
-      
+
       textPainter.text = TextSpan(
         text: data[i].label,
         style: const TextStyle(
@@ -461,7 +486,7 @@ class TrendChartPainter extends CustomPainter {
           color: AppColors.textMuted,
         ),
       );
-      
+
       textPainter.layout();
       textPainter.paint(
         canvas,
@@ -472,7 +497,8 @@ class TrendChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(TrendChartPainter oldDelegate) =>
-      progress != oldDelegate.progress || hoveredIndex != oldDelegate.hoveredIndex;
+      progress != oldDelegate.progress ||
+      hoveredIndex != oldDelegate.hoveredIndex;
 }
 
 // ==================== 应用流转图 ====================
@@ -568,13 +594,13 @@ class FlowDiagramPainter extends CustomPainter {
   Map<String, Offset> _calculatePositions(List<String> apps, Size size) {
     final positions = <String, Offset>{};
     final padding = 60.0;
-    
+
     for (var i = 0; i < apps.length; i++) {
       final x = i % 2 == 0 ? padding : size.width - padding;
       final y = (i * size.height / apps.length) + padding;
       positions[apps[i]] = Offset(x, y);
     }
-    
+
     return positions;
   }
 
@@ -590,20 +616,22 @@ class FlowDiagramPainter extends CustomPainter {
 
     final path = Path();
     path.moveTo(start.dx, start.dy);
-    
+
     final controlX = size.width / 2;
     final controlY = (start.dy + end.dy) / 2;
-    
+
     path.quadraticBezierTo(
-      controlX, controlY,
-      end.dx, end.dy,
+      controlX,
+      controlY,
+      end.dx,
+      end.dy,
     );
 
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppColors.accentCyan.withOpacity(
-          math.min(flow.count / 150, 0.8),
+        ..color = AppColors.accentCyan.withValues(
+          alpha: math.min(flow.count / 150, 0.8),
         )
         ..strokeWidth = thickness
         ..style = PaintingStyle.stroke,
@@ -616,7 +644,7 @@ class FlowDiagramPainter extends CustomPainter {
       position,
       16,
       Paint()
-        ..color = AppColors.accentCyan.withOpacity(0.3)
+        ..color = AppColors.accentCyan.withValues(alpha: 0.3)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
     );
 
@@ -694,17 +722,17 @@ class AppColors {
   static const bgPrimary = Color(0xFF0A0E14);
   static const bgSecondary = Color(0xFF121820);
   static const bgTertiary = Color(0xFF1A1F2E);
-  
+
   static const accentCyan = Color(0xFF00D9FF);
   static const accentPurple = Color(0xFFA855F7);
   static const accentPink = Color(0xFFEC4899);
   static const accentGreen = Color(0xFF10B981);
   static const accentOrange = Color(0xFFF59E0B);
-  
+
   static const textPrimary = Color(0xFFE0E7FF);
   static const textSecondary = Color(0xFF94A3B8);
   static const textMuted = Color(0xFF64748B);
-  
+
   static const borderColor = Color(0x1A94A3B8);
   static const glowCyan = Color(0x4D00D9FF);
   static const glowPurple = Color(0x4DA855F7);

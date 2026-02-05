@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/clipboard_analytics.dart';
-import 'package:easy_pasta/service/analytics_service.dart';
 
 /// 热力图组件
 ///
@@ -234,7 +233,7 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
         color: AppColors.bgTertiary,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.accentCyan),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: AppColors.glowCyan,
             blurRadius: 24,
@@ -280,13 +279,13 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
   Color _getIntensityColor(int intensity) {
     switch (intensity) {
       case 1:
-        return AppColors.accentCyan.withOpacity(0.2);
+        return AppColors.accentCyan.withValues(alpha: 0.2);
       case 2:
-        return AppColors.accentCyan.withOpacity(0.4);
+        return AppColors.accentCyan.withValues(alpha: 0.4);
       case 3:
-        return AppColors.accentCyan.withOpacity(0.6);
+        return AppColors.accentCyan.withValues(alpha: 0.6);
       case 4:
-        return AppColors.accentCyan.withOpacity(0.8);
+        return AppColors.accentCyan.withValues(alpha: 0.8);
       case 5:
         return AppColors.accentCyan;
       default:
@@ -360,7 +359,7 @@ class _HeatmapCellState extends State<_HeatmapCell>
               boxShadow: _isHovered
                   ? [
                       BoxShadow(
-                        color: AppColors.accentCyan.withOpacity(0.4),
+                        color: AppColors.accentCyan.withValues(alpha: 0.4),
                         blurRadius: 12,
                         spreadRadius: 2,
                       ),
@@ -387,13 +386,13 @@ class _HeatmapCellState extends State<_HeatmapCell>
       case 0:
         return AppColors.bgTertiary;
       case 1:
-        return AppColors.accentCyan.withOpacity(0.2);
+        return AppColors.accentCyan.withValues(alpha: 0.2);
       case 2:
-        return AppColors.accentCyan.withOpacity(0.4);
+        return AppColors.accentCyan.withValues(alpha: 0.4);
       case 3:
-        return AppColors.accentCyan.withOpacity(0.6);
+        return AppColors.accentCyan.withValues(alpha: 0.6);
       case 4:
-        return AppColors.accentCyan.withOpacity(0.8);
+        return AppColors.accentCyan.withValues(alpha: 0.8);
       case 5:
         return AppColors.accentCyan;
       default:

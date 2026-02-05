@@ -75,8 +75,8 @@ class _DuplicateListWidgetState extends State<DuplicateListWidget>
         }
 
         if (snapshot.hasError) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
             child: Text(
               '加载重复内容失败',
               style: TextStyle(
@@ -89,8 +89,8 @@ class _DuplicateListWidgetState extends State<DuplicateListWidget>
 
         final duplicates = snapshot.data ?? [];
         if (duplicates.isEmpty) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
             child: Text(
               '暂无重复内容',
               style: TextStyle(
@@ -204,7 +204,7 @@ class _DuplicateCardState extends State<_DuplicateCard>
               boxShadow: _isHovered
                   ? [
                       BoxShadow(
-                        color: AppColors.accentCyan.withOpacity(0.2),
+                        color: AppColors.accentCyan.withValues(alpha: 0.2),
                         blurRadius: 20,
                         spreadRadius: 0,
                       ),
@@ -226,9 +226,9 @@ class _DuplicateCardState extends State<_DuplicateCard>
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                
+
                 const SizedBox(width: 20),
-                
+
                 // Count badge
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -251,9 +251,9 @@ class _DuplicateCardState extends State<_DuplicateCard>
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(width: 20),
-                
+
                 // Suggestion
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -261,7 +261,7 @@ class _DuplicateCardState extends State<_DuplicateCard>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.accentGreen.withOpacity(0.1),
+                    color: AppColors.accentGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
