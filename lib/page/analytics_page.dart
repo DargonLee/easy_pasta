@@ -127,16 +127,6 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
                     ),
                   ),
 
-                  const SliverToBoxAdapter(child: DataFlowLine()),
-
-                  // Insights Section
-                  SliverToBoxAdapter(
-                    child: _buildSection(
-                      title: '智能洞察',
-                      child: const InsightsWidget(),
-                    ),
-                  ),
-
                   const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
                 ],
               ),
