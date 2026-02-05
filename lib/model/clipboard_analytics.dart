@@ -1,20 +1,18 @@
-import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
-import 'package:easy_pasta/db/database_helper.dart';
 
 /// 分析时间段类型
 enum TimePeriod { day, week, month }
 
 /// 内容用途分类
 enum ContentPurpose {
-  code,      // 代码
-  text,      // 普通文本
-  url,       // 链接
-  image,     // 图片
-  command,   // 命令
-  personal,  // 个人信息（地址、电话等）
-  other,     // 其他
+  code, // 代码
+  text, // 普通文本
+  url, // 链接
+  image, // 图片
+  command, // 命令
+  personal, // 个人信息（地址、电话等）
+  other, // 其他
 }
 
 /// 剪贴板分析数据模型
@@ -26,10 +24,10 @@ class ClipboardAnalyticsData {
   final DateTime timestamp;
   final ContentPurpose purpose;
   final int contentLength;
-  final String? contentHash;  // 用于检测重复
+  final String? contentHash; // 用于检测重复
   final List<String> tags;
-  final int copyCount;        // 该内容的复制次数
-  final Duration? dwellTime;  // 在剪贴板停留时间（直到被覆盖或粘贴）
+  final int copyCount; // 该内容的复制次数
+  final Duration? dwellTime; // 在剪贴板停留时间（直到被覆盖或粘贴）
 
   const ClipboardAnalyticsData({
     required this.id,
@@ -63,20 +61,20 @@ class ClipboardAnalyticsData {
 
   static ContentPurpose _detectPurpose(ClipboardItemModel item) {
     final value = item.pvalue.toLowerCase();
-    
+
     if (item.ptype.toString().contains('image')) return ContentPurpose.image;
     if (_isCode(value)) return ContentPurpose.code;
     if (_isUrl(value)) return ContentPurpose.url;
     if (_isCommand(value)) return ContentPurpose.command;
     if (_isPersonalInfo(value)) return ContentPurpose.personal;
-    
+
     return ContentPurpose.text;
   }
 
   static bool _isCode(String value) {
     final codePatterns = [
       RegExp(r'^(const|let|var|function|class|import|export|def|class)\s'),
-      RegExp(r'[{};]\s*\n.*[{};]'),  // 多行代码特征
+      RegExp(r'[{};]\s*\n.*[{};]'), // 多行代码特征
       RegExp(r'^(https?://|git@|npm|pip|brew)\s'),
     ];
     return codePatterns.any((p) => p.hasMatch(value));
@@ -87,51 +85,53 @@ class ClipboardAnalyticsData {
   }
 
   static bool _isCommand(String value) {
-    return RegExp(r'^(cd|ls|mkdir|git|docker|npm|yarn|pip|brew)\s').hasMatch(value);
+    return RegExp(r'^(cd|ls|mkdir|git|docker|npm|yarn|pip|brew)\s')
+        .hasMatch(value);
   }
 
   static bool _isPersonalInfo(String value) {
     // 检测地址、电话、邮箱等
     return RegExp(r'(路|街|号|单元|室|电话|手机|@)').hasMatch(value) ||
-           RegExp(r'\d{11}').hasMatch(value);  // 手机号
+        RegExp(r'\d{11}').hasMatch(value); // 手机号
   }
 
   static String? _generateContentHash(ClipboardItemModel item) {
     // 简化版本的内容哈希，用于检测重复
-    final normalized = item.pvalue
-        .toLowerCase()
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+    final normalized =
+        item.pvalue.toLowerCase().replaceAll(RegExp(r'\s+'), ' ').trim();
     if (normalized.length < 10) return null;
-    return normalized.substring(0, normalized.length > 50 ? 50 : normalized.length);
+    return normalized.substring(
+        0, normalized.length > 50 ? 50 : normalized.length);
   }
 
   static List<String> _autoTag(ClipboardItemModel item) {
     final tags = <String>[];
     final value = item.pvalue.toLowerCase();
-    
+
     // 语言标签
     if (value.contains('flutter')) tags.add('Flutter');
     if (value.contains('python')) tags.add('Python');
-    if (value.contains('javascript') || value.contains('js')) tags.add('JavaScript');
+    if (value.contains('javascript') || value.contains('js'))
+      tags.add('JavaScript');
     if (value.contains('docker')) tags.add('Docker');
     if (value.contains('sql')) tags.add('SQL');
-    
+
     // 场景标签
     if (value.contains('http')) tags.add('网络');
-    if (value.contains('error') || value.contains('exception')) tags.add('错误处理');
+    if (value.contains('error') || value.contains('exception'))
+      tags.add('错误处理');
     if (RegExp(r'\d{4}-\d{2}-\d{2}').hasMatch(value)) tags.add('日期');
-    
+
     return tags;
   }
 }
 
 /// 复制热力图数据点
 class HeatmapDataPoint {
-  final int hour;      // 0-23
-  final int day;       // 0-6 (周一到周日)
-  final int count;     // 复制次数
-  final List<ContentPurpose> purposes;  // 该时段的主要用途
+  final int hour; // 0-23
+  final int day; // 0-6 (周一到周日)
+  final int count; // 复制次数
+  final List<ContentPurpose> purposes; // 该时段的主要用途
 
   const HeatmapDataPoint({
     required this.hour,
@@ -162,7 +162,7 @@ class DuplicateContentGroup {
   });
 
   bool get isWorthOptimizing => occurrenceCount >= 3;
-  
+
   String get suggestion {
     if (purpose == ContentPurpose.personal) {
       return '这是您的个人信息，建议保存到地址簿或密码管理器';
@@ -210,7 +210,7 @@ class EfficiencyInsight {
   final String title;
   final String description;
   final InsightType type;
-  final double potentialTimeSaved;  // 预计节省的分钟数
+  final double potentialTimeSaved; // 预计节省的分钟数
 
   const EfficiencyInsight({
     required this.title,
@@ -221,10 +221,10 @@ class EfficiencyInsight {
 }
 
 enum InsightType {
-  optimization,  // 优化建议
-  pattern,       // 模式发现
-  achievement,   // 成就
-  warning,       // 警告
+  optimization, // 优化建议
+  pattern, // 模式发现
+  achievement, // 成就
+  warning, // 警告
 }
 
 /// 分析报告
