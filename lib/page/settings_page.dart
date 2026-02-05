@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
@@ -11,10 +9,12 @@ import 'package:easy_pasta/core/settings_service.dart';
 import 'package:easy_pasta/page/confirm_dialog_view.dart';
 import 'package:easy_pasta/widget/settting_page_widgets.dart';
 import 'package:easy_pasta/model/design_tokens.dart';
-import 'package:easy_pasta/model/app_typography.dart';
 import 'package:easy_pasta/core/animation_helper.dart';
 import 'package:easy_pasta/core/auto_paste_service.dart';
 import 'package:easy_pasta/core/bonsoir_service.dart';
+import 'package:easy_pasta/page/settings/settings_background.dart';
+import 'package:easy_pasta/page/settings/settings_header.dart';
+import 'package:easy_pasta/page/settings/settings_section.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -117,10 +117,10 @@ class _SettingsPageState extends State<SettingsPage> {
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          const _SettingsBackground(),
+          const SettingsBackground(),
           Column(
             children: [
-              _SettingsHeader(
+              SettingsHeader(
                 title: '设置',
                 onBack: () {
                   HapticFeedback.lightImpact();
@@ -138,14 +138,13 @@ class _SettingsPageState extends State<SettingsPage> {
                       AppSpacing.xxxl,
                     ),
                     children: [
-                      _buildSection(
-                        context: context,
+                      SettingsSection(
                         title: SettingsConstants.basicSettingsTitle,
                         items: _basicSettings,
+                        itemBuilder: _buildSettingTile,
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      _buildSection(
-                        context: context,
+                      SettingsSection(
                         title: '存储管理',
                         items: [
                           const SettingItem(
@@ -181,10 +180,10 @@ class _SettingsPageState extends State<SettingsPage> {
                             iconColor: Colors.red,
                           ),
                         ],
+                        itemBuilder: _buildSettingTile,
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      _buildSection(
-                        context: context,
+                      SettingsSection(
                         title: SettingsConstants.aboutTitle,
                         items: [
                           const SettingItem(
@@ -194,6 +193,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             icon: Icons.info_outline,
                           ),
                         ],
+                        itemBuilder: _buildSettingTile,
                       ),
                       const SizedBox(height: AppSpacing.xxxl),
                     ],
@@ -204,75 +204,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSection({
-    required BuildContext context,
-    required String title,
-    required List<SettingItem> items,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 分组标题
-        Padding(
-          padding: const EdgeInsets.only(
-            left: AppSpacing.md,
-            bottom: AppSpacing.sm,
-          ),
-          child: Text(
-            title.toUpperCase(),
-            style: (isDark
-                    ? AppTypography.darkCaption
-                    : AppTypography.lightCaption)
-                .copyWith(
-              color: isDark
-                  ? AppColors.darkTextSecondary
-                  : AppColors.lightTextSecondary,
-              fontWeight: AppFontWeights.semiBold,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-
-        // 设置项卡片
-        Container(
-          decoration: BoxDecoration(
-            gradient: isDark
-                ? AppGradients.darkCardSheen
-                : AppGradients.lightCardSheen,
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(
-              color: isDark
-                  ? AppColors.darkFrostedBorder
-                  : AppColors.lightFrostedBorder,
-            ),
-            boxShadow: isDark ? AppShadows.darkSm : AppShadows.sm,
-          ),
-          child: Column(
-            children: [
-              for (int i = 0; i < items.length; i++) ...[
-                Column(
-                  children: [
-                    _buildSettingTile(items[i]),
-                    if (i < items.length - 1)
-                      Divider(
-                        height: 1,
-                        indent: AppSpacing.xxxl + AppSpacing.lg,
-                        color: isDark
-                            ? AppColors.darkDivider
-                            : AppColors.lightDivider,
-                      ),
-                  ],
-                ),
-              ],
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -439,200 +370,5 @@ class _SettingsPageState extends State<SettingsPage> {
         _isAccessibilityTrusted = hasPermission;
       });
     }
-  }
-}
-
-class _SettingsHeader extends StatelessWidget {
-  final String title;
-  final VoidCallback onBack;
-
-  const _SettingsHeader({
-    required this.title,
-    required this.onBack,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor =
-        isDark ? AppColors.darkFrostedSurface : AppColors.lightFrostedSurface;
-    final borderColor =
-        isDark ? AppColors.darkFrostedBorder : AppColors.lightFrostedBorder;
-
-    return SafeArea(
-      bottom: false,
-      child: ClipRRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(
-            sigmaX: AppBlur.frosted,
-            sigmaY: AppBlur.frosted,
-          ),
-          child: Container(
-            height: 64,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-            decoration: BoxDecoration(
-              color: surfaceColor,
-              border: Border(
-                bottom: BorderSide(
-                  color: borderColor,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                _HeaderButton(
-                  icon: Icons.arrow_back,
-                  onTap: onBack,
-                ),
-                Expanded(
-                  child: Center(
-                    child: Text(
-                      title,
-                      style: isDark
-                          ? AppTypography.darkHeadline
-                          : AppTypography.lightHeadline,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 36),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HeaderButton extends StatefulWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _HeaderButton({
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  State<_HeaderButton> createState() => _HeaderButtonState();
-}
-
-class _HeaderButtonState extends State<_HeaderButton> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark
-        ? AppColors.darkSecondaryBackground.withValues(alpha: 0.7)
-        : AppColors.lightSecondaryBackground.withValues(alpha: 0.7);
-    final hoverColor = isDark
-        ? AppColors.darkTertiaryBackground.withValues(alpha: 0.7)
-        : AppColors.lightTertiaryBackground.withValues(alpha: 0.7);
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: widget.onTap,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          child: AnimatedContainer(
-            duration: AppDurations.fast,
-            curve: AppCurves.standard,
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: _isHovered ? hoverColor : baseColor,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(
-                color: isDark
-                    ? AppColors.darkBorder.withValues(alpha: 0.4)
-                    : AppColors.lightBorder.withValues(alpha: 0.4),
-              ),
-            ),
-            child: Icon(
-              widget.icon,
-              size: 18,
-              color: isDark
-                  ? AppColors.darkTextPrimary
-                  : AppColors.lightTextPrimary,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsBackground extends StatelessWidget {
-  const _SettingsBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Positioned.fill(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: isDark
-              ? AppGradients.darkPaperBackground
-              : AppGradients.lightPaperBackground,
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: -140,
-              left: -80,
-              child: _SettingsGlow(
-                color: isDark
-                    ? AppColors.primary.withValues(alpha: 0.12)
-                    : AppColors.primary.withValues(alpha: 0.08),
-                radius: 220,
-              ),
-            ),
-            Positioned(
-              bottom: -160,
-              right: -90,
-              child: _SettingsGlow(
-                color: isDark
-                    ? AppColors.primaryLight.withValues(alpha: 0.08)
-                    : AppColors.primaryLight.withValues(alpha: 0.12),
-                radius: 260,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SettingsGlow extends StatelessWidget {
-  final Color color;
-  final double radius;
-
-  const _SettingsGlow({
-    required this.color,
-    required this.radius,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: radius,
-      height: radius,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            color,
-            color.withValues(alpha: 0),
-          ],
-        ),
-      ),
-    );
   }
 }
