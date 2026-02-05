@@ -296,7 +296,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
-        childAspectRatio: 1.5,
+        childAspectRatio: 1.8,
         crossAxisSpacing: 20,
         mainAxisSpacing: 20,
       ),
@@ -710,7 +710,8 @@ class _StatCardState extends State<StatCard>
 
                 // Content
                 Padding(
-                  padding: const EdgeInsets.all(28),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -718,13 +719,13 @@ class _StatCardState extends State<StatCard>
                       Text(
                         widget.label.toUpperCase(),
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: AppColors.textSecondary,
-                          letterSpacing: 2,
+                          letterSpacing: 1.5,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       ShaderMask(
                         shaderCallback: (bounds) => const LinearGradient(
                           colors: [
@@ -736,13 +737,13 @@ class _StatCardState extends State<StatCard>
                           widget.value,
                           style: const TextStyle(
                             fontFamily: 'JetBrainsMono',
-                            fontSize: 32,
+                            fontSize: 28,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
                           if (widget.isPositive != null)
