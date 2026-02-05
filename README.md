@@ -6,6 +6,8 @@
   <p>📱 <b>手机同步</b> - 扫码或 Bonjour 自动发现</p>
   <img src="README.assets/Bonjour.png" alt="Bonjour 手机同步" width="400"/>
   <img src="README.assets/Bonjour_phone.jpg" alt="手机端界面" width="200"/>
+  <p>📊 <b>数据分析</b> - 剪贴板使用统计与洞察</p>
+  <img src="README.assets/analytics.png" alt="数据分析面板" width="800"/>
 </div>
 
 <p align="center">
