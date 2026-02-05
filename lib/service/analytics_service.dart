@@ -1,5 +1,6 @@
 import 'package:easy_pasta/model/clipboard_analytics.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
+import 'package:easy_pasta/db/database_helper.dart';
 
 /// 剪贴板数据分析服务
 class ClipboardAnalyticsService {
@@ -386,5 +387,261 @@ class ClipboardAnalyticsService {
   void cleanupOldData({int keepDays = 30}) {
     final cutoff = DateTime.now().subtract(Duration(days: keepDays));
     _analyticsCache.removeWhere((d) => d.timestamp.isBefore(cutoff));
+  }
+
+  // ==================== 真实数据库查询 ====================
+
+  /// 获取总复制次数
+  Future<int> getTotalCopies({TimePeriod period = TimePeriod.week}) async {
+    final db = await DatabaseHelper.instance.database;
+    final now = DateTime.now();
+    DateTime start;
+
+    switch (period) {
+      case TimePeriod.day:
+        start = DateTime(now.year, now.month, now.day);
+        break;
+      case TimePeriod.week:
+        start = now.subtract(const Duration(days: 7));
+        break;
+      case TimePeriod.month:
+        start = DateTime(now.year, now.month - 1, now.day);
+        break;
+    }
+
+    final result = await db.rawQuery('''
+      SELECT COUNT(*) as count FROM ${DatabaseConfig.tableName}
+      WHERE ${DatabaseConfig.columnTime} >= ?
+    ''', [start.toString()]);
+
+    return result.first['count'] as int? ?? 0;
+  }
+
+  /// 获取活跃应用数
+  Future<int> getActiveApps({TimePeriod period = TimePeriod.week}) async {
+    final db = await DatabaseHelper.instance.database;
+    final now = DateTime.now();
+    DateTime start;
+
+    switch (period) {
+      case TimePeriod.day:
+        start = DateTime(now.year, now.month, now.day);
+        break;
+      case TimePeriod.week:
+        start = now.subtract(const Duration(days: 7));
+        break;
+      case TimePeriod.month:
+        start = DateTime(now.year, now.month - 1, now.day);
+        break;
+    }
+
+    final result = await db.rawQuery('''
+      SELECT COUNT(DISTINCT ${DatabaseConfig.columnSourceAppId}) as count 
+      FROM ${DatabaseConfig.tableName}
+      WHERE ${DatabaseConfig.columnTime} >= ? 
+      AND ${DatabaseConfig.columnSourceAppId} IS NOT NULL
+    ''', [start.toString()]);
+
+    return result.first['count'] as int? ?? 0;
+  }
+
+  /// 获取重复内容数（基于相同 value 的条目数）
+  Future<int> getDuplicateCount({TimePeriod period = TimePeriod.week}) async {
+    final db = await DatabaseHelper.instance.database;
+    final now = DateTime.now();
+    DateTime start;
+
+    switch (period) {
+      case TimePeriod.day:
+        start = DateTime(now.year, now.month, now.day);
+        break;
+      case TimePeriod.week:
+        start = now.subtract(const Duration(days: 7));
+        break;
+      case TimePeriod.month:
+        start = DateTime(now.year, now.month - 1, now.day);
+        break;
+    }
+
+    final result = await db.rawQuery('''
+      SELECT COUNT(*) as count FROM (
+        SELECT ${DatabaseConfig.columnValue}
+        FROM ${DatabaseConfig.tableName}
+        WHERE ${DatabaseConfig.columnTime} >= ?
+        GROUP BY ${DatabaseConfig.columnValue}
+        HAVING COUNT(*) > 1
+      )
+    ''', [start.toString()]);
+
+    return result.first['count'] as int? ?? 0;
+  }
+
+  /// 获取效率评分（基于复制频率和活跃时段计算）
+  Future<double> getProductivityScore(
+      {TimePeriod period = TimePeriod.week}) async {
+    final total = await getTotalCopies(period: period);
+    final activeApps = await getActiveApps(period: period);
+
+    if (total == 0) return 0;
+
+    // 基于总复制次数和活跃应用数计算评分
+    // 基准：100次复制 + 5个活跃应用 = 100分
+    final copyScore = (total / 100).clamp(0, 60).toDouble();
+    final appScore = (activeApps / 5 * 40).clamp(0, 40).toDouble();
+
+    return (copyScore + appScore).clamp(0, 100);
+  }
+
+  /// 获取热力图数据（从真实数据库）
+  Future<List<HeatmapDataPoint>> getHeatmapData(
+      {TimePeriod period = TimePeriod.week}) async {
+    final db = await DatabaseHelper.instance.database;
+    final now = DateTime.now();
+    DateTime start;
+
+    switch (period) {
+      case TimePeriod.day:
+        start = DateTime(now.year, now.month, now.day);
+        break;
+      case TimePeriod.week:
+        start = now.subtract(const Duration(days: 7));
+        break;
+      case TimePeriod.month:
+        start = DateTime(now.year, now.month - 1, now.day);
+        break;
+    }
+
+    final results = await db.rawQuery('''
+      SELECT 
+        CAST(strftime('%w', ${DatabaseConfig.columnTime}) AS INTEGER) as day,
+        CAST(strftime('%H', ${DatabaseConfig.columnTime}) AS INTEGER) as hour,
+        COUNT(*) as count
+      FROM ${DatabaseConfig.tableName}
+      WHERE ${DatabaseConfig.columnTime} >= ?
+      GROUP BY day, hour
+      ORDER BY day, hour
+    ''', [start.toString()]);
+
+    return results
+        .map((row) => HeatmapDataPoint(
+              hour: row['hour'] as int,
+              day: row['day'] as int,
+              count: row['count'] as int,
+              purposes: [], // 可以从数据库中获取，但这里简化处理
+            ))
+        .toList();
+  }
+
+  /// 获取内容类型分布
+  Future<Map<String, int>> getContentTypeDistribution(
+      {TimePeriod period = TimePeriod.week}) async {
+    final db = await DatabaseHelper.instance.database;
+    final now = DateTime.now();
+    DateTime start;
+
+    switch (period) {
+      case TimePeriod.day:
+        start = DateTime(now.year, now.month, now.day);
+        break;
+      case TimePeriod.week:
+        start = now.subtract(const Duration(days: 7));
+        break;
+      case TimePeriod.month:
+        start = DateTime(now.year, now.month - 1, now.day);
+        break;
+    }
+
+    final results = await db.rawQuery('''
+      SELECT ${DatabaseConfig.columnType}, COUNT(*) as count
+      FROM ${DatabaseConfig.tableName}
+      WHERE ${DatabaseConfig.columnTime} >= ?
+      GROUP BY ${DatabaseConfig.columnType}
+    ''', [start.toString()]);
+
+    return {
+      for (var row in results) row['type'] as String: row['count'] as int
+    };
+  }
+
+  /// 获取每日复制趋势
+  Future<Map<String, int>> getDailyTrend(
+      {TimePeriod period = TimePeriod.week}) async {
+    final db = await DatabaseHelper.instance.database;
+    final now = DateTime.now();
+    DateTime start;
+
+    switch (period) {
+      case TimePeriod.day:
+        start = DateTime(now.year, now.month, now.day);
+        break;
+      case TimePeriod.week:
+        start = now.subtract(const Duration(days: 7));
+        break;
+      case TimePeriod.month:
+        start = DateTime(now.year, now.month - 1, now.day);
+        break;
+    }
+
+    final results = await db.rawQuery('''
+      SELECT 
+        strftime('%Y-%m-%d', ${DatabaseConfig.columnTime}) as date,
+        COUNT(*) as count
+      FROM ${DatabaseConfig.tableName}
+      WHERE ${DatabaseConfig.columnTime} >= ?
+      GROUP BY date
+      ORDER BY date
+    ''', [start.toString()]);
+
+    return {
+      for (var row in results) row['date'] as String: row['count'] as int
+    };
+  }
+
+  /// 获取应用使用统计
+  Future<Map<String, dynamic>> getAppUsageStats(
+      {TimePeriod period = TimePeriod.week}) async {
+    final db = await DatabaseHelper.instance.database;
+    final now = DateTime.now();
+    DateTime start;
+
+    switch (period) {
+      case TimePeriod.day:
+        start = DateTime(now.year, now.month, now.day);
+        break;
+      case TimePeriod.week:
+        start = now.subtract(const Duration(days: 7));
+        break;
+      case TimePeriod.month:
+        start = DateTime(now.year, now.month - 1, now.day);
+        break;
+    }
+
+    final appResults = await db.rawQuery('''
+      SELECT 
+        ${DatabaseConfig.columnSourceAppId},
+        COUNT(*) as count
+      FROM ${DatabaseConfig.tableName}
+      WHERE ${DatabaseConfig.columnTime} >= ?
+      AND ${DatabaseConfig.columnSourceAppId} IS NOT NULL
+      GROUP BY ${DatabaseConfig.columnSourceAppId}
+      ORDER BY count DESC
+    ''', [start.toString()]);
+
+    final totalApps = await db.rawQuery('''
+      SELECT COUNT(DISTINCT ${DatabaseConfig.columnSourceAppId}) as count 
+      FROM ${DatabaseConfig.tableName}
+      WHERE ${DatabaseConfig.columnTime} >= ?
+      AND ${DatabaseConfig.columnSourceAppId} IS NOT NULL
+    ''', [start.toString()]);
+
+    return {
+      'topApps': appResults
+          .map((row) => {
+                'name': row[DatabaseConfig.columnSourceAppId],
+                'copyCount': row['count'],
+              })
+          .toList(),
+      'totalApps': totalApps.first['count'],
+    };
   }
 }

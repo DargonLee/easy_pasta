@@ -304,9 +304,9 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
           future: _getTotalCopies(),
           builder: (context, snapshot) => StatCard(
             label: '总复制次数',
-            value: snapshot.data?.toString() ?? '0',
-            change: '+23% vs 上周',
-            isPositive: true,
+            value: snapshot.data?.toString() ?? '-',
+            change: '本期统计',
+            isPositive: null,
             delay: 100,
           ),
         ),
@@ -314,9 +314,9 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
           future: _getProductivityScore(),
           builder: (context, snapshot) => StatCard(
             label: '效率评分',
-            value: snapshot.data?.toStringAsFixed(0) ?? '0',
-            change: '+5分',
-            isPositive: true,
+            value: snapshot.data?.toStringAsFixed(0) ?? '-',
+            change: '满分100',
+            isPositive: null,
             delay: 200,
           ),
         ),
@@ -324,9 +324,9 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
           future: _getActiveApps(),
           builder: (context, snapshot) => StatCard(
             label: '活跃应用',
-            value: snapshot.data?.toString() ?? '0',
-            change: '-2 vs 上周',
-            isPositive: false,
+            value: snapshot.data?.toString() ?? '-',
+            change: '应用数量',
+            isPositive: null,
             delay: 300,
           ),
         ),
@@ -334,7 +334,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
           future: _getDuplicateCount(),
           builder: (context, snapshot) => StatCard(
             label: '重复内容',
-            value: snapshot.data?.toString() ?? '0',
+            value: snapshot.data?.toString() ?? '-',
             change: '可优化',
             isPositive: null,
             delay: 400,
@@ -371,25 +371,29 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
     );
   }
 
-  // Mock data methods
+  // Real database queries
   Future<int> _getTotalCopies() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return 1247;
+    return await ClipboardAnalyticsService.instance.getTotalCopies(
+      period: _selectedPeriod,
+    );
   }
 
   Future<double> _getProductivityScore() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return 87;
+    return await ClipboardAnalyticsService.instance.getProductivityScore(
+      period: _selectedPeriod,
+    );
   }
 
   Future<int> _getActiveApps() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return 12;
+    return await ClipboardAnalyticsService.instance.getActiveApps(
+      period: _selectedPeriod,
+    );
   }
 
   Future<int> _getDuplicateCount() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return 34;
+    return await ClipboardAnalyticsService.instance.getDuplicateCount(
+      period: _selectedPeriod,
+    );
   }
 }
 
