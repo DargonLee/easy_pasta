@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:easy_pasta/core/content_classifier.dart';
 import 'package:flutter/foundation.dart';
@@ -33,6 +34,8 @@ class SuperClipboard {
   static const int _maxContentLength = 50000;
   static const int _fastHashLength = 10240;
   static const int _largeDataThreshold = 10 * 1024; // 10KB
+
+  static const _FastHashResult _emptyFastHash = _FastHashResult();
 
   /* ================================
    * Polling lifecycle
@@ -71,12 +74,17 @@ class SuperClipboard {
       final reader = await _clipboard!.read();
 
       // Fast hash check for early exit
-      final fastHash = await _computeFastHash(reader);
+      final fastHashResult = await _computeFastHash(reader);
+      final fastHash = fastHashResult.hash;
       if (_shouldSkipProcessing(fastHash, reader)) {
         return;
       }
 
-      await _processClipboardContent(reader, fastHash: fastHash);
+      await _processClipboardContent(
+        reader,
+        fastHash: fastHash,
+        fastHashResult: fastHashResult,
+      );
     } catch (e) {
       _logError('Clipboard polling failed', e);
     } finally {
@@ -119,6 +127,7 @@ class SuperClipboard {
   Future<void> _processClipboardContent(
     ClipboardReader reader, {
     String? fastHash,
+    _FastHashResult? fastHashResult,
   }) async {
     // Priority order: Image > File > Text (incl. HTML)
     // Process only the highest priority format available
@@ -129,7 +138,8 @@ class SuperClipboard {
     }
 
     if (reader.canProvide(Formats.fileUri)) {
-      final uri = await reader.readValue(Formats.fileUri);
+      final uri =
+          fastHashResult?.fileUri ?? await reader.readValue(Formats.fileUri);
       if (uri != null && !_isDisposed) {
         await _handleContentChange(
           uri.toFilePath(),
@@ -142,7 +152,12 @@ class SuperClipboard {
 
     if (reader.canProvide(Formats.plainText) ||
         reader.canProvide(Formats.htmlText)) {
-      await _processText(reader, fastHash);
+      await _processText(
+        reader,
+        fastHash,
+        cachedText: fastHashResult?.text,
+        cachedHtml: fastHashResult?.html,
+      );
     }
   }
 
@@ -173,12 +188,19 @@ class SuperClipboard {
     }
   }
 
-  Future<void> _processText(ClipboardReader reader, String? fastHash) async {
+  Future<void> _processText(
+    ClipboardReader reader,
+    String? fastHash, {
+    String? cachedText,
+    String? cachedHtml,
+  }) async {
     // Try plain text first, then HTML as fallback
-    String? text;
-    if (reader.canProvide(Formats.plainText)) {
+    String? text = cachedText;
+    if (text == null && reader.canProvide(Formats.plainText)) {
       text = await reader.readValue(Formats.plainText);
-    } else if (reader.canProvide(Formats.htmlText)) {
+    } else if (text == null && cachedHtml != null) {
+      text = cachedHtml;
+    } else if (text == null && reader.canProvide(Formats.htmlText)) {
       text = await reader.readValue(Formats.htmlText);
     }
 
@@ -194,11 +216,11 @@ class SuperClipboard {
   }
 
   Future<Uint8List> _readStreamBytes(Stream<List<int>> stream) async {
-    final chunks = <int>[];
+    final builder = BytesBuilder(copy: false);
     await for (final chunk in stream) {
-      chunks.addAll(chunk);
+      builder.add(chunk);
     }
-    return Uint8List.fromList(chunks);
+    return builder.takeBytes();
   }
 
   String _limitContentLength(String content) {
@@ -345,29 +367,42 @@ class SuperClipboard {
    * Utilities
    * ================================ */
 
-  Future<String?> _computeFastHash(ClipboardReader reader) async {
+  Future<_FastHashResult> _computeFastHash(ClipboardReader reader) async {
     try {
       // Try text (most common case) or HTML fallback
       if (reader.canProvide(Formats.plainText)) {
         final text = await reader.readValue(Formats.plainText);
-        if (text != null) return _hashLimitedString(text);
+        if (text != null) {
+          return _FastHashResult(
+            hash: _hashLimitedString(text),
+            text: text,
+          );
+        }
       } else if (reader.canProvide(Formats.htmlText)) {
         final html = await reader.readValue(Formats.htmlText);
-        if (html != null) return _hashLimitedString(html);
+        if (html != null) {
+          return _FastHashResult(
+            hash: _hashLimitedString(html),
+            html: html,
+          );
+        }
       }
 
       // Try file URI
       if (reader.canProvide(Formats.fileUri)) {
         final uri = await reader.readValue(Formats.fileUri);
         if (uri != null) {
-          return _hashString(uri.toFilePath());
+          return _FastHashResult(
+            hash: _hashString(uri.toFilePath()),
+            fileUri: uri,
+          );
         }
       }
     } catch (e) {
       _logError('Fast hash computation failed', e);
     }
 
-    return null;
+    return _emptyFastHash;
   }
 
   String _hashLimitedString(String input) {
@@ -411,4 +446,18 @@ class SuperClipboard {
       debugPrint('[$runtimeType] Clipboard service disposed');
     }
   }
+}
+
+class _FastHashResult {
+  final String? hash;
+  final String? text;
+  final String? html;
+  final Uri? fileUri;
+
+  const _FastHashResult({
+    this.hash,
+    this.text,
+    this.html,
+    this.fileUri,
+  });
 }
