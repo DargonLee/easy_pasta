@@ -56,7 +56,7 @@ class FooterContent extends StatelessWidget {
           ),
           SizedBox(width: spacing),
           Text(
-            _formatTimestamp(DateTime.parse(model.time)),
+            _formatTimestamp(model.parsedTime),
             style: (isDark
                     ? AppTypography.darkCaption
                     : AppTypography.lightCaption)

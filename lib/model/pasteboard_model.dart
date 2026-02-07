@@ -10,6 +10,7 @@ class ClipboardItemModel {
   // 基础属性
   final String id;
   final String time;
+  final DateTime parsedTime;
   final ClipboardType? ptype;
   final String pvalue;
   final bool isFavorite;
@@ -30,7 +31,8 @@ class ClipboardItemModel {
     this.sourceAppId,
     this.classification,
   })  : id = id ?? const Uuid().v4(),
-        time = time ?? DateTime.now().toString();
+        time = time ?? DateTime.now().toString(),
+        parsedTime = DateTime.parse(time ?? DateTime.now().toString());
 
   /// 从数据库映射创建模型
   factory ClipboardItemModel.fromMapObject(Map<String, dynamic> map) {

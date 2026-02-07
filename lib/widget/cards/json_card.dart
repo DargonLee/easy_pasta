@@ -74,7 +74,7 @@ class _JsonCardContentState extends State<JsonCardContent> {
                 border: Border.all(color: borderColor),
               ),
               child: Text(
-                'JSON ${rootType ?? ''}'.trim().toUpperCase(),
+                'JSON ${widget.rootType ?? ''}'.trim().toUpperCase(),
                 style: (isDark
                         ? AppTypography.darkCaption
                         : AppTypography.lightCaption)
@@ -102,7 +102,7 @@ class _JsonCardContentState extends State<JsonCardContent> {
             ),
             child: Text(
               _formatted,
-              maxLines: maxLines,
+              maxLines: widget.maxLines,
               overflow: TextOverflow.ellipsis,
               style: (isDark
                       ? AppTypography.darkMonospace
