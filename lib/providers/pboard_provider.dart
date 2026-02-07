@@ -257,8 +257,13 @@ class PboardProvider extends ChangeNotifier {
       // 插入逻辑移交给 Service (自动处理缩略图生成)
       final deletedItemId = await _service.processAndInsert(classifiedModel);
 
-      // 更新内存状态 (内存中不保留原始 bytes 以节省系统内存，仅保留缩略图)
-      final memorySafeModel = classifiedModel.copyWith(bytes: null);
+      // 更新内存状态 (图片/文件/HTML 保留 bytes 提升展示清晰度与完整性)
+      final shouldKeepBytes = classifiedModel.ptype == ClipboardType.image ||
+          classifiedModel.ptype == ClipboardType.file ||
+          classifiedModel.ptype == ClipboardType.html;
+      final memorySafeModel = shouldKeepBytes
+          ? classifiedModel
+          : classifiedModel.copyWith(bytes: null);
       List<ClipboardItemModel> nextAllItems = [
         memorySafeModel,
         ..._state.allItems

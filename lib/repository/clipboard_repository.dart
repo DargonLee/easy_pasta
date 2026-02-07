@@ -8,7 +8,7 @@ class ClipboardRepository {
   ClipboardRepository({DatabaseHelper? db})
       : _db = db ?? DatabaseHelper.instance;
 
-  /// 分页拉取历史记录 (仅包含元数据与缩略图，不包含原始 bytes)
+  /// 分页拉取历史记录 (包含完整 bytes 以提升图片清晰度)
   Future<List<ClipboardItemModel>> getItems({
     required int limit,
     required int offset,
@@ -51,7 +51,7 @@ class ClipboardRepository {
     // 构建 SQL
     // 注意: 这里不 SELECT columnBytes，而是 SELECT 必要的元数据与 columnThumbnail
     const columns =
-        't.id, t.time, t.type, t.value, t.isFavorite, t.thumbnail, t.sourceAppId, t.classification';
+        't.id, t.time, t.type, t.value, t.isFavorite, t.bytes, t.thumbnail, t.sourceAppId, t.classification';
     String sql;
     if (searchQuery != null && searchQuery.trim().isNotEmpty) {
       // 使用 FTS5 全文搜索

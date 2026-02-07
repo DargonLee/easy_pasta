@@ -460,31 +460,24 @@ class _ImagePreview extends StatelessWidget {
   const _ImagePreview({required this.model});
 
   static const _fallbackIconSize = 48.0;
-  static const _thumbnailMaxDimension = 320.0;
   static const _maxCacheDimension = 2048;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final thumbnail = model.thumbnail;
         final fullBytes = model.bytes;
-        if ((thumbnail == null || thumbnail.isEmpty) &&
-            (fullBytes == null || fullBytes.isEmpty)) {
+        final thumbnail = model.thumbnail;
+        if ((fullBytes == null || fullBytes.isEmpty) &&
+            (thumbnail == null || thumbnail.isEmpty)) {
           return _buildFallbackIcon(context);
         }
 
         final dpr = MediaQuery.of(context).devicePixelRatio;
         final maxDimension = _maxFinite(constraints.maxWidth, constraints.maxHeight);
-        final targetDimension = maxDimension * dpr;
-        final shouldUseFullBytes =
-            (fullBytes != null && fullBytes.isNotEmpty) &&
-                (thumbnail == null ||
-                    thumbnail.isEmpty ||
-                    targetDimension > _thumbnailMaxDimension);
-
-        final imageData =
-            shouldUseFullBytes ? fullBytes! : (thumbnail ?? fullBytes!);
+        final imageData = (fullBytes != null && fullBytes.isNotEmpty)
+            ? fullBytes
+            : thumbnail!;
 
         final cacheWidth = _cacheDimension(constraints.maxWidth, dpr);
         final cacheHeight = _cacheDimension(constraints.maxHeight, dpr);

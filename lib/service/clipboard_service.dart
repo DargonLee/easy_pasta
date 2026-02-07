@@ -12,14 +12,11 @@ class ClipboardService {
   ClipboardService({ClipboardRepository? repository})
       : _repository = repository ?? ClipboardRepository();
 
-  /// 插入新项，自动处理图片压缩与缩略图生成
+  /// 插入新项，保留原始图片，不生成缩略图（优先清晰度）
   Future<String?> processAndInsert(ClipboardItemModel item) async {
-    ClipboardItemModel processedItem = item;
-
-    if (item.ptype == ClipboardType.image && item.bytes != null) {
-      final thumbnail = await _generateThumbnail(item.bytes!);
-      processedItem = item.copyWith(thumbnail: thumbnail);
-    }
+    final processedItem = item.ptype == ClipboardType.image
+        ? item.copyWith(thumbnail: null)
+        : item;
 
     // 将数据库插入放到后台线程，避免阻塞 UI
     // 注意：这里不能用 compute，因为 Database 实例不能跨 Isolate
