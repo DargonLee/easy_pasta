@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/pboard_sort_type.dart';
@@ -73,6 +74,8 @@ class PboardState {
 }
 
 class PboardProvider extends ChangeNotifier {
+  static const int _ensureBytesCacheBudget = 64 * 1024 * 1024; // 64MB
+
   final ClipboardService _service;
 
   PboardState _state;
@@ -89,6 +92,9 @@ class PboardProvider extends ChangeNotifier {
   TimeFilter get timeFilter => _state.timeFilter;
 
   bool _isDisposed = false;
+  final LinkedHashMap<String, Uint8List> _ensureBytesCache =
+      LinkedHashMap<String, Uint8List>();
+  int _ensureBytesCacheSize = 0;
 
   PboardProvider({ClipboardService? service})
       : _service = service ?? ClipboardService(),
@@ -142,20 +148,71 @@ class PboardProvider extends ChangeNotifier {
 
   /// 确保项具有完整 bytes (Lazy Loading)
   Future<ClipboardItemModel> ensureBytes(ClipboardItemModel model) async {
-    if (model.bytes != null) return model;
-
-    final updated = await _service.ensureBytes(model);
-
-    // 更新内存状态
-    final index = _state.allItems.indexWhere((item) => item.id == model.id);
-    if (index != -1) {
-      final newItems = List<ClipboardItemModel>.from(_state.allItems);
-      newItems[index] = updated;
-      _setStateSilent(_state.copyWith(allItems: newItems));
-      _applyFiltersAndSearch();
+    final bytes = model.bytes;
+    if (bytes != null) {
+      _cacheEnsureBytes(model.id, bytes);
+      return model;
     }
 
+    final cachedBytes = _touchEnsureBytesCache(model.id);
+    if (cachedBytes != null) {
+      return model.copyWith(bytes: cachedBytes);
+    }
+
+    final updated = await _service.ensureBytes(model);
+    final fullBytes = updated.bytes;
+    if (fullBytes != null) {
+      _cacheEnsureBytes(updated.id, fullBytes);
+    }
     return updated;
+  }
+
+  Uint8List? _touchEnsureBytesCache(String id) {
+    final bytes = _ensureBytesCache.remove(id);
+    if (bytes == null) return null;
+    _ensureBytesCache[id] = bytes;
+    return bytes;
+  }
+
+  void _cacheEnsureBytes(String id, Uint8List bytes) {
+    final previous = _ensureBytesCache.remove(id);
+    if (previous != null) {
+      _ensureBytesCacheSize -= previous.length;
+    }
+
+    if (bytes.length > _ensureBytesCacheBudget) {
+      return;
+    }
+
+    _ensureBytesCache[id] = bytes;
+    _ensureBytesCacheSize += bytes.length;
+
+    while (_ensureBytesCacheSize > _ensureBytesCacheBudget &&
+        _ensureBytesCache.isNotEmpty) {
+      final oldestKey = _ensureBytesCache.keys.first;
+      final evicted = _ensureBytesCache.remove(oldestKey);
+      if (evicted != null) {
+        _ensureBytesCacheSize -= evicted.length;
+      }
+    }
+  }
+
+  void _removeEnsureBytes(String id) {
+    final removed = _ensureBytesCache.remove(id);
+    if (removed != null) {
+      _ensureBytesCacheSize -= removed.length;
+    }
+  }
+
+  void _retainEnsureBytesForItems(List<ClipboardItemModel> items) {
+    if (_ensureBytesCache.isEmpty) return;
+    final keepIds = items.map((item) => item.id).toSet();
+    final staleIds = _ensureBytesCache.keys
+        .where((id) => !keepIds.contains(id))
+        .toList(growable: false);
+    for (final id in staleIds) {
+      _removeEnsureBytes(id);
+    }
   }
 
   void _handleError(String operation, dynamic error) {
@@ -187,11 +244,10 @@ class PboardProvider extends ChangeNotifier {
   }
 
   // 应用过滤和搜索
-  // 应用过滤和搜索
   void _applyFiltersAndSearch() {
     var filteredItems = List<ClipboardItemModel>.from(_state.allItems);
-    bool hasSearch = _state.searchQuery.isNotEmpty;
-    bool hasFilter = _state.filterType != NSPboardSortType.all;
+    final hasSearch = _state.searchQuery.isNotEmpty;
+    final hasFilter = _state.filterType != NSPboardSortType.all;
 
     // 应用内存级别基础过滤 (提升 UI 响应深度)
     if (hasFilter) {
@@ -227,11 +283,44 @@ class PboardProvider extends ChangeNotifier {
     // 2. 真实错误 -> error 字段保留用于真实错误信息
     // 注意：不再将 "未找到相关内容" 存入 error，避免与真实错误混淆
 
+    final canReuseGroups =
+        _hasSameItemOrder(filteredItems, _state.filteredItems) &&
+            _state.groupedItems.isNotEmpty;
+    final groupedItems = canReuseGroups
+        ? _mergeGroupsWithLatestItems(_state.groupedItems, filteredItems)
+        : _performGrouping(filteredItems);
+
     _updateState(_state.copyWith(
       filteredItems: filteredItems,
-      groupedItems: _performGrouping(filteredItems), // 触发预计算
+      groupedItems: groupedItems, // 仅在集合变化时重建分组
       // error 保留原有值，不覆盖为 "未找到相关内容"
     ));
+  }
+
+  bool _hasSameItemOrder(
+      List<ClipboardItemModel> next, List<ClipboardItemModel> current) {
+    if (next.length != current.length) return false;
+    for (var i = 0; i < next.length; i++) {
+      if (next[i].id != current[i].id) return false;
+    }
+    return true;
+  }
+
+  Map<String, List<ClipboardItemModel>> _mergeGroupsWithLatestItems(
+    Map<String, List<ClipboardItemModel>> currentGroups,
+    List<ClipboardItemModel> latestItems,
+  ) {
+    if (currentGroups.isEmpty) return currentGroups;
+    final byId = <String, ClipboardItemModel>{
+      for (final item in latestItems) item.id: item,
+    };
+    final merged = <String, List<ClipboardItemModel>>{};
+    for (final entry in currentGroups.entries) {
+      merged[entry.key] = entry.value
+          .map((item) => byId[item.id] ?? item)
+          .toList(growable: false);
+    }
+    return merged;
   }
 
   Map<String, List<ClipboardItemModel>> _performGrouping(
@@ -249,6 +338,34 @@ class PboardProvider extends ChangeNotifier {
     return groups;
   }
 
+  int get _pageFetchSize => _state.maxItems < _state.pageSize
+      ? _state.maxItems
+      : _state.pageSize;
+
+  List<ClipboardItemModel> _enforceInMemoryCap(
+      List<ClipboardItemModel> items) {
+    if (items.length <= _state.maxItems) {
+      _retainEnsureBytesForItems(items);
+      return items;
+    }
+    final capped = items.take(_state.maxItems).toList(growable: false);
+    _retainEnsureBytesForItems(capped);
+    return capped;
+  }
+
+  ClipboardItemModel _withoutBytes(ClipboardItemModel model) {
+    return ClipboardItemModel(
+      id: model.id,
+      time: model.time,
+      ptype: model.ptype,
+      pvalue: model.pvalue,
+      isFavorite: model.isFavorite,
+      thumbnail: model.thumbnail,
+      sourceAppId: model.sourceAppId,
+      classification: model.classification,
+    );
+  }
+
   Future<Result<void>> addItem(ClipboardItemModel model) async {
     try {
       // 如果模型已有分类，直接使用，避免重复计算
@@ -263,18 +380,24 @@ class PboardProvider extends ChangeNotifier {
           classifiedModel.ptype == ClipboardType.html;
       final memorySafeModel = shouldKeepBytes
           ? classifiedModel
-          : classifiedModel.copyWith(bytes: null);
+          : _withoutBytes(classifiedModel);
       List<ClipboardItemModel> nextAllItems = [
         memorySafeModel,
         ..._state.allItems
       ];
 
       if (deletedItemId != null) {
+        _removeEnsureBytes(deletedItemId);
         nextAllItems =
             nextAllItems.where((item) => item.id != deletedItemId).toList();
       }
 
-      _setStateSilent(_state.copyWith(allItems: nextAllItems));
+      final cappedItems = _enforceInMemoryCap(nextAllItems);
+      final reachedCap = cappedItems.length >= _state.maxItems;
+      _setStateSilent(_state.copyWith(
+        allItems: cappedItems,
+        hasMore: reachedCap ? false : _state.hasMore,
+      ));
       _applyFiltersAndSearch();
 
       return const Result.success(null);
@@ -293,8 +416,9 @@ class PboardProvider extends ChangeNotifier {
     return await _withLoading(() async {
       try {
         final timeRange = _state.timeFilter.range;
+        final fetchSize = _pageFetchSize;
         final items = await _service.getFilteredItems(
-          limit: _state.pageSize,
+          limit: fetchSize,
           offset: 0,
           searchQuery:
               _state.searchQuery.isNotEmpty ? _state.searchQuery : null,
@@ -302,12 +426,14 @@ class PboardProvider extends ChangeNotifier {
           startTime: timeRange.start,
           endTime: timeRange.end,
         );
+        final cappedItems = _enforceInMemoryCap(items);
+        final reachedCap = cappedItems.length >= _state.maxItems;
 
         _setStateSilent(_state.copyWith(
-          allItems: items,
-          filteredItems: items,
+          allItems: cappedItems,
+          filteredItems: cappedItems,
           currentPage: 0,
-          hasMore: items.length >= _state.pageSize,
+          hasMore: !reachedCap && items.length >= fetchSize,
         ));
 
         _applyFiltersAndSearch();
@@ -329,8 +455,26 @@ class PboardProvider extends ChangeNotifier {
       final newAllItems = List<ClipboardItemModel>.from(_state.allItems);
       newAllItems[index] = newModel;
 
-      _setStateSilent(_state.copyWith(allItems: newAllItems));
-      _applyFiltersAndSearch();
+      if (_state.filterType == NSPboardSortType.favorite) {
+        _setStateSilent(_state.copyWith(allItems: newAllItems));
+        _applyFiltersAndSearch();
+      } else {
+        final filteredIndex =
+            _state.filteredItems.indexWhere((item) => item.id == model.id);
+        if (filteredIndex == -1) {
+          _updateState(_state.copyWith(allItems: newAllItems));
+        } else {
+          final newFilteredItems =
+              List<ClipboardItemModel>.from(_state.filteredItems);
+          newFilteredItems[filteredIndex] = newModel;
+          _updateState(_state.copyWith(
+            allItems: newAllItems,
+            filteredItems: newFilteredItems,
+            groupedItems:
+                _mergeGroupsWithLatestItems(_state.groupedItems, newFilteredItems),
+          ));
+        }
+      }
 
       await _service.toggleFavorite(newModel);
       return const Result.success(null);
@@ -344,8 +488,10 @@ class PboardProvider extends ChangeNotifier {
     try {
       final newAllItems =
           _state.allItems.where((item) => item.id != model.id).toList();
+      _removeEnsureBytes(model.id);
+      final cappedItems = _enforceInMemoryCap(newAllItems);
 
-      _setStateSilent(_state.copyWith(allItems: newAllItems));
+      _setStateSilent(_state.copyWith(allItems: cappedItems));
       _applyFiltersAndSearch();
 
       await _service.delete(model);
@@ -393,6 +539,8 @@ class PboardProvider extends ChangeNotifier {
     try {
       // 暂保留直接 DB 调用用于清空，或由 Service 扩展
       await _service.clearAll();
+      _ensureBytesCache.clear();
+      _ensureBytesCacheSize = 0;
       _updateState(_state.copyWith(
         allItems: [],
         filteredItems: [],
@@ -410,17 +558,25 @@ class PboardProvider extends ChangeNotifier {
 
   // 加载更多数据(懒加载)
   Future<Result<void>> loadMore() async {
+    if (_state.allItems.length >= _state.maxItems) {
+      if (_state.hasMore) {
+        _updateState(_state.copyWith(hasMore: false));
+      }
+      return const Result.success(null);
+    }
+
     if (!_state.hasMore || _state.isLoading) {
       return const Result.success(null);
     }
 
     try {
       final nextPage = _state.currentPage + 1;
-      final offset = nextPage * _state.pageSize;
+      final fetchSize = _pageFetchSize;
+      final offset = nextPage * fetchSize;
 
       final timeRange = _state.timeFilter.range;
       final newItems = await _service.getFilteredItems(
-        limit: _state.pageSize,
+        limit: fetchSize,
         offset: offset,
         searchQuery: _state.searchQuery.isNotEmpty ? _state.searchQuery : null,
         filterType: _state.filterType.toString().split('.').last,
@@ -433,12 +589,14 @@ class PboardProvider extends ChangeNotifier {
         return const Result.success(null);
       }
 
-      final updatedAllItems = [..._state.allItems, ...newItems];
+      final updatedAllItems =
+          _enforceInMemoryCap([..._state.allItems, ...newItems]);
+      final reachedCap = updatedAllItems.length >= _state.maxItems;
 
       _setStateSilent(_state.copyWith(
         allItems: updatedAllItems,
         currentPage: nextPage,
-        hasMore: newItems.length >= _state.pageSize,
+        hasMore: !reachedCap && newItems.length >= fetchSize,
       ));
 
       _applyFiltersAndSearch();
