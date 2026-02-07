@@ -17,6 +17,9 @@ import 'package:easy_pasta/db/shared_preference_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+final _appLifecycleObserver = _AppLifecycleObserver();
+bool _isLifecycleObserverRegistered = false;
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -40,7 +43,7 @@ void main() async {
   }
 
   // 注册应用生命周期回调，确保退出时清理资源
-  WidgetsBinding.instance.addObserver(_AppLifecycleObserver());
+  _registerLifecycleObserver();
 
   runApp(const MyApp());
 
@@ -51,16 +54,40 @@ void main() async {
 }
 
 Future<void> _startBackgroundServices() async {
-  // 启动移动端同步服务
-  await SyncPortalService.instance.start();
+  try {
+    // 启动移动端同步服务
+    final syncStarted = await SyncPortalService.instance.start();
+    if (!syncStarted) {
+      debugPrint(
+          'Background services: Sync portal failed to start, skip Bonjour.');
+      return;
+    }
 
-  // 启动 Bonjour 广播 (根据设置)
-  final prefs = await SharedPreferenceHelper.instance;
-
-  if (prefs.getBonjourEnabled()) {
-    await BonjourManager.instance.startService(
-        attributes: {'portal_url': SyncPortalService.instance.portalUrl ?? ''});
+    // 启动 Bonjour 广播 (根据设置)
+    final prefs = await SharedPreferenceHelper.instance;
+    if (prefs.getBonjourEnabled()) {
+      await BonjourManager.instance.startService(attributes: {
+        'portal_url': SyncPortalService.instance.portalUrl ?? ''
+      });
+    }
+  } catch (e, st) {
+    debugPrint('Background services startup failed: $e');
+    debugPrint('Background services stack trace: $st');
   }
+}
+
+void _registerLifecycleObserver() {
+  if (_isLifecycleObserverRegistered) {
+    WidgetsBinding.instance.removeObserver(_appLifecycleObserver);
+  }
+  WidgetsBinding.instance.addObserver(_appLifecycleObserver);
+  _isLifecycleObserverRegistered = true;
+}
+
+void _unregisterLifecycleObserver() {
+  if (!_isLifecycleObserverRegistered) return;
+  WidgetsBinding.instance.removeObserver(_appLifecycleObserver);
+  _isLifecycleObserverRegistered = false;
 }
 
 class MyApp extends StatelessWidget {
@@ -105,10 +132,12 @@ class _AppLifecycleObserver extends WidgetsBindingObserver {
 
   @override
   Future<ui.AppExitResponse> didRequestAppExit() async {
+    _unregisterLifecycleObserver();
     return AppExitService.instance.handleExitRequest();
   }
 
   Future<void> _cleanupResources() async {
+    _unregisterLifecycleObserver();
     await AppExitService.instance.cleanupIfNeeded();
   }
 }
