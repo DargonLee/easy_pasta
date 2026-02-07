@@ -176,7 +176,7 @@ class DonutChartPainter extends CustomPainter {
       // Glow effect for hovered segment
       if (isHovered) {
         final glowPaint = Paint()
-          ..color = data[i].color.withOpacity(0.3)
+          ..color = data[i].color.withValues(alpha: 0.3)
           ..style = PaintingStyle.stroke
           ..strokeWidth = currentRadius - innerRadius + 10
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
@@ -290,7 +290,7 @@ class TrendChartPainter extends CustomPainter {
     if (data.isEmpty) return;
 
     final maxValue = data.map((d) => d.value).reduce(math.max).toDouble();
-    final padding = 40.0;
+    const padding = 40.0;
     final chartWidth = size.width - padding * 2;
     final chartHeight = size.height - padding * 2;
     final stepX = chartWidth / (data.length - 1);
@@ -371,8 +371,8 @@ class TrendChartPainter extends CustomPainter {
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        AppColors.accentCyan.withOpacity(0.3),
-        AppColors.accentCyan.withOpacity(0.05),
+        AppColors.accentCyan.withValues(alpha: 0.3),
+        AppColors.accentCyan.withValues(alpha: 0.05),
       ],
     );
 
@@ -450,7 +450,7 @@ class TrendChartPainter extends CustomPainter {
           Offset(x, y),
           10,
           Paint()
-            ..color = AppColors.accentCyan.withOpacity(0.3)
+            ..color = AppColors.accentCyan.withValues(alpha: 0.3)
             ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
         );
       }
@@ -662,7 +662,7 @@ class FlowDiagramPainter extends CustomPainter {
 
   Map<String, Offset> _calculatePositions(List<String> apps, Size size) {
     final positions = <String, Offset>{};
-    final padding = 60.0;
+    const padding = 60.0;
 
     for (var i = 0; i < apps.length; i++) {
       final x = i % 2 == 0 ? padding : size.width - padding;

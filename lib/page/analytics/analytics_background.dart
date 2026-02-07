@@ -81,7 +81,7 @@ class GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.accentCyan.withOpacity(opacity * 0.03)
+      ..color = AppColors.accentCyan.withValues(alpha: opacity * 0.03)
       ..strokeWidth = 1;
 
     const spacing = 50.0;
@@ -168,8 +168,8 @@ class _GlowOrbState extends State<_GlowOrb>
             shape: BoxShape.circle,
             gradient: RadialGradient(
               colors: [
-                widget.color.withOpacity(0.15),
-                widget.color.withOpacity(0),
+                widget.color.withValues(alpha: 0.15),
+                widget.color.withValues(alpha: 0),
               ],
             ),
           ),

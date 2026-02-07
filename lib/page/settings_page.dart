@@ -146,32 +146,32 @@ class _SettingsPageState extends State<SettingsPage> {
                       const SizedBox(height: AppSpacing.xl),
                       SettingsSection(
                         title: '存储管理',
-                        items: [
-                          const SettingItem(
+                        items: const [
+                          SettingItem(
                             type: SettingType.maxStorage,
                             title: '最大存储量',
                             subtitle: '达到上限后将自动清理最早的非收藏记录',
                             icon: Icons.storage,
                           ),
-                          const SettingItem(
+                          SettingItem(
                             type: SettingType.dbSize,
                             title: SettingsConstants.dbSizeTitle,
                             subtitle: 'EasyPasta 数据库文件占用的总空间',
                             icon: Icons.data_usage_rounded,
                           ),
-                          const SettingItem(
+                          SettingItem(
                             type: SettingType.dbOptimize,
                             title: SettingsConstants.dbOptimizeTitle,
                             subtitle: SettingsConstants.dbOptimizeSubtitle,
                             icon: Icons.cleaning_services_rounded,
                           ),
-                          const SettingItem(
+                          SettingItem(
                             type: SettingType.retention,
                             title: '保留时长',
                             subtitle: '历史记录保留天数（收藏项除外）',
                             icon: Icons.history,
                           ),
-                          const SettingItem(
+                          SettingItem(
                             type: SettingType.clearData,
                             title: '清除所有记录',
                             subtitle: '清空数据库中的所有本地剪贴板历史',
@@ -185,8 +185,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       const SizedBox(height: AppSpacing.xl),
                       SettingsSection(
                         title: SettingsConstants.aboutTitle,
-                        items: [
-                          const SettingItem(
+                        items: const [
+                          SettingItem(
                             type: SettingType.about,
                             title: SettingsConstants.versionInfoTitle,
                             subtitle: SettingsConstants.versionInfoSubtitle,

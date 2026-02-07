@@ -111,15 +111,17 @@ class ClipboardAnalyticsData {
     // 语言标签
     if (value.contains('flutter')) tags.add('Flutter');
     if (value.contains('python')) tags.add('Python');
-    if (value.contains('javascript') || value.contains('js'))
+    if (value.contains('javascript') || value.contains('js')) {
       tags.add('JavaScript');
+    }
     if (value.contains('docker')) tags.add('Docker');
     if (value.contains('sql')) tags.add('SQL');
 
     // 场景标签
     if (value.contains('http')) tags.add('网络');
-    if (value.contains('error') || value.contains('exception'))
+    if (value.contains('error') || value.contains('exception')) {
       tags.add('错误处理');
+    }
     if (RegExp(r'\d{4}-\d{2}-\d{2}').hasMatch(value)) tags.add('日期');
 
     return tags;

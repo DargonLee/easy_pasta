@@ -1,6 +1,4 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:easy_pasta/model/settings_model.dart';
 import 'package:easy_pasta/model/settings_constants.dart';

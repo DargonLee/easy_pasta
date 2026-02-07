@@ -78,7 +78,7 @@ class _StatCardState extends State<StatCard>
               ),
               boxShadow: _isHovered
                   ? [
-                      BoxShadow(
+                      const BoxShadow(
                         color: AppColors.glowCyan,
                         blurRadius: 40,
                         spreadRadius: 0,

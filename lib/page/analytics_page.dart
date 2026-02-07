@@ -277,7 +277,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: AppColors.accentCyan.withOpacity(0.3),
+                        color: AppColors.accentCyan.withValues(alpha: 0.3),
                         blurRadius: 20,
                         spreadRadius: 0,
                       ),

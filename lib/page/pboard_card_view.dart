@@ -474,7 +474,6 @@ class _ImagePreview extends StatelessWidget {
         }
 
         final dpr = MediaQuery.of(context).devicePixelRatio;
-        final maxDimension = _maxFinite(constraints.maxWidth, constraints.maxHeight);
         final imageData = (fullBytes != null && fullBytes.isNotEmpty)
             ? fullBytes
             : thumbnail!;
@@ -496,12 +495,6 @@ class _ImagePreview extends StatelessWidget {
         );
       },
     );
-  }
-
-  double _maxFinite(double a, double b) {
-    final safeA = a.isFinite ? a : 0.0;
-    final safeB = b.isFinite ? b : 0.0;
-    return safeA > safeB ? safeA : safeB;
   }
 
   int? _cacheDimension(double dimension, double dpr) {

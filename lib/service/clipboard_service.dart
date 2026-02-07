@@ -1,14 +1,12 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:easy_pasta/db/database_helper.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
 import 'package:easy_pasta/model/content_classification.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:easy_pasta/repository/clipboard_repository.dart';
 import 'package:easy_pasta/core/content_classifier.dart';
-import 'package:image/image.dart' as img;
 
 class ClipboardService {
   static const int _classificationConcurrency = 4;
@@ -154,29 +152,6 @@ class ClipboardService {
     _metadataWriteQueue.runDetached(() async {
       await _repository.updateItemClassification(id, payload);
     });
-  }
-
-  /// 生成缩略图逻辑 (在 Isolate 中执行)
-  static Uint8List? _generateThumbnailSync(Uint8List original) {
-    try {
-      final image = img.decodeImage(original);
-      if (image == null) return null;
-
-      final thumbnail = img.copyResize(
-        image,
-        width: image.width > image.height ? 400 : null,
-        height: image.height >= image.width ? 400 : null,
-        interpolation: img.Interpolation.cubic,
-      );
-
-      return Uint8List.fromList(img.encodeJpg(thumbnail, quality: 90));
-    } catch (e) {
-      return null;
-    }
-  }
-
-  Future<Uint8List?> _generateThumbnail(Uint8List original) async {
-    return compute(_generateThumbnailSync, original);
   }
 
   // 代理 Repository 的简单方法

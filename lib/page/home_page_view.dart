@@ -18,7 +18,7 @@ import 'package:easy_pasta/widget/search_empty_state.dart';
 import 'package:easy_pasta/service/analytics_service.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:easy_pasta/page/analytics_page.dart' hide AppColors;
+import 'package:easy_pasta/page/analytics_page.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
