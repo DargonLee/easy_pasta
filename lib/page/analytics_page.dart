@@ -28,6 +28,10 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
   TimePeriod _selectedPeriod = TimePeriod.week;
   late AnimationController _glowController;
   late AnimationController _fadeController;
+  final Map<TimePeriod, Future<int>> _totalCopiesFutures = {};
+  final Map<TimePeriod, Future<double>> _productivityScoreFutures = {};
+  final Map<TimePeriod, Future<int>> _activeAppsFutures = {};
+  final Map<TimePeriod, Future<int>> _duplicateCountFutures = {};
 
   @override
   void initState() {
@@ -44,6 +48,8 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
+
+    _ensureFutures(_selectedPeriod);
   }
 
   @override
@@ -251,7 +257,13 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => setState(() => _selectedPeriod = period),
+          onTap: () {
+            if (period == _selectedPeriod) return;
+            setState(() {
+              _selectedPeriod = period;
+              _ensureFutures(period);
+            });
+          },
           borderRadius: BorderRadius.circular(8),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -296,7 +308,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
       ),
       delegate: SliverChildListDelegate([
         FutureBuilder<int>(
-          future: _getTotalCopies(),
+          future: _totalCopiesFutures[_selectedPeriod],
           builder: (context, snapshot) => StatCard(
             label: '总复制次数',
             value: snapshot.data?.toString() ?? '-',
@@ -306,7 +318,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
           ),
         ),
         FutureBuilder<double>(
-          future: _getProductivityScore(),
+          future: _productivityScoreFutures[_selectedPeriod],
           builder: (context, snapshot) => StatCard(
             label: '效率评分',
             value: snapshot.data?.toStringAsFixed(0) ?? '-',
@@ -316,7 +328,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
           ),
         ),
         FutureBuilder<int>(
-          future: _getActiveApps(),
+          future: _activeAppsFutures[_selectedPeriod],
           builder: (context, snapshot) => StatCard(
             label: '活跃应用',
             value: snapshot.data?.toString() ?? '-',
@@ -326,7 +338,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
           ),
         ),
         FutureBuilder<int>(
-          future: _getDuplicateCount(),
+          future: _duplicateCountFutures[_selectedPeriod],
           builder: (context, snapshot) => StatCard(
             label: '重复内容',
             value: snapshot.data?.toString() ?? '-',
@@ -336,6 +348,19 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
           ),
         ),
       ]),
+    );
+  }
+
+  void _ensureFutures(TimePeriod period) {
+    _totalCopiesFutures.putIfAbsent(period, () => _fetchTotalCopies(period));
+    _productivityScoreFutures.putIfAbsent(
+      period,
+      () => _fetchProductivityScore(period),
+    );
+    _activeAppsFutures.putIfAbsent(period, () => _fetchActiveApps(period));
+    _duplicateCountFutures.putIfAbsent(
+      period,
+      () => _fetchDuplicateCount(period),
     );
   }
 
@@ -367,27 +392,27 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
   }
 
   // Real database queries
-  Future<int> _getTotalCopies() async {
+  Future<int> _fetchTotalCopies(TimePeriod period) async {
     return await ClipboardAnalyticsService.instance.getTotalCopies(
-      period: _selectedPeriod,
+      period: period,
     );
   }
 
-  Future<double> _getProductivityScore() async {
+  Future<double> _fetchProductivityScore(TimePeriod period) async {
     return await ClipboardAnalyticsService.instance.getProductivityScore(
-      period: _selectedPeriod,
+      period: period,
     );
   }
 
-  Future<int> _getActiveApps() async {
+  Future<int> _fetchActiveApps(TimePeriod period) async {
     return await ClipboardAnalyticsService.instance.getActiveApps(
-      period: _selectedPeriod,
+      period: period,
     );
   }
 
-  Future<int> _getDuplicateCount() async {
+  Future<int> _fetchDuplicateCount(TimePeriod period) async {
     return await ClipboardAnalyticsService.instance.getDuplicateCount(
-      period: _selectedPeriod,
+      period: period,
     );
   }
 }
