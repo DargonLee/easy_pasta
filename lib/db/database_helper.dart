@@ -70,6 +70,10 @@ class DatabaseHelper implements IDatabaseHelper {
   // 性能优化：避免每次插入都做 COUNT(*) 查询
   int _insertCountSinceLastCheck = 0;
   int _lastKnownCount = 0;
+  int _insertCountSinceLastRetentionCleanup = 0;
+
+  // Retention cleanup throttling to avoid running on every insert.
+  static const int _retentionCleanupInterval = 50;
 
   /// Returns database instance, initializing if necessary
   Future<Database> get database {
@@ -412,14 +416,20 @@ class DatabaseHelper implements IDatabaseHelper {
 
     // 先检查是否需要清理，在事务外执行以减少锁定时间
     if (retentionDays > 0) {
-      final expirationDate =
-          DateTime.now().subtract(Duration(days: retentionDays));
-      await db.delete(
-        DatabaseConfig.tableName,
-        where:
-            '${DatabaseConfig.columnIsFavorite} = 0 AND ${DatabaseConfig.columnTime} < ?',
-        whereArgs: [expirationDate.toString()],
-      );
+      _insertCountSinceLastRetentionCleanup++;
+      if (_insertCountSinceLastRetentionCleanup >= _retentionCleanupInterval) {
+        _insertCountSinceLastRetentionCleanup = 0;
+        final expirationDate =
+            DateTime.now().subtract(Duration(days: retentionDays));
+        await db.delete(
+          DatabaseConfig.tableName,
+          where:
+              '${DatabaseConfig.columnIsFavorite} = 0 AND ${DatabaseConfig.columnTime} < ?',
+          whereArgs: [expirationDate.toString()],
+        );
+      }
+    } else {
+      _insertCountSinceLastRetentionCleanup = 0;
     }
 
     // 快速插入，不在事务中查询 COUNT
