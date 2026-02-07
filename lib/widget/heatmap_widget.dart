@@ -18,6 +18,7 @@ class HeatmapWidget extends StatefulWidget {
 
 class _HeatmapWidgetState extends State<HeatmapWidget> {
   List<HeatmapDataPoint>? _heatmapData;
+  Map<int, HeatmapDataPoint> _heatmapDataByKey = {};
   HeatmapDataPoint? _hoveredCell;
 
   @override
@@ -36,6 +37,9 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
 
     setState(() {
       _heatmapData = data;
+      _heatmapDataByKey = {
+        for (final point in data) _cellKey(point.day, point.hour): point,
+      };
     });
   }
 
@@ -167,9 +171,12 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
         return Expanded(
           child: Row(
             children: List.generate(24, (hour) {
-              final cellData = _heatmapData!.firstWhere(
-                (d) => d.day == day && d.hour == hour,
-              );
+              final cellData = _heatmapDataByKey[_cellKey(day, hour)] ??
+                  HeatmapDataPoint(
+                    hour: hour,
+                    day: day,
+                    count: 0,
+                  );
 
               return Expanded(
                 child: _HeatmapCell(
@@ -187,6 +194,8 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
       }),
     );
   }
+
+  int _cellKey(int day, int hour) => day * 24 + hour;
 
   Widget _buildLegend() {
     return Row(
@@ -297,7 +306,7 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
 /// 单个热力图单元格
 class _HeatmapCell extends StatefulWidget {
   final HeatmapDataPoint data;
-  final Function(bool) onHover;
+  final ValueChanged<bool> onHover;
 
   const _HeatmapCell({
     required this.data,
@@ -309,29 +318,8 @@ class _HeatmapCell extends StatefulWidget {
 }
 
 class _HeatmapCellState extends State<_HeatmapCell>
-    with SingleTickerProviderStateMixin {
+    {
   bool _isHovered = false;
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.3).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -339,20 +327,24 @@ class _HeatmapCellState extends State<_HeatmapCell>
 
     return MouseRegion(
       onEnter: (_) {
+        if (_isHovered) return;
         setState(() => _isHovered = true);
-        _controller.forward();
         widget.onHover(true);
       },
       onExit: (_) {
+        if (!_isHovered) return;
         setState(() => _isHovered = false);
-        _controller.reverse();
         widget.onHover(false);
       },
       child: Padding(
         padding: const EdgeInsets.all(1.5),
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: Container(
+        child: AnimatedScale(
+          scale: _isHovered ? 1.3 : 1.0,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
             decoration: BoxDecoration(
               color: _getColor(intensity),
               borderRadius: BorderRadius.circular(4),
@@ -364,7 +356,7 @@ class _HeatmapCellState extends State<_HeatmapCell>
                         spreadRadius: 2,
                       ),
                     ]
-                  : null,
+                  : const [],
             ),
           ),
         ),
