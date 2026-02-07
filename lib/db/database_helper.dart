@@ -46,6 +46,7 @@ abstract class IDatabaseHelper {
       {int limit, int offset, DateTime? startTime, DateTime? endTime});
   Future<ClipboardItemModel?> checkDuplicate(ClipboardItemModel model);
   Future<void> setFavorite(ClipboardItemModel model);
+  Future<void> setClassification(String id, String classificationJson);
   Future<void> cancelFavorite(ClipboardItemModel model);
   Future<void> deletePboardItem(ClipboardItemModel model);
   Future<String?> insertPboardItem(ClipboardItemModel model);
@@ -376,6 +377,21 @@ class DatabaseHelper implements IDatabaseHelper {
       );
     } catch (e) {
       throw DatabaseException('Failed to set favorite', e);
+    }
+  }
+
+  @override
+  Future<void> setClassification(String id, String classificationJson) async {
+    try {
+      final db = await database;
+      await db.update(
+        DatabaseConfig.tableName,
+        {DatabaseConfig.columnClassification: classificationJson},
+        where: '${DatabaseConfig.columnId} = ?',
+        whereArgs: [id],
+      );
+    } catch (e) {
+      throw DatabaseException('Failed to set classification', e);
     }
   }
 

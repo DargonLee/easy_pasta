@@ -1,13 +1,26 @@
+import 'dart:async';
+import 'dart:collection';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:easy_pasta/db/database_helper.dart';
 import 'package:easy_pasta/model/pasteboard_model.dart';
+import 'package:easy_pasta/model/content_classification.dart';
 import 'package:easy_pasta/model/clipboard_type.dart';
 import 'package:easy_pasta/repository/clipboard_repository.dart';
 import 'package:easy_pasta/core/content_classifier.dart';
 import 'package:image/image.dart' as img;
 
 class ClipboardService {
+  static const int _classificationConcurrency = 4;
+  static const int _classificationCacheMaxEntries = 5000;
+
   final ClipboardRepository _repository;
+  final _insertWriteQueue = _AsyncWriteQueue();
+  final _metadataWriteQueue = _AsyncWriteQueue();
+  final LinkedHashMap<String, ContentClassification> _classificationCache =
+      LinkedHashMap<String, ContentClassification>();
+  final Map<String, Future<ContentClassification>> _classificationInFlight =
+      <String, Future<ContentClassification>>{};
 
   ClipboardService({ClipboardRepository? repository})
       : _repository = repository ?? ClipboardRepository();
@@ -18,10 +31,9 @@ class ClipboardService {
         ? item.copyWith(thumbnail: null)
         : item;
 
-    // 将数据库插入放到后台线程，避免阻塞 UI
-    // 注意：这里不能用 compute，因为 Database 实例不能跨 Isolate
-    // 所以我们直接调用，但确保数据库操作尽可能快
-    return await _repository.insertItem(processedItem);
+    // 串行化写入，避免高频并发写入放大 UI 抖动。
+    // 若后续 profiling 显示仍有卡顿，可升级为独立 isolate + 专属 DB 连接。
+    return _insertWriteQueue.run(() => _repository.insertItem(processedItem));
   }
 
   /// 获取带完整 bytes 的项 (Lazy Fetch)
@@ -50,17 +62,98 @@ class ClipboardService {
       filterType: filterType,
     );
 
-    // 使用 Future.wait 并行执行分类，提高效率
-    final items = await Future.wait(rawItems.map((item) async {
-      if (item.classification != null) {
-        return item;
-      } else {
-        final classification = await item.classify();
-        return item.copyWith(classification: classification);
+    if (rawItems.isEmpty) return rawItems;
+    return _applyClassificationWithLimit(rawItems);
+  }
+
+  Future<List<ClipboardItemModel>> _applyClassificationWithLimit(
+      List<ClipboardItemModel> rawItems) async {
+    final items = List<ClipboardItemModel>.from(rawItems);
+    final pendingIndices = <int>[];
+
+    for (var i = 0; i < rawItems.length; i++) {
+      final item = rawItems[i];
+      final existing = item.classification;
+      if (existing != null) {
+        _cacheClassification(item.id, existing);
+        continue;
       }
-    }));
+
+      final cached = _touchClassificationCache(item.id);
+      if (cached != null) {
+        items[i] = item.copyWith(classification: cached);
+        continue;
+      }
+
+      pendingIndices.add(i);
+    }
+
+    if (pendingIndices.isEmpty) {
+      return items;
+    }
+
+    var cursor = 0;
+    Future<void> worker() async {
+      while (true) {
+        if (cursor >= pendingIndices.length) return;
+        final index = pendingIndices[cursor++];
+        final source = rawItems[index];
+        final classification = await _resolveClassification(source);
+        items[index] = source.copyWith(classification: classification);
+      }
+    }
+
+    final workerCount = pendingIndices.length < _classificationConcurrency
+        ? pendingIndices.length
+        : _classificationConcurrency;
+    await Future.wait(List.generate(workerCount, (_) => worker()));
 
     return items;
+  }
+
+  ContentClassification? _touchClassificationCache(String id) {
+    final cached = _classificationCache.remove(id);
+    if (cached == null) return null;
+    _classificationCache[id] = cached;
+    return cached;
+  }
+
+  void _cacheClassification(String id, ContentClassification classification) {
+    _classificationCache.remove(id);
+    _classificationCache[id] = classification;
+    while (_classificationCache.length > _classificationCacheMaxEntries) {
+      _classificationCache.remove(_classificationCache.keys.first);
+    }
+  }
+
+  Future<ContentClassification> _resolveClassification(
+      ClipboardItemModel item) async {
+    final cached = _touchClassificationCache(item.id);
+    if (cached != null) return cached;
+
+    final inFlight = _classificationInFlight[item.id];
+    if (inFlight != null) return inFlight;
+
+    final future = item.classify().then((classification) {
+      _cacheClassification(item.id, classification);
+      _queueClassificationPersistence(item.id, classification);
+      return classification;
+    }).whenComplete(() {
+      _classificationInFlight.remove(item.id);
+    });
+
+    _classificationInFlight[item.id] = future;
+    return future;
+  }
+
+  void _queueClassificationPersistence(
+      String id, ContentClassification classification) {
+    if (classification.kind == ContentKind.text) return;
+
+    final payload = jsonEncode(classification.toMap());
+    _metadataWriteQueue.runDetached(() async {
+      await _repository.updateItemClassification(id, payload);
+    });
   }
 
   /// 生成缩略图逻辑 (在 Isolate 中执行)
@@ -92,5 +185,29 @@ class ClipboardService {
       _repository.toggleFavorite(item);
   Future<void> clearAll() async {
     await DatabaseHelper.instance.deleteAll();
+  }
+}
+
+class _AsyncWriteQueue {
+  Future<void> _queue = Future<void>.value();
+
+  Future<T> run<T>(Future<T> Function() task) {
+    final completer = Completer<T>();
+    _queue = _queue.catchError((_) {}).then((_) async {
+      try {
+        completer.complete(await task());
+      } catch (e, st) {
+        completer.completeError(e, st);
+      }
+    });
+    return completer.future;
+  }
+
+  void runDetached(Future<void> Function() task) {
+    _queue = _queue.catchError((_) {}).then((_) async {
+      try {
+        await task();
+      } catch (_) {}
+    });
   }
 }

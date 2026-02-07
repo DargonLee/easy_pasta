@@ -102,6 +102,12 @@ class ClipboardRepository {
     return await _db.insertPboardItem(item);
   }
 
+  /// 回填分类结果，避免后续重复分类
+  Future<void> updateItemClassification(
+      String id, String classificationJson) async {
+    await _db.setClassification(id, classificationJson);
+  }
+
   /// 删除项
   Future<void> deleteItem(ClipboardItemModel item) async {
     await _db.deletePboardItem(item);
