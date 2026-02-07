@@ -3,7 +3,7 @@ import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/model/app_typography.dart';
 import 'dart:convert';
 
-class JsonCardContent extends StatelessWidget {
+class JsonCardContent extends StatefulWidget {
   final String jsonText;
   final String? rootType;
   final int maxLines;
@@ -14,6 +14,27 @@ class JsonCardContent extends StatelessWidget {
     this.rootType,
     this.maxLines = 4,
   });
+
+  @override
+  State<JsonCardContent> createState() => _JsonCardContentState();
+}
+
+class _JsonCardContentState extends State<JsonCardContent> {
+  late String _formatted;
+
+  @override
+  void initState() {
+    super.initState();
+    _formatted = _formatJsonSnippet(widget.jsonText);
+  }
+
+  @override
+  void didUpdateWidget(covariant JsonCardContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.jsonText != widget.jsonText) {
+      _formatted = _formatJsonSnippet(widget.jsonText);
+    }
+  }
 
   String _formatJsonSnippet(String json) {
     try {
@@ -29,7 +50,6 @@ class JsonCardContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final formatted = _formatJsonSnippet(jsonText);
 
     final badgeColor = isDark
         ? AppColors.darkSecondaryBackground.withValues(alpha: 0.8)
@@ -81,7 +101,7 @@ class JsonCardContent extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(
-              formatted,
+              _formatted,
               maxLines: maxLines,
               overflow: TextOverflow.ellipsis,
               style: (isDark
