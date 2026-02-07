@@ -138,25 +138,11 @@ class ClipboardItemModel {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     if (other is! ClipboardItemModel) return false;
-
-    switch (ptype) {
-      case ClipboardType.text:
-        return pvalue == other.pvalue && ptype == other.ptype;
-      case ClipboardType.html:
-        return pvalue == other.pvalue &&
-            ptype == other.ptype &&
-            listEquals(bytes, other.bytes);
-      case ClipboardType.file:
-        return pvalue == other.pvalue && ptype == other.ptype;
-      case ClipboardType.image:
-        return ptype == other.ptype && listEquals(bytes, other.bytes);
-      default:
-        return false;
-    }
+    return id == other.id;
   }
 
   @override
-  int get hashCode => Object.hash(id, time, ptype, pvalue, bytes, isFavorite);
+  int get hashCode => id.hashCode;
 
   @override
   String toString() =>
