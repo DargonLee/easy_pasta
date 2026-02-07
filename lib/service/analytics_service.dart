@@ -4,6 +4,12 @@ import 'package:easy_pasta/db/database_helper.dart';
 
 /// 剪贴板数据分析服务
 class ClipboardAnalyticsService {
+  static const int _maxAnalyticsCacheSize = 10000;
+  static const int _maxAppTransferEvents = 10000;
+  static const int _maxReturnedDuplicateGroups = 20;
+  static const int _daysPerWeek = 7;
+  static const int _hoursPerDay = 24;
+
   static final ClipboardAnalyticsService instance =
       ClipboardAnalyticsService._internal();
   ClipboardAnalyticsService._internal();
@@ -12,6 +18,107 @@ class ClipboardAnalyticsService {
   final _duplicateDetector = <String, int>{}; // contentHash -> count
   final _appTransferTracker =
       <String, Map<String, int>>{}; // sourceApp -> {targetApp -> count}
+  final List<_AppTransferEvent> _appTransferEvents = [];
+  final Map<String, _CachedResult<List<HeatmapDataPoint>>> _heatmapDataCache =
+      {};
+  final Map<String, _CachedResult<List<DuplicateContentGroup>>>
+      _duplicateGroupsCache = {};
+  int _analyticsCacheVersion = 0;
+
+  void _incrementAnalyticsVersion() {
+    _analyticsCacheVersion++;
+    _heatmapDataCache.clear();
+    _duplicateGroupsCache.clear();
+  }
+
+  void _incrementDuplicateHash(String? hash) {
+    if (hash == null) return;
+    _duplicateDetector[hash] = (_duplicateDetector[hash] ?? 0) + 1;
+  }
+
+  void _decrementDuplicateHash(String? hash) {
+    if (hash == null) return;
+    final current = _duplicateDetector[hash];
+    if (current == null) return;
+    if (current <= 1) {
+      _duplicateDetector.remove(hash);
+      return;
+    }
+    _duplicateDetector[hash] = current - 1;
+  }
+
+  void _appendAnalyticsData(ClipboardAnalyticsData analyticsData) {
+    _analyticsCache.add(analyticsData);
+    _incrementDuplicateHash(analyticsData.contentHash);
+
+    while (_analyticsCache.length > _maxAnalyticsCacheSize) {
+      final evicted = _analyticsCache.removeAt(0);
+      _decrementDuplicateHash(evicted.contentHash);
+    }
+
+    _incrementAnalyticsVersion();
+  }
+
+  void _incrementAppTransfer(String sourceApp, String targetApp) {
+    _appTransferTracker.putIfAbsent(sourceApp, () => {});
+    _appTransferTracker[sourceApp]![targetApp] =
+        (_appTransferTracker[sourceApp]![targetApp] ?? 0) + 1;
+  }
+
+  void _decrementAppTransfer(String sourceApp, String targetApp) {
+    final targets = _appTransferTracker[sourceApp];
+    if (targets == null) return;
+    final current = targets[targetApp];
+    if (current == null) return;
+    if (current <= 1) {
+      targets.remove(targetApp);
+      if (targets.isEmpty) {
+        _appTransferTracker.remove(sourceApp);
+      }
+      return;
+    }
+    targets[targetApp] = current - 1;
+  }
+
+  void _appendAppTransferEvent(String sourceApp, String targetApp) {
+    _appTransferEvents.add(_AppTransferEvent(
+      sourceApp: sourceApp,
+      targetApp: targetApp,
+      timestamp: DateTime.now(),
+    ));
+    _incrementAppTransfer(sourceApp, targetApp);
+
+    while (_appTransferEvents.length > _maxAppTransferEvents) {
+      final evicted = _appTransferEvents.removeAt(0);
+      _decrementAppTransfer(evicted.sourceApp, evicted.targetApp);
+    }
+  }
+
+  DateTime _resolveHeatmapStart(TimePeriod period, DateTime? startDate) {
+    if (startDate != null) return startDate;
+
+    final now = DateTime.now();
+    switch (period) {
+      case TimePeriod.day:
+        return DateTime(now.year, now.month, now.day);
+      case TimePeriod.week:
+        return now.subtract(const Duration(days: 7));
+      case TimePeriod.month:
+        return DateTime(now.year, now.month - 1, now.day);
+    }
+  }
+
+  DateTime _resolveDuplicateStart(TimePeriod period) {
+    final now = DateTime.now();
+    switch (period) {
+      case TimePeriod.day:
+        return now.subtract(const Duration(days: 1));
+      case TimePeriod.week:
+        return now.subtract(const Duration(days: 7));
+      case TimePeriod.month:
+        return now.subtract(const Duration(days: 30));
+    }
+  }
 
   /// 记录一次剪贴板操作
   Future<void> recordClipboardEvent(
@@ -21,18 +128,7 @@ class ClipboardAnalyticsService {
       sourceAppName: sourceAppName,
     );
 
-    _analyticsCache.add(analyticsData);
-
-    // 检测重复
-    if (analyticsData.contentHash != null) {
-      _duplicateDetector[analyticsData.contentHash!] =
-          (_duplicateDetector[analyticsData.contentHash!] ?? 0) + 1;
-    }
-
-    // 保持缓存大小合理
-    if (_analyticsCache.length > 10000) {
-      _analyticsCache.removeAt(0);
-    }
+    _appendAnalyticsData(analyticsData);
 
     // 持久化到数据库（可选）
     await _persistAnalyticsData(analyticsData);
@@ -40,9 +136,7 @@ class ClipboardAnalyticsService {
 
   /// 记录应用间流转（如果能检测到粘贴目标应用）
   void recordAppTransfer(String sourceApp, String targetApp) {
-    _appTransferTracker.putIfAbsent(sourceApp, () => {});
-    _appTransferTracker[sourceApp]![targetApp] =
-        (_appTransferTracker[sourceApp]![targetApp] ?? 0) + 1;
+    _appendAppTransferEvent(sourceApp, targetApp);
   }
 
   // ==================== 1. 复制热力图分析 ====================
@@ -52,59 +146,58 @@ class ClipboardAnalyticsService {
     required TimePeriod period,
     DateTime? startDate,
   }) {
-    final now = DateTime.now();
-    DateTime start;
-
-    switch (period) {
-      case TimePeriod.day:
-        start = DateTime(now.year, now.month, now.day);
-        break;
-      case TimePeriod.week:
-        start = now.subtract(const Duration(days: 7));
-        break;
-      case TimePeriod.month:
-        start = DateTime(now.year, now.month - 1, now.day);
-        break;
+    final start = _resolveHeatmapStart(period, startDate);
+    final cacheKey = '${period.name}_${start.millisecondsSinceEpoch}';
+    final cached = _heatmapDataCache[cacheKey];
+    if (cached != null && cached.version == _analyticsCacheVersion) {
+      return cached.data;
     }
 
-    final filteredData =
-        _analyticsCache.where((d) => d.timestamp.isAfter(start)).toList();
+    const slotCount = _daysPerWeek * _hoursPerDay;
+    final counts = List<int>.filled(slotCount, 0);
+    final purposeCounts = List.generate(
+      slotCount,
+      (_) => <ContentPurpose, int>{},
+      growable: false,
+    );
 
-    // 按小时和星期几分组
-    final heatmapMap = <String, List<ClipboardAnalyticsData>>{};
+    for (final data in _analyticsCache) {
+      if (!data.timestamp.isAfter(start)) continue;
 
-    for (final data in filteredData) {
-      final key = '${data.timestamp.weekday % 7}_${data.timestamp.hour}';
-      heatmapMap.putIfAbsent(key, () => []).add(data);
+      final day = data.timestamp.weekday % _daysPerWeek;
+      final hour = data.timestamp.hour;
+      final index = day * _hoursPerDay + hour;
+      counts[index]++;
+
+      final purposeCountMap = purposeCounts[index];
+      purposeCountMap[data.purpose] = (purposeCountMap[data.purpose] ?? 0) + 1;
     }
 
-    // 转换为 HeatmapDataPoint
     final result = <HeatmapDataPoint>[];
-    for (var day = 0; day < 7; day++) {
-      for (var hour = 0; hour < 24; hour++) {
-        final key = '${day}_$hour';
-        final dataList = heatmapMap[key] ?? [];
+    for (var day = 0; day < _daysPerWeek; day++) {
+      for (var hour = 0; hour < _hoursPerDay; hour++) {
+        final index = day * _hoursPerDay + hour;
+        final count = counts[index];
+        if (count == 0) continue;
 
-        if (dataList.isNotEmpty) {
-          // 统计主要用途
-          final purposeCount = <ContentPurpose, int>{};
-          for (final d in dataList) {
-            purposeCount[d.purpose] = (purposeCount[d.purpose] ?? 0) + 1;
-          }
-          final topPurposes = purposeCount.entries.toList()
-            ..sort((a, b) => b.value.compareTo(a.value));
+        final topPurposes = purposeCounts[index].entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
 
-          result.add(HeatmapDataPoint(
-            hour: hour,
-            day: day,
-            count: dataList.length,
-            purposes: topPurposes.take(2).map((e) => e.key).toList(),
-          ));
-        }
+        result.add(HeatmapDataPoint(
+          hour: hour,
+          day: day,
+          count: count,
+          purposes: topPurposes.take(2).map((e) => e.key).toList(),
+        ));
       }
     }
 
-    return result;
+    final immutableResult = List<HeatmapDataPoint>.unmodifiable(result);
+    _heatmapDataCache[cacheKey] = _CachedResult(
+      version: _analyticsCacheVersion,
+      data: immutableResult,
+    );
+    return immutableResult;
   }
 
   /// 获取工作效率时段
@@ -165,58 +258,45 @@ class ClipboardAnalyticsService {
     int minOccurrences = 3,
     TimePeriod period = TimePeriod.week,
   }) {
-    final now = DateTime.now();
-    DateTime start;
+    final cacheKey = '${period.name}_$minOccurrences';
+    final cached = _duplicateGroupsCache[cacheKey];
+    if (cached != null && cached.version == _analyticsCacheVersion) {
+      return cached.data;
+    }
+    final start = _resolveDuplicateStart(period);
 
-    switch (period) {
-      case TimePeriod.day:
-        start = now.subtract(const Duration(days: 1));
-        break;
-      case TimePeriod.week:
-        start = now.subtract(const Duration(days: 7));
-        break;
-      case TimePeriod.month:
-        start = now.subtract(const Duration(days: 30));
-        break;
+    final groups = <String, _DuplicateAccumulator>{};
+    for (final data in _analyticsCache) {
+      if (!data.timestamp.isAfter(start)) continue;
+      final hash = data.contentHash;
+      if (hash == null) continue;
+      groups.putIfAbsent(hash, () => _DuplicateAccumulator(data)).add(data);
     }
 
-    final recentData = _analyticsCache
-        .where((d) => d.timestamp.isAfter(start) && d.contentHash != null)
-        .toList();
-
-    // 按 contentHash 分组
-    final groups = <String, List<ClipboardAnalyticsData>>{};
-    for (final data in recentData) {
-      groups.putIfAbsent(data.contentHash!, () => []).add(data);
-    }
-
-    // 筛选出重复的组
     final duplicates = <DuplicateContentGroup>[];
     for (final entry in groups.entries) {
-      if (entry.value.length >= minOccurrences) {
-        final sourceApps =
-            entry.value.map((d) => d.sourceAppName).toSet().toList();
-
-        duplicates.add(DuplicateContentGroup(
-          contentHash: entry.key,
-          representativeText: _getRepresentativeText(entry.value.first),
-          occurrenceCount: entry.value.length,
-          firstSeen: entry.value
-              .map((d) => d.timestamp)
-              .reduce((a, b) => a.isBefore(b) ? a : b),
-          lastSeen: entry.value
-              .map((d) => d.timestamp)
-              .reduce((a, b) => a.isAfter(b) ? a : b),
-          sourceApps: sourceApps,
-          purpose: entry.value.first.purpose,
-        ));
-      }
+      final summary = entry.value;
+      if (summary.count < minOccurrences) continue;
+      duplicates.add(DuplicateContentGroup(
+        contentHash: entry.key,
+        representativeText: _getRepresentativeText(summary.firstData),
+        occurrenceCount: summary.count,
+        firstSeen: summary.firstSeen,
+        lastSeen: summary.lastSeen,
+        sourceApps: summary.sourceApps.toList(growable: false),
+        purpose: summary.purpose,
+      ));
     }
 
-    // 按重复次数排序
     duplicates.sort((a, b) => b.occurrenceCount.compareTo(a.occurrenceCount));
-
-    return duplicates.take(20).toList(); // 最多返回20个
+    final limited = List<DuplicateContentGroup>.unmodifiable(
+      duplicates.take(_maxReturnedDuplicateGroups).toList(growable: false),
+    );
+    _duplicateGroupsCache[cacheKey] = _CachedResult(
+      version: _analyticsCacheVersion,
+      data: limited,
+    );
+    return limited;
   }
 
   /// 生成快捷短语建议
@@ -386,7 +466,32 @@ class ClipboardAnalyticsService {
   /// 清理旧数据
   void cleanupOldData({int keepDays = 30}) {
     final cutoff = DateTime.now().subtract(Duration(days: keepDays));
-    _analyticsCache.removeWhere((d) => d.timestamp.isBefore(cutoff));
+    final removedAnalytics = <ClipboardAnalyticsData>[];
+    _analyticsCache.removeWhere((data) {
+      final shouldRemove = data.timestamp.isBefore(cutoff);
+      if (shouldRemove) {
+        removedAnalytics.add(data);
+      }
+      return shouldRemove;
+    });
+    if (removedAnalytics.isNotEmpty) {
+      for (final data in removedAnalytics) {
+        _decrementDuplicateHash(data.contentHash);
+      }
+      _incrementAnalyticsVersion();
+    }
+
+    final removedTransfers = <_AppTransferEvent>[];
+    _appTransferEvents.removeWhere((event) {
+      final shouldRemove = event.timestamp.isBefore(cutoff);
+      if (shouldRemove) {
+        removedTransfers.add(event);
+      }
+      return shouldRemove;
+    });
+    for (final event in removedTransfers) {
+      _decrementAppTransfer(event.sourceApp, event.targetApp);
+    }
   }
 
   // ==================== 真实数据库查询 ====================
@@ -746,5 +851,53 @@ class ClipboardAnalyticsService {
           .toList(),
       'totalApps': totalApps.first['count'],
     };
+  }
+}
+
+class _CachedResult<T> {
+  final int version;
+  final T data;
+
+  const _CachedResult({
+    required this.version,
+    required this.data,
+  });
+}
+
+class _AppTransferEvent {
+  final String sourceApp;
+  final String targetApp;
+  final DateTime timestamp;
+
+  const _AppTransferEvent({
+    required this.sourceApp,
+    required this.targetApp,
+    required this.timestamp,
+  });
+}
+
+class _DuplicateAccumulator {
+  final ClipboardAnalyticsData firstData;
+  final Set<String> sourceApps = <String>{};
+  late DateTime firstSeen;
+  late DateTime lastSeen;
+  late ContentPurpose purpose;
+  int count = 0;
+
+  _DuplicateAccumulator(this.firstData) {
+    purpose = firstData.purpose;
+    firstSeen = firstData.timestamp;
+    lastSeen = firstData.timestamp;
+  }
+
+  void add(ClipboardAnalyticsData data) {
+    count++;
+    sourceApps.add(data.sourceAppName);
+    if (data.timestamp.isBefore(firstSeen)) {
+      firstSeen = data.timestamp;
+    }
+    if (data.timestamp.isAfter(lastSeen)) {
+      lastSeen = data.timestamp;
+    }
   }
 }
