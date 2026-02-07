@@ -805,6 +805,129 @@ class ClipboardAnalyticsService {
     };
   }
 
+  /// 获取应用间流转关系（基于连续剪贴板来源应用变化推断）
+  Future<List<AppFlowData>> getAppFlowData({
+    TimePeriod period = TimePeriod.week,
+    int limit = 15,
+    Duration maxTransitionGap = const Duration(minutes: 30),
+  }) async {
+    final db = await DatabaseHelper.instance.database;
+    final start = _startOfPeriod(period);
+    final rows = await db.rawQuery('''
+      SELECT ${DatabaseConfig.columnSourceAppId} as sourceApp, ${DatabaseConfig.columnTime} as time
+      FROM ${DatabaseConfig.tableName}
+      WHERE ${DatabaseConfig.columnTime} >= ?
+        AND ${DatabaseConfig.columnSourceAppId} IS NOT NULL
+        AND length(trim(${DatabaseConfig.columnSourceAppId})) > 0
+      ORDER BY ${DatabaseConfig.columnTime} ASC
+    ''', [start.toString()]);
+
+    if (rows.length < 2) {
+      return const [];
+    }
+
+    String? previousApp;
+    DateTime? previousTime;
+    final relationMap = <String, _AppFlowAccumulator>{};
+
+    for (final row in rows) {
+      final rawApp = row['sourceApp']?.toString().trim();
+      final rawTime = row['time']?.toString();
+      if (rawApp == null || rawApp.isEmpty || rawTime == null) continue;
+
+      final currentTime = DateTime.tryParse(rawTime);
+      if (currentTime == null) continue;
+
+      final prevApp = previousApp;
+      final prevTime = previousTime;
+      if (prevApp != null &&
+          prevTime != null &&
+          rawApp != prevApp &&
+          !currentTime.isBefore(prevTime)) {
+        final gap = currentTime.difference(prevTime);
+        if (gap <= maxTransitionGap) {
+          final key = '$prevApp->$rawApp';
+          relationMap
+              .putIfAbsent(
+                key,
+                () => _AppFlowAccumulator(
+                  sourceAppId: prevApp,
+                  targetAppId: rawApp,
+                  lastTransfer: currentTime,
+                ),
+              )
+              .add(currentTime);
+        }
+      }
+
+      previousApp = rawApp;
+      previousTime = currentTime;
+    }
+
+    if (relationMap.isEmpty) {
+      return const [];
+    }
+
+    final flows = relationMap.values
+        .map(
+          (accumulator) => AppFlowData(
+            sourceApp: _formatAppName(accumulator.sourceAppId),
+            targetApp: _formatAppName(accumulator.targetAppId),
+            transferCount: accumulator.transferCount,
+            lastTransfer: accumulator.lastTransfer,
+          ),
+        )
+        .toList()
+      ..sort((a, b) {
+        final countCmp = b.transferCount.compareTo(a.transferCount);
+        if (countCmp != 0) return countCmp;
+        return b.lastTransfer.compareTo(a.lastTransfer);
+      });
+
+    return flows.take(limit).toList(growable: false);
+  }
+
+  DateTime _startOfPeriod(TimePeriod period) {
+    final now = DateTime.now();
+    switch (period) {
+      case TimePeriod.day:
+        return DateTime(now.year, now.month, now.day);
+      case TimePeriod.week:
+        return now.subtract(const Duration(days: 7));
+      case TimePeriod.month:
+        return DateTime(now.year, now.month - 1, now.day);
+    }
+  }
+
+  String _formatAppName(String sourceAppId) {
+    final raw = sourceAppId.trim();
+    if (raw.isEmpty) return 'Unknown';
+
+    const wellKnown = <String, String>{
+      'com.microsoft.vscode': 'VS Code',
+      'com.google.chrome': 'Chrome',
+      'com.apple.safari': 'Safari',
+      'com.apple.finder': 'Finder',
+      'com.apple.terminal': 'Terminal',
+      'com.todesktop.230313mzl4w4u92': 'Cursor',
+      'com.figma.desktop': 'Figma',
+      'notion.id': 'Notion',
+      'com.tinyspeck.slackmacgap': 'Slack',
+    };
+    final normalizedRaw = raw.toLowerCase();
+    final alias = wellKnown[normalizedRaw];
+    if (alias != null) return alias;
+
+    final tail = raw.contains('.') ? raw.split('.').last : raw;
+    final spaced = tail
+        .replaceAll(RegExp(r'([a-z])([A-Z])'), r'$1 $2')
+        .replaceAll(RegExp(r'[_-]+'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+
+    return spaced.isEmpty ? raw : spaced;
+  }
+
   /// 获取应用使用统计
   Future<Map<String, dynamic>> getAppUsageStats(
       {TimePeriod period = TimePeriod.week}) async {
@@ -874,6 +997,26 @@ class _AppTransferEvent {
     required this.targetApp,
     required this.timestamp,
   });
+}
+
+class _AppFlowAccumulator {
+  final String sourceAppId;
+  final String targetAppId;
+  int transferCount = 0;
+  DateTime lastTransfer;
+
+  _AppFlowAccumulator({
+    required this.sourceAppId,
+    required this.targetAppId,
+    required this.lastTransfer,
+  });
+
+  void add(DateTime at) {
+    transferCount++;
+    if (at.isAfter(lastTransfer)) {
+      lastTransfer = at;
+    }
+  }
 }
 
 class _DuplicateAccumulator {

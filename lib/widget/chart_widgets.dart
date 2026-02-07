@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:easy_pasta/model/clipboard_analytics.dart';
+import 'package:easy_pasta/service/analytics_service.dart';
 import 'dart:math' as math;
 
 // ==================== 饼图组件 ====================
@@ -504,7 +506,14 @@ class TrendChartPainter extends CustomPainter {
 // ==================== 应用流转图 ====================
 
 class AppFlowWidget extends StatefulWidget {
-  const AppFlowWidget({super.key});
+  final TimePeriod period;
+  final int limit;
+
+  const AppFlowWidget({
+    super.key,
+    this.period = TimePeriod.week,
+    this.limit = 15,
+  });
 
   @override
   State<AppFlowWidget> createState() => _AppFlowWidgetState();
@@ -513,14 +522,7 @@ class AppFlowWidget extends StatefulWidget {
 class _AppFlowWidgetState extends State<AppFlowWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-
-  final List<FlowConnection> _flows = [
-    FlowConnection('VS Code', 'Terminal', 145, 0),
-    FlowConnection('Chrome', 'VS Code', 98, 1),
-    FlowConnection('Notion', 'Slack', 67, 2),
-    FlowConnection('Figma', 'VS Code', 54, 3),
-    FlowConnection('Terminal', 'VS Code', 43, 4),
-  ];
+  late Future<List<FlowConnection>> _flowsFuture;
 
   @override
   void initState() {
@@ -528,7 +530,39 @@ class _AppFlowWidgetState extends State<AppFlowWidget>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2000),
-    )..forward();
+    );
+    _flowsFuture = _loadFlows();
+  }
+
+  @override
+  void didUpdateWidget(covariant AppFlowWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.period != widget.period || oldWidget.limit != widget.limit) {
+      _flowsFuture = _loadFlows();
+    }
+  }
+
+  Future<List<FlowConnection>> _loadFlows() async {
+    final flows = await ClipboardAnalyticsService.instance.getAppFlowData(
+      period: widget.period,
+      limit: widget.limit,
+    );
+    if (flows.isEmpty) return const [];
+
+    if (mounted) {
+      _controller.forward(from: 0);
+    }
+
+    return List.generate(
+      flows.length,
+      (index) => FlowConnection(
+        flows[index].sourceApp,
+        flows[index].targetApp,
+        flows[index].transferCount,
+        index,
+      ),
+      growable: false,
+    );
   }
 
   @override
@@ -539,18 +573,53 @@ class _AppFlowWidgetState extends State<AppFlowWidget>
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 400,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) => CustomPaint(
-          painter: FlowDiagramPainter(
-            flows: _flows,
-            progress: _controller.value,
+    return FutureBuilder<List<FlowConnection>>(
+      future: _flowsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 400,
+            child: Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        }
+
+        final flows = snapshot.data ?? const <FlowConnection>[];
+        if (flows.isEmpty) {
+          return const SizedBox(
+            height: 400,
+            child: Center(
+              child: Text(
+                '当前时间范围暂无应用流转数据',
+                style: TextStyle(
+                  fontFamily: 'JetBrainsMono',
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ),
+          );
+        }
+
+        return SizedBox(
+          height: 400,
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) => CustomPaint(
+              painter: FlowDiagramPainter(
+                flows: flows,
+                progress: _controller.value,
+              ),
+              child: const SizedBox.expand(),
+            ),
           ),
-          child: const SizedBox.expand(),
-        ),
-      ),
+        );
+      },
     );
   }
 }

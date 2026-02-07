@@ -124,7 +124,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
                   SliverToBoxAdapter(
                     child: _buildSection(
                       title: '应用间流转关系',
-                      child: const AppFlowWidget(),
+                      child: AppFlowWidget(period: _selectedPeriod),
                     ),
                   ),
 
