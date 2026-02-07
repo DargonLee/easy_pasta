@@ -36,8 +36,10 @@ class FileContent extends StatelessWidget {
 
   /// 构建单文件显示
   Widget _buildSingleFile(BuildContext context) {
-    final decodedPath = StringUtils.decodeFilePath(fileUri);
+    final path = _resolveSinglePath();
+    final decodedPath = StringUtils.decodeFilePath(path);
     final displayName = StringUtils.extractFileName(decodedPath);
+    final parentPath = _extractParentPath(decodedPath);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -45,6 +47,10 @@ class FileContent extends StatelessWidget {
         _buildIcon(decodedPath),
         const SizedBox(height: AppSpacing.sm),
         _buildFileName(displayName, context),
+        if (parentPath.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xs),
+          _buildPathInfo(parentPath, context),
+        ],
       ],
     );
   }
@@ -55,6 +61,7 @@ class FileContent extends StatelessWidget {
     final files = _fileList;
     final displayFiles = files.take(_maxFilesToShow).toList();
     final remainingCount = files.length - displayFiles.length;
+    final commonDirectory = _commonDirectory(files);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -108,6 +115,10 @@ class FileContent extends StatelessWidget {
             ),
           ),
         ),
+        if (commonDirectory != null && commonDirectory.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xs),
+          _buildPathInfo(commonDirectory, context),
+        ],
         const SizedBox(height: AppSpacing.xs),
         // 文件列表预览
         ...displayFiles.map((file) {
@@ -199,6 +210,81 @@ class FileContent extends StatelessWidget {
         height: 1.3,
       ),
     );
+  }
+
+  Widget _buildPathInfo(String path, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      child: Text(
+        path,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: (isDark
+                ? AppTypography.darkCaption
+                : AppTypography.lightCaption)
+            .copyWith(color: textColor, height: 1.3),
+      ),
+    );
+  }
+
+  String _resolveSinglePath() {
+    if (_fileList.isNotEmpty) {
+      return _fileList.first;
+    }
+    if (fileUri.isNotEmpty) {
+      return fileUri;
+    }
+    return fileName;
+  }
+
+  String _extractParentPath(String path) {
+    if (path.isEmpty) return '';
+    final normalized = path.replaceAll(RegExp(r'[/\\]+$'), '');
+    final separatorIndex = normalized.lastIndexOf(RegExp(r'[/\\]'));
+    if (separatorIndex <= 0) return normalized;
+    return normalized.substring(0, separatorIndex);
+  }
+
+  String? _commonDirectory(List<String> paths) {
+    if (paths.isEmpty) return null;
+
+    final normalized = paths
+        .map((path) => path.replaceAll('\\', '/').replaceAll(RegExp(r'/+$'), ''))
+        .toList();
+
+    final directories = normalized
+        .map((path) {
+          final separatorIndex = path.lastIndexOf('/');
+          if (separatorIndex <= 0) return path;
+          return path.substring(0, separatorIndex);
+        })
+        .toList();
+
+    final segments = directories
+        .map((dir) => dir.split('/').where((s) => s.isNotEmpty).toList())
+        .toList();
+
+    if (segments.isEmpty) return directories.first;
+
+    final common = <String>[];
+    final shortest = segments.reduce((a, b) => a.length < b.length ? a : b);
+
+    for (var i = 0; i < shortest.length; i++) {
+      final value = shortest[i];
+      final allMatch = segments.every((segment) => segment[i] == value);
+      if (!allMatch) break;
+      common.add(value);
+    }
+
+    if (common.isEmpty) return directories.first;
+    final hasLeadingSlash = directories.any((dir) => dir.startsWith('/'));
+    return hasLeadingSlash ? '/${common.join('/')}' : common.join('/');
   }
 
   IconData _getFileIconForPath(String path) {

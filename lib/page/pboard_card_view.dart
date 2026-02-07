@@ -365,7 +365,7 @@ class _ContentArea extends StatelessWidget {
       case ClipboardType.file:
         return FileContent(
           fileName: model.pvalue,
-          fileUri: model.bytesToString(model.bytes ?? Uint8List(0)),
+          fileUri: model.decodedBytes,
         );
 
       case ClipboardType.html:
@@ -405,7 +405,7 @@ class _ContentArea extends StatelessWidget {
     );
 
     return HtmlContent(
-      htmlData: model.bytesToString(model.bytes ?? Uint8List(0)),
+      htmlData: model.decodedBytes,
       fallbackText: model.pvalue,
       maxLines: htmlLines,
     );
@@ -460,26 +460,62 @@ class _ImagePreview extends StatelessWidget {
   const _ImagePreview({required this.model});
 
   static const _fallbackIconSize = 48.0;
-  static const _cacheWidth = 800;
+  static const _thumbnailMaxDimension = 320.0;
+  static const _maxCacheDimension = 2048;
 
   @override
   Widget build(BuildContext context) {
-    // 优先使用 bytes，如果没有则使用 thumbnail
-    final imageData = model.bytes ?? model.thumbnail;
-    if (imageData == null || imageData.isEmpty) {
-      return _buildFallbackIcon(context);
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final thumbnail = model.thumbnail;
+        final fullBytes = model.bytes;
+        if ((thumbnail == null || thumbnail.isEmpty) &&
+            (fullBytes == null || fullBytes.isEmpty)) {
+          return _buildFallbackIcon(context);
+        }
 
-    return Image.memory(
-      imageData,
-      fit: BoxFit.cover,
-      width: double.infinity,
-      height: double.infinity,
-      cacheWidth: _cacheWidth,
-      gaplessPlayback: true,
-      filterQuality: FilterQuality.medium,
-      errorBuilder: (context, error, stackTrace) => _buildFallbackIcon(context),
+        final dpr = MediaQuery.of(context).devicePixelRatio;
+        final maxDimension = _maxFinite(constraints.maxWidth, constraints.maxHeight);
+        final targetDimension = maxDimension * dpr;
+        final shouldUseFullBytes =
+            (fullBytes != null && fullBytes.isNotEmpty) &&
+                (thumbnail == null ||
+                    thumbnail.isEmpty ||
+                    targetDimension > _thumbnailMaxDimension);
+
+        final imageData =
+            shouldUseFullBytes ? fullBytes! : (thumbnail ?? fullBytes!);
+
+        final cacheWidth = _cacheDimension(constraints.maxWidth, dpr);
+        final cacheHeight = _cacheDimension(constraints.maxHeight, dpr);
+
+        return Image.memory(
+          imageData,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: double.infinity,
+          cacheWidth: cacheWidth,
+          cacheHeight: cacheHeight,
+          gaplessPlayback: true,
+          filterQuality: FilterQuality.high,
+          errorBuilder: (context, error, stackTrace) =>
+              _buildFallbackIcon(context),
+        );
+      },
     );
+  }
+
+  double _maxFinite(double a, double b) {
+    final safeA = a.isFinite ? a : 0.0;
+    final safeB = b.isFinite ? b : 0.0;
+    return safeA > safeB ? safeA : safeB;
+  }
+
+  int? _cacheDimension(double dimension, double dpr) {
+    if (!dimension.isFinite || dimension <= 0) return null;
+    final scaled = (dimension * dpr).round();
+    if (scaled <= 0) return null;
+    return scaled.clamp(1, _maxCacheDimension);
   }
 
   Widget _buildFallbackIcon(BuildContext context) {

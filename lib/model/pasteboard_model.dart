@@ -18,6 +18,7 @@ class ClipboardItemModel {
   final Uint8List? thumbnail; // 新增缩略图
   final String? sourceAppId;
   final ContentClassification? classification;
+  late final String decodedBytes = _decodeBytes();
 
   /// 创建剪贴板数据模型
   ClipboardItemModel({
@@ -78,14 +79,14 @@ class ClipboardItemModel {
 
   /// 获取HTML数据
   String? get htmlData =>
-      ptype == ClipboardType.html ? bytesToString(bytes ?? Uint8List(0)) : null;
+      ptype == ClipboardType.html ? decodedBytes : null;
 
   /// 获取图片数据
   Uint8List? get imageBytes => ptype == ClipboardType.image ? bytes : null;
 
   /// 获取文件路径
   String? get filePath =>
-      ptype == ClipboardType.file ? bytesToString(bytes ?? Uint8List(0)) : null;
+      ptype == ClipboardType.file ? decodedBytes : null;
 
   /// 将字符串转换为Uint8List
   static Uint8List stringToBytes(String str) {
@@ -95,6 +96,12 @@ class ClipboardItemModel {
   /// 将Uint8List转换为字符串
   String bytesToString(Uint8List bytes) {
     return utf8.decode(bytes);
+  }
+
+  String _decodeBytes() {
+    final data = bytes;
+    if (data == null || data.isEmpty) return '';
+    return utf8.decode(data);
   }
 
   /// 复制模型并更新部分属性
