@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/clipboard_analytics.dart';
+import 'package:easy_pasta/model/design_tokens.dart';
 import 'package:easy_pasta/service/analytics_service.dart';
 
 // ==================== 常量定义 ====================
@@ -40,7 +41,15 @@ class HeatmapConstants {
   static const Duration animationDuration = Duration(milliseconds: 200);
   static const Curve animationCurve = Curves.easeOut;
 
-  static const List<String> dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  static const List<String> dayNames = [
+    '周日',
+    '周一',
+    '周二',
+    '周三',
+    '周四',
+    '周五',
+    '周六'
+  ];
 
   // Intensity thresholds
   static const Map<int, int> intensityThresholds = {
@@ -150,7 +159,7 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
         _loadError!,
         style: const TextStyle(
           fontSize: 12,
-          color: AppColors.textMuted,
+          color: AnalyticsColors.textMuted,
         ),
       ),
     );
@@ -159,7 +168,7 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
   Widget _buildLoadingState() {
     return const Center(
       child: CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation(AppColors.accentCyan),
+        valueColor: AlwaysStoppedAnimation(AnalyticsColors.accentCyan),
       ),
     );
   }
@@ -173,12 +182,12 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _DayLabels(),
+              const _DayLabels(),
               const SizedBox(width: HeatmapConstants.dayLabelSpacing),
               Expanded(
                 child: Column(
                   children: [
-                    _HourLabels(),
+                    const _HourLabels(),
                     const SizedBox(height: HeatmapConstants.hourLabelSpacing),
                     Expanded(
                       child: _HeatmapGrid(
@@ -232,7 +241,7 @@ class _DayLabels extends StatelessWidget {
                   style: const TextStyle(
                     fontFamily: 'JetBrainsMono',
                     fontSize: 11,
-                    color: AppColors.textMuted,
+                    color: AnalyticsColors.textMuted,
                   ),
                 ),
               ),
@@ -260,7 +269,7 @@ class _HourLabels extends StatelessWidget {
               style: const TextStyle(
                 fontFamily: 'JetBrainsMono',
                 fontSize: 10,
-                color: AppColors.textMuted,
+                color: AnalyticsColors.textMuted,
               ),
             ),
           ),
@@ -308,7 +317,8 @@ class _HeatmapGrid extends StatelessWidget {
   }
 
   Widget _buildCell(int day, int hour) {
-    final cellData = dataMap[_cellKey(day, hour)] ?? HeatmapDataPoint(hour: hour, day: day, count: 0);
+    final cellData = dataMap[_cellKey(day, hour)] ??
+        HeatmapDataPoint(hour: hour, day: day, count: 0);
 
     return _HeatmapCell(
       data: cellData,
@@ -332,7 +342,7 @@ class _HeatmapLegend extends StatelessWidget {
           '较少',
           style: TextStyle(
             fontSize: 11,
-            color: AppColors.textMuted,
+            color: AnalyticsColors.textMuted,
           ),
         ),
         const SizedBox(width: HeatmapConstants.legendTextSpacing),
@@ -342,7 +352,7 @@ class _HeatmapLegend extends StatelessWidget {
           '较多',
           style: TextStyle(
             fontSize: 11,
-            color: AppColors.textMuted,
+            color: AnalyticsColors.textMuted,
           ),
         ),
       ],
@@ -374,12 +384,13 @@ class _HeatmapTooltip extends StatelessWidget {
       margin: const EdgeInsets.only(top: HeatmapConstants.tooltipMarginTop),
       padding: const EdgeInsets.all(HeatmapConstants.tooltipPadding),
       decoration: BoxDecoration(
-        color: AppColors.bgTertiary,
-        borderRadius: BorderRadius.circular(HeatmapConstants.tooltipBorderRadius),
-        border: Border.all(color: AppColors.accentCyan),
+        color: AnalyticsColors.bgTertiary,
+        borderRadius:
+            BorderRadius.circular(HeatmapConstants.tooltipBorderRadius),
+        border: Border.all(color: AnalyticsColors.accentCyan),
         boxShadow: const [
           BoxShadow(
-            color: AppColors.glowCyan,
+            color: AnalyticsColors.glowCyan,
             blurRadius: HeatmapConstants.tooltipGlowBlur,
           ),
         ],
@@ -392,7 +403,7 @@ class _HeatmapTooltip extends StatelessWidget {
             style: const TextStyle(
               fontFamily: 'JetBrainsMono',
               fontSize: 12,
-              color: AppColors.textPrimary,
+              color: AnalyticsColors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -415,7 +426,7 @@ class _HeatmapTooltip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [AppColors.accentCyan, AppColors.accentPurple],
+          colors: [AnalyticsColors.accentCyan, AnalyticsColors.accentPurple],
         ),
         borderRadius: BorderRadius.circular(
           HeatmapConstants.tooltipBadgeBorderRadius,
@@ -493,7 +504,7 @@ class _HeatmapCellState extends State<_HeatmapCell> {
   List<BoxShadow> _buildGlowEffect() {
     return [
       BoxShadow(
-        color: AppColors.accentCyan.withValues(alpha: 0.4),
+        color: AnalyticsColors.accentCyan.withValues(alpha: 0.4),
         blurRadius: HeatmapConstants.cellGlowBlur,
         spreadRadius: HeatmapConstants.cellGlowSpread,
       ),
@@ -535,34 +546,10 @@ class IntensityColorHelper {
 
   static Color getColor(int intensity) {
     if (intensity == 0) {
-      return AppColors.bgTertiary;
+      return AnalyticsColors.bgTertiary;
     }
 
     final alpha = _alphaValues[intensity] ?? 1.0;
-    return AppColors.accentCyan.withValues(alpha: alpha);
+    return AnalyticsColors.accentCyan.withValues(alpha: alpha);
   }
-}
-
-// ==================== 颜色定义 ====================
-
-class AppColors {
-  AppColors._();
-
-  static const bgPrimary = Color(0xFF0A0E14);
-  static const bgSecondary = Color(0xFF121820);
-  static const bgTertiary = Color(0xFF1A1F2E);
-
-  static const accentCyan = Color(0xFF00D9FF);
-  static const accentPurple = Color(0xFFA855F7);
-  static const accentPink = Color(0xFFEC4899);
-  static const accentGreen = Color(0xFF10B981);
-  static const accentOrange = Color(0xFFF59E0B);
-
-  static const textPrimary = Color(0xFFE0E7FF);
-  static const textSecondary = Color(0xFF94A3B8);
-  static const textMuted = Color(0xFF64748B);
-
-  static const borderColor = Color(0x1A94A3B8);
-  static const glowCyan = Color(0x4D00D9FF);
-  static const glowPurple = Color(0x4DA855F7);
 }

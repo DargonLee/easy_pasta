@@ -53,8 +53,8 @@ class FlowLinePainter extends CustomPainter {
       ..shader = LinearGradient(
         colors: const [
           Colors.transparent,
-          AppColors.accentCyan,
-          AppColors.accentPurple,
+          AnalyticsColors.accentCyan,
+          AnalyticsColors.accentPurple,
           Colors.transparent,
         ],
         stops: [

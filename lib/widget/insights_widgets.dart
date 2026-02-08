@@ -81,7 +81,7 @@ class _DuplicateListWidgetState extends State<DuplicateListWidget>
               '加载重复内容失败',
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textMuted,
+                color: AnalyticsColors.textMuted,
               ),
             ),
           );
@@ -95,7 +95,7 @@ class _DuplicateListWidgetState extends State<DuplicateListWidget>
               '暂无重复内容',
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.textMuted,
+                color: AnalyticsColors.textMuted,
               ),
             ),
           );
@@ -195,16 +195,19 @@ class _DuplicateCardState extends State<_DuplicateCard>
             duration: const Duration(milliseconds: 300),
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: AppColors.bgTertiary,
+              color: AnalyticsColors.bgTertiary,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: _isHovered ? AppColors.accentCyan : Colors.transparent,
+                color: _isHovered
+                    ? AnalyticsColors.accentCyan
+                    : Colors.transparent,
                 width: 1,
               ),
               boxShadow: _isHovered
                   ? [
                       BoxShadow(
-                        color: AppColors.accentCyan.withValues(alpha: 0.2),
+                        color:
+                            AnalyticsColors.accentCyan.withValues(alpha: 0.2),
                         blurRadius: 20,
                         spreadRadius: 0,
                       ),
@@ -220,7 +223,7 @@ class _DuplicateCardState extends State<_DuplicateCard>
                     style: const TextStyle(
                       fontFamily: 'JetBrainsMono',
                       fontSize: 14,
-                      color: AppColors.textPrimary,
+                      color: AnalyticsColors.textPrimary,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -237,7 +240,10 @@ class _DuplicateCardState extends State<_DuplicateCard>
                   ),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [AppColors.accentCyan, AppColors.accentPurple],
+                      colors: [
+                        AnalyticsColors.accentCyan,
+                        AnalyticsColors.accentPurple
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -261,14 +267,14 @@ class _DuplicateCardState extends State<_DuplicateCard>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.accentGreen.withValues(alpha: 0.1),
+                    color: AnalyticsColors.accentGreen.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
                     widget.item.suggestion,
                     style: const TextStyle(
                       fontSize: 11,
-                      color: AppColors.accentGreen,
+                      color: AnalyticsColors.accentGreen,
                     ),
                   ),
                 ),

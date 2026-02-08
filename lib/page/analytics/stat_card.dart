@@ -69,17 +69,18 @@ class _StatCardState extends State<StatCard>
             curve: Curves.easeOut,
             transform: Matrix4.translationValues(0, _isHovered ? -4 : 0, 0),
             decoration: BoxDecoration(
-              color: AppColors.bgSecondary,
+              color: AnalyticsColors.bgSecondary,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color:
-                    _isHovered ? AppColors.accentCyan : AppColors.borderColor,
+                color: _isHovered
+                    ? AnalyticsColors.accentCyan
+                    : AnalyticsColors.borderColor,
                 width: 1,
               ),
               boxShadow: _isHovered
                   ? [
                       const BoxShadow(
-                        color: AppColors.glowCyan,
+                        color: AnalyticsColors.glowCyan,
                         blurRadius: 40,
                         spreadRadius: 0,
                       ),
@@ -100,7 +101,7 @@ class _StatCardState extends State<StatCard>
                         gradient: LinearGradient(
                           colors: [
                             Colors.transparent,
-                            AppColors.accentCyan,
+                            AnalyticsColors.accentCyan,
                             Colors.transparent,
                           ],
                         ),
@@ -136,7 +137,7 @@ class _StatCardState extends State<StatCard>
                             widget.label.toUpperCase(),
                             style: TextStyle(
                               fontSize: labelSize,
-                              color: AppColors.textSecondary,
+                              color: AnalyticsColors.textSecondary,
                               letterSpacing: 1.5,
                               fontWeight: FontWeight.w600,
                             ),
@@ -145,8 +146,8 @@ class _StatCardState extends State<StatCard>
                           ShaderMask(
                             shaderCallback: (bounds) => const LinearGradient(
                               colors: [
-                                AppColors.textPrimary,
-                                AppColors.accentCyan,
+                                AnalyticsColors.textPrimary,
+                                AnalyticsColors.accentCyan,
                               ],
                             ).createShader(bounds),
                             child: Text(
@@ -167,8 +168,8 @@ class _StatCardState extends State<StatCard>
                                   widget.isPositive! ? '↗' : '↘',
                                   style: TextStyle(
                                     color: widget.isPositive!
-                                        ? AppColors.accentGreen
-                                        : AppColors.accentPink,
+                                        ? AnalyticsColors.accentGreen
+                                        : AnalyticsColors.accentPink,
                                     fontSize: iconSize,
                                   ),
                                 ),
@@ -180,10 +181,10 @@ class _StatCardState extends State<StatCard>
                                   fontFamily: 'JetBrainsMono',
                                   fontSize: changeSize,
                                   color: widget.isPositive == null
-                                      ? AppColors.textMuted
+                                      ? AnalyticsColors.textMuted
                                       : (widget.isPositive!
-                                          ? AppColors.accentGreen
-                                          : AppColors.accentPink),
+                                          ? AnalyticsColors.accentGreen
+                                          : AnalyticsColors.accentPink),
                                 ),
                               ),
                             ],

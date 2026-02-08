@@ -200,8 +200,9 @@ class _LegendItem extends StatelessWidget {
               style: TextStyle(
                 fontFamily: 'JetBrainsMono',
                 fontSize: 11,
-                color:
-                    isHovered ? AppColors.textPrimary : AppColors.textSecondary,
+                color: isHovered
+                    ? AnalyticsColors.textPrimary
+                    : AnalyticsColors.textSecondary,
                 fontWeight: isHovered ? FontWeight.w600 : FontWeight.normal,
               ),
             ),

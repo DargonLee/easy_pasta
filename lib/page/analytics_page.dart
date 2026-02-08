@@ -6,8 +6,8 @@ import 'package:easy_pasta/page/analytics/analytics_flow_line.dart';
 import 'package:easy_pasta/page/analytics/analytics_section.dart';
 import 'package:easy_pasta/page/analytics/analytics_styles.dart';
 import 'package:easy_pasta/page/analytics/stat_card.dart';
-import 'package:easy_pasta/widget/chart_widgets.dart' hide AppColors;
-import 'package:easy_pasta/widget/heatmap_widget.dart' hide AppColors;
+import 'package:easy_pasta/widget/chart_widgets.dart';
+import 'package:easy_pasta/widget/heatmap_widget.dart';
 import 'package:easy_pasta/widget/insights_widgets.dart';
 
 /// 剪贴板分析主页面
@@ -64,7 +64,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
     return Theme(
       data: _buildDarkTheme(),
       child: Scaffold(
-        backgroundColor: AppColors.bgPrimary,
+        backgroundColor: AnalyticsColors.bgPrimary,
         body: Stack(
           children: [
             // 背景网格和光晕效果
@@ -103,7 +103,8 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
                           Expanded(
                             child: _buildSection(
                               title: '内容类型分布',
-                              child: PurposeChartWidget(period: _selectedPeriod),
+                              child:
+                                  PurposeChartWidget(period: _selectedPeriod),
                             ),
                           ),
                           const SizedBox(width: 24),
@@ -166,13 +167,13 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.bgSecondary,
+                        color: AnalyticsColors.bgSecondary,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.borderColor),
+                        border: Border.all(color: AnalyticsColors.borderColor),
                       ),
                       child: const Icon(
                         Icons.arrow_back_ios_new,
-                        color: AppColors.accentCyan,
+                        color: AnalyticsColors.accentCyan,
                         size: 20,
                       ),
                     ),
@@ -185,7 +186,10 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
                     opacity: _fadeController,
                     child: ShaderMask(
                       shaderCallback: (bounds) => const LinearGradient(
-                        colors: [AppColors.accentCyan, AppColors.accentPurple],
+                        colors: [
+                          AnalyticsColors.accentCyan,
+                          AnalyticsColors.accentPurple
+                        ],
                       ).createShader(bounds),
                       child: const Text(
                         'CLIPBOARD ANALYTICS',
@@ -213,7 +217,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
                 style: TextStyle(
                   fontFamily: 'JetBrainsMono',
                   fontSize: 14,
-                  color: AppColors.textSecondary,
+                  color: AnalyticsColors.textSecondary,
                   letterSpacing: 3,
                 ),
               ),
@@ -233,9 +237,9 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: AppColors.bgTertiary,
+        color: AnalyticsColors.bgTertiary,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: AnalyticsColors.borderColor),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -270,14 +274,18 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
             decoration: BoxDecoration(
               gradient: isSelected
                   ? const LinearGradient(
-                      colors: [AppColors.accentCyan, AppColors.accentPurple],
+                      colors: [
+                        AnalyticsColors.accentCyan,
+                        AnalyticsColors.accentPurple
+                      ],
                     )
                   : null,
               borderRadius: BorderRadius.circular(8),
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: AppColors.accentCyan.withValues(alpha: 0.3),
+                        color:
+                            AnalyticsColors.accentCyan.withValues(alpha: 0.3),
                         blurRadius: 20,
                         spreadRadius: 0,
                       ),
@@ -290,7 +298,8 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
                 fontFamily: 'JetBrainsMono',
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : AppColors.textSecondary,
+                color:
+                    isSelected ? Colors.white : AnalyticsColors.textSecondary,
               ),
             ),
           ),
@@ -383,10 +392,10 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
 
   ThemeData _buildDarkTheme() {
     return ThemeData.dark().copyWith(
-      scaffoldBackgroundColor: AppColors.bgPrimary,
+      scaffoldBackgroundColor: AnalyticsColors.bgPrimary,
       textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: AppColors.textPrimary),
-        bodyMedium: TextStyle(color: AppColors.textSecondary),
+        bodyLarge: TextStyle(color: AnalyticsColors.textPrimary),
+        bodyMedium: TextStyle(color: AnalyticsColors.textSecondary),
       ),
     );
   }

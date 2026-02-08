@@ -23,15 +23,15 @@ class AppColors {
   static const Color lightBackground = Color(0xFFFFFFFF);
   static const Color lightSecondaryBackground = Color(0xFFF5F5F7);
   static const Color lightTertiaryBackground = Color(0xFFEFEFF4);
-  
+
   static const Color lightCardBackground = Color(0xFFFFFFFF);
   static const Color lightCardHover = Color(0xFFF5F5F7);
   static const Color lightCardSelected = Color(0xFFE3F2FD);
-  
+
   static const Color lightTextPrimary = Color(0xFF000000);
   static const Color lightTextSecondary = Color(0xFF8E8E93);
   static const Color lightTextTertiary = Color(0xFFC7C7CC);
-  
+
   static const Color lightDivider = Color(0xFFE5E5EA);
   static const Color lightBorder = Color(0xFFD1D1D6);
 
@@ -39,15 +39,15 @@ class AppColors {
   static const Color darkBackground = Color(0xFF000000);
   static const Color darkSecondaryBackground = Color(0xFF1C1C1E);
   static const Color darkTertiaryBackground = Color(0xFF2C2C2E);
-  
+
   static const Color darkCardBackground = Color(0xFF1C1C1E);
   static const Color darkCardHover = Color(0xFF2C2C2E);
   static const Color darkCardSelected = Color(0xFF1E3A5F);
-  
+
   static const Color darkTextPrimary = Color(0xFFFFFFFF);
   static const Color darkTextSecondary = Color(0xFF8E8E93);
   static const Color darkTextTertiary = Color(0xFF48484A);
-  
+
   static const Color darkDivider = Color(0xFF38383A);
   static const Color darkBorder = Color(0xFF48484A);
 
@@ -78,6 +78,31 @@ class AppColors {
   static const Color darkPaperHighlight = Color(0xFF17171B);
   static const Color darkFrostedSurface = Color(0xCC1C1C1E);
   static const Color darkFrostedBorder = Color(0x26FFFFFF);
+}
+
+/// 分析模块色板
+///
+/// 用于 analytics 页面和图表组件，统一维护避免重复声明。
+class AnalyticsColors {
+  AnalyticsColors._();
+
+  static const Color bgPrimary = Color(0xFF0A0E14);
+  static const Color bgSecondary = Color(0xFF121820);
+  static const Color bgTertiary = Color(0xFF1A1F2E);
+
+  static const Color accentCyan = Color(0xFF00D9FF);
+  static const Color accentPurple = Color(0xFFA855F7);
+  static const Color accentPink = Color(0xFFEC4899);
+  static const Color accentGreen = Color(0xFF10B981);
+  static const Color accentOrange = Color(0xFFF59E0B);
+
+  static const Color textPrimary = Color(0xFFE0E7FF);
+  static const Color textSecondary = Color(0xFF94A3B8);
+  static const Color textMuted = Color(0xFF64748B);
+
+  static const Color borderColor = Color(0x1A94A3B8);
+  static const Color glowCyan = Color(0x4D00D9FF);
+  static const Color glowPurple = Color(0x4DA855F7);
 }
 
 /// 渐变与材质

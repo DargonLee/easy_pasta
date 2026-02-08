@@ -9,11 +9,11 @@ class ChartConstants {
   static const flowChartHeight = 400.0;
 
   static const chartPalette = [
-    AppColors.accentCyan,
-    AppColors.accentPurple,
-    AppColors.accentPink,
-    AppColors.accentGreen,
-    AppColors.accentOrange,
+    AnalyticsColors.accentCyan,
+    AnalyticsColors.accentPurple,
+    AnalyticsColors.accentPink,
+    AnalyticsColors.accentGreen,
+    AnalyticsColors.accentOrange,
   ];
 
   static const contentTypeLabels = {
@@ -75,7 +75,7 @@ class ChartEmptyState extends StatelessWidget {
           style: const TextStyle(
             fontFamily: 'JetBrainsMono',
             fontSize: 12,
-            color: AppColors.textMuted,
+            color: AnalyticsColors.textMuted,
           ),
         ),
       ),

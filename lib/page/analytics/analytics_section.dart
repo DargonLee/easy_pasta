@@ -17,7 +17,10 @@ class SectionTitle extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [AppColors.accentCyan, AppColors.accentPurple],
+              colors: [
+                AnalyticsColors.accentCyan,
+                AnalyticsColors.accentPurple
+              ],
             ),
             borderRadius: BorderRadius.all(Radius.circular(2)),
           ),
@@ -29,7 +32,7 @@ class SectionTitle extends StatelessWidget {
             fontFamily: 'JetBrainsMono',
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: AppColors.textPrimary,
+            color: AnalyticsColors.textPrimary,
           ),
         ),
       ],
@@ -47,9 +50,9 @@ class ChartContainer extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: AppColors.bgSecondary,
+        color: AnalyticsColors.bgSecondary,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderColor),
+        border: Border.all(color: AnalyticsColors.borderColor),
       ),
       child: Stack(
         children: [
@@ -64,7 +67,7 @@ class ChartContainer extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.glowPurple,
+                    AnalyticsColors.glowPurple,
                     Colors.transparent,
                   ],
                 ),

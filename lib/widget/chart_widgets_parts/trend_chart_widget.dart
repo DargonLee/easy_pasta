@@ -183,7 +183,7 @@ class TrendChartPainter extends CustomPainter {
 
   void _drawGrid(Canvas canvas, Size size, double chartHeight) {
     final gridPaint = Paint()
-      ..color = AppColors.borderColor
+      ..color = AnalyticsColors.borderColor
       ..strokeWidth = 1;
 
     for (var i = 0; i <= _gridLines; i++) {
@@ -209,8 +209,8 @@ class TrendChartPainter extends CustomPainter {
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        AppColors.accentCyan.withValues(alpha: 0.3),
-        AppColors.accentCyan.withValues(alpha: 0.05),
+        AnalyticsColors.accentCyan.withValues(alpha: 0.3),
+        AnalyticsColors.accentCyan.withValues(alpha: 0.05),
       ],
     );
 
@@ -235,7 +235,7 @@ class TrendChartPainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppColors.accentCyan
+        ..color = AnalyticsColors.accentCyan
         ..strokeWidth = _lineWidth
         ..style = PaintingStyle.stroke,
     );
@@ -302,7 +302,7 @@ class TrendChartPainter extends CustomPainter {
         position,
         _glowRadius,
         Paint()
-          ..color = AppColors.accentCyan.withValues(alpha: 0.3)
+          ..color = AnalyticsColors.accentCyan.withValues(alpha: 0.3)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
       );
     }
@@ -310,13 +310,13 @@ class TrendChartPainter extends CustomPainter {
     canvas.drawCircle(
       position,
       isHovered ? _hoveredPointRadius : _pointRadius,
-      Paint()..color = AppColors.accentCyan,
+      Paint()..color = AnalyticsColors.accentCyan,
     );
 
     canvas.drawCircle(
       position,
       isHovered ? _hoveredPointInnerRadius : _pointInnerRadius,
-      Paint()..color = AppColors.bgPrimary,
+      Paint()..color = AnalyticsColors.bgPrimary,
     );
   }
 
@@ -332,7 +332,7 @@ class TrendChartPainter extends CustomPainter {
         style: const TextStyle(
           fontFamily: 'JetBrainsMono',
           fontSize: 10,
-          color: AppColors.textMuted,
+          color: AnalyticsColors.textMuted,
         ),
       );
 

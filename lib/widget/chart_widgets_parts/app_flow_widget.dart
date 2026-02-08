@@ -183,7 +183,7 @@ class FlowDiagramPainter extends CustomPainter {
     canvas.drawPath(
       path,
       Paint()
-        ..color = AppColors.accentCyan.withValues(
+        ..color = AnalyticsColors.accentCyan.withValues(
           alpha: math.min(flow.count / _thicknessScaleFactor, _maxAlpha),
         )
         ..strokeWidth = thickness
@@ -226,7 +226,7 @@ class FlowDiagramPainter extends CustomPainter {
       position,
       _nodeGlowRadius,
       Paint()
-        ..color = AppColors.accentCyan.withValues(alpha: 0.3)
+        ..color = AnalyticsColors.accentCyan.withValues(alpha: 0.3)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
     );
 
@@ -234,14 +234,14 @@ class FlowDiagramPainter extends CustomPainter {
     canvas.drawCircle(
       position,
       _nodeRadius,
-      Paint()..color = AppColors.accentCyan,
+      Paint()..color = AnalyticsColors.accentCyan,
     );
 
     // Inner circle
     canvas.drawCircle(
       position,
       _nodeInnerRadius,
-      Paint()..color = AppColors.bgSecondary,
+      Paint()..color = AnalyticsColors.bgSecondary,
     );
 
     // Label
@@ -255,7 +255,7 @@ class FlowDiagramPainter extends CustomPainter {
         style: const TextStyle(
           fontFamily: 'JetBrainsMono',
           fontSize: 12,
-          color: AppColors.textPrimary,
+          color: AnalyticsColors.textPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),

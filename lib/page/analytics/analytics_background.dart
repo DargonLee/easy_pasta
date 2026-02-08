@@ -45,7 +45,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
           top: -100,
           left: -100,
           child: _GlowOrb(
-            color: AppColors.accentCyan,
+            color: AnalyticsColors.accentCyan,
             size: 400,
             delay: 0,
           ),
@@ -54,7 +54,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
           bottom: -150,
           right: -150,
           child: _GlowOrb(
-            color: AppColors.accentPurple,
+            color: AnalyticsColors.accentPurple,
             size: 500,
             delay: 5,
           ),
@@ -63,7 +63,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
           top: MediaQuery.of(context).size.height * 0.4,
           right: MediaQuery.of(context).size.width * 0.1,
           child: const _GlowOrb(
-            color: AppColors.accentPink,
+            color: AnalyticsColors.accentPink,
             size: 300,
             delay: 10,
           ),
@@ -81,7 +81,7 @@ class GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.accentCyan.withValues(alpha: opacity * 0.03)
+      ..color = AnalyticsColors.accentCyan.withValues(alpha: opacity * 0.03)
       ..strokeWidth = 1;
 
     const spacing = 50.0;
