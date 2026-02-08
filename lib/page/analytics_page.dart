@@ -90,7 +90,7 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
                   SliverToBoxAdapter(
                     child: _buildSection(
                       title: '复制活动热力图',
-                      child: const HeatmapWidget(),
+                      child: HeatmapWidget(period: _selectedPeriod),
                     ),
                   ),
 
@@ -103,14 +103,14 @@ class _ClipboardAnalyticsPageState extends State<ClipboardAnalyticsPage>
                           Expanded(
                             child: _buildSection(
                               title: '内容类型分布',
-                              child: const PurposeChartWidget(),
+                              child: PurposeChartWidget(period: _selectedPeriod),
                             ),
                           ),
                           const SizedBox(width: 24),
                           Expanded(
                             child: _buildSection(
                               title: '每日复制趋势',
-                              child: const TrendChartWidget(),
+                              child: TrendChartWidget(period: _selectedPeriod),
                             ),
                           ),
                         ],

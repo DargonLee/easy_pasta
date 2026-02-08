@@ -1,5 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:easy_pasta/model/clipboard_analytics.dart';
+import 'package:easy_pasta/service/analytics_service.dart';
+
+// ==================== 常量定义 ====================
+
+class HeatmapConstants {
+  HeatmapConstants._();
+
+  static const double heatmapHeight = 400.0;
+  static const double dayLabelTopPadding = 30.0;
+  static const double dayLabelRightPadding = 8.0;
+  static const double dayLabelSpacing = 12.0;
+  static const double hourLabelSpacing = 8.0;
+  static const double legendSpacing = 20.0;
+  static const double tooltipMarginTop = 16.0;
+
+  static const double cellPadding = 1.5;
+  static const double cellBorderRadius = 4.0;
+  static const double cellHoverScale = 1.3;
+  static const double cellGlowBlur = 12.0;
+  static const double cellGlowSpread = 2.0;
+
+  static const double legendItemSize = 20.0;
+  static const double legendItemSpacing = 4.0;
+  static const double legendTextSpacing = 12.0;
+
+  static const double tooltipPadding = 12.0;
+  static const double tooltipBorderRadius = 8.0;
+  static const double tooltipGlowBlur = 24.0;
+  static const double tooltipContentSpacing = 12.0;
+  static const double tooltipBadgePaddingH = 8.0;
+  static const double tooltipBadgePaddingV = 2.0;
+  static const double tooltipBadgeBorderRadius = 4.0;
+
+  static const int hourLabelInterval = 3;
+  static const int daysInWeek = 7;
+  static const int hoursInDay = 24;
+
+  static const Duration animationDuration = Duration(milliseconds: 200);
+  static const Curve animationCurve = Curves.easeOut;
+
+  static const List<String> dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+  // Intensity thresholds
+  static const Map<int, int> intensityThresholds = {
+    1: 10,
+    2: 20,
+    3: 30,
+    4: 40,
+  };
+}
+
+// ==================== 热力图主组件 ====================
 
 /// 热力图组件
 ///
@@ -20,6 +72,7 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
   List<HeatmapDataPoint>? _heatmapData;
   Map<int, HeatmapDataPoint> _heatmapDataByKey = {};
   HeatmapDataPoint? _hoveredCell;
+  String? _loadError;
 
   @override
   void initState() {
@@ -27,132 +80,183 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
-    // TODO: 从实际服务获取数据
-    // final service = context.read<ClipboardAnalyticsService>();
-    // final data = await service.generateHeatmapData(period: widget.period);
+  @override
+  void didUpdateWidget(covariant HeatmapWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.period != widget.period) {
+      _resetState();
+      _loadData();
+    }
+  }
 
-    // Mock data
-    final data = _generateMockHeatmapData();
-
+  void _resetState() {
     setState(() {
-      _heatmapData = data;
-      _heatmapDataByKey = {
-        for (final point in data) _cellKey(point.day, point.hour): point,
-      };
+      _hoveredCell = null;
+      _heatmapData = null;
+      _loadError = null;
+      _heatmapDataByKey = {};
     });
   }
 
-  List<HeatmapDataPoint> _generateMockHeatmapData() {
-    final data = <HeatmapDataPoint>[];
-    for (var day = 0; day < 7; day++) {
-      for (var hour = 0; hour < 24; hour++) {
-        final isWorkHour = day >= 1 && day <= 5 && hour >= 9 && hour <= 18;
-        final baseIntensity =
-            isWorkHour ? (15 + (hour % 3) * 10) : (5 + (hour % 2) * 5);
+  Future<void> _loadData() async {
+    try {
+      final data = await ClipboardAnalyticsService.instance.getHeatmapData(
+        period: widget.period,
+      );
 
-        data.add(HeatmapDataPoint(
-          hour: hour,
-          day: day,
-          count: baseIntensity,
-          purposes: [ContentPurpose.code, ContentPurpose.text],
-        ));
-      }
+      if (!mounted) return;
+
+      setState(() {
+        _loadError = null;
+        _heatmapData = data;
+        _heatmapDataByKey = _buildDataMap(data);
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _loadError = '加载热力图失败';
+        _heatmapData = const [];
+        _heatmapDataByKey = {};
+      });
     }
-    return data;
   }
+
+  Map<int, HeatmapDataPoint> _buildDataMap(List<HeatmapDataPoint> data) {
+    return {
+      for (final point in data) _cellKey(point.day, point.hour): point,
+    };
+  }
+
+  int _cellKey(int day, int hour) => day * HeatmapConstants.hoursInDay + hour;
 
   @override
   Widget build(BuildContext context) {
-    if (_heatmapData == null) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation(AppColors.accentCyan),
-        ),
-      );
+    if (_loadError != null) {
+      return _buildErrorState();
     }
 
+    if (_heatmapData == null) {
+      return _buildLoadingState();
+    }
+
+    return _buildHeatmap();
+  }
+
+  Widget _buildErrorState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Text(
+        _loadError!,
+        style: const TextStyle(
+          fontSize: 12,
+          color: AppColors.textMuted,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Center(
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation(AppColors.accentCyan),
+      ),
+    );
+  }
+
+  Widget _buildHeatmap() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Heatmap grid
         SizedBox(
-          height: 400,
+          height: HeatmapConstants.heatmapHeight,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Day labels
-              _buildDayLabels(),
-
-              const SizedBox(width: 12),
-
-              // Heatmap cells
+              _DayLabels(),
+              const SizedBox(width: HeatmapConstants.dayLabelSpacing),
               Expanded(
                 child: Column(
                   children: [
-                    // Hour labels
-                    _buildHourLabels(),
-
-                    const SizedBox(height: 8),
-
-                    // Grid
-                    Expanded(child: _buildHeatmapGrid()),
+                    _HourLabels(),
+                    const SizedBox(height: HeatmapConstants.hourLabelSpacing),
+                    Expanded(
+                      child: _HeatmapGrid(
+                        dataMap: _heatmapDataByKey,
+                        onCellHover: _handleCellHover,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
         ),
-
-        const SizedBox(height: 20),
-
-        // Legend
-        _buildLegend(),
-
-        // Tooltip
-        if (_hoveredCell != null) _buildTooltip(),
+        const SizedBox(height: HeatmapConstants.legendSpacing),
+        const _HeatmapLegend(),
+        if (_hoveredCell != null) _HeatmapTooltip(data: _hoveredCell!),
       ],
     );
   }
 
-  Widget _buildDayLabels() {
-    const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  void _handleCellHover(HeatmapDataPoint? data) {
+    if (_hoveredCell != data) {
+      setState(() => _hoveredCell = data);
+    }
+  }
+}
 
+// ==================== 子组件 ====================
+
+/// 星期标签列
+class _DayLabels extends StatelessWidget {
+  const _DayLabels();
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        const SizedBox(height: 30), // Align with hour labels
-        ...days.map((day) => Expanded(
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Text(
-                    day,
-                    style: const TextStyle(
-                      fontFamily: 'JetBrainsMono',
-                      fontSize: 11,
-                      color: AppColors.textMuted,
-                    ),
+        const SizedBox(height: HeatmapConstants.dayLabelTopPadding),
+        ...HeatmapConstants.dayNames.map(
+          (day) => Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  right: HeatmapConstants.dayLabelRightPadding,
+                ),
+                child: Text(
+                  day,
+                  style: const TextStyle(
+                    fontFamily: 'JetBrainsMono',
+                    fontSize: 11,
+                    color: AppColors.textMuted,
                   ),
                 ),
               ),
-            )),
+            ),
+          ),
+        ),
       ],
     );
   }
+}
 
-  Widget _buildHourLabels() {
+/// 小时标签行
+class _HourLabels extends StatelessWidget {
+  const _HourLabels();
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
-      children: List.generate(24, (hour) {
-        // Only show labels for every 3 hours
-        final shouldShow = hour % 3 == 0;
-
-        return Expanded(
+      children: List.generate(
+        HeatmapConstants.hoursInDay,
+        (hour) => Expanded(
           child: Center(
             child: Text(
-              shouldShow ? '$hour' : '',
+              _shouldShowHourLabel(hour) ? '$hour' : '',
               style: const TextStyle(
                 fontFamily: 'JetBrainsMono',
                 fontSize: 10,
@@ -160,44 +264,67 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
               ),
             ),
           ),
-        );
-      }),
+        ),
+      ),
     );
   }
 
-  Widget _buildHeatmapGrid() {
+  bool _shouldShowHourLabel(int hour) {
+    return hour % HeatmapConstants.hourLabelInterval == 0;
+  }
+}
+
+/// 热力图网格
+class _HeatmapGrid extends StatelessWidget {
+  final Map<int, HeatmapDataPoint> dataMap;
+  final ValueChanged<HeatmapDataPoint?> onCellHover;
+
+  const _HeatmapGrid({
+    required this.dataMap,
+    required this.onCellHover,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
-      children: List.generate(7, (day) {
-        return Expanded(
-          child: Row(
-            children: List.generate(24, (hour) {
-              final cellData = _heatmapDataByKey[_cellKey(day, hour)] ??
-                  HeatmapDataPoint(
-                    hour: hour,
-                    day: day,
-                    count: 0,
-                  );
-
-              return Expanded(
-                child: _HeatmapCell(
-                  data: cellData,
-                  onHover: (isHovered) {
-                    setState(() {
-                      _hoveredCell = isHovered ? cellData : null;
-                    });
-                  },
-                ),
-              );
-            }),
-          ),
-        );
-      }),
+      children: List.generate(
+        HeatmapConstants.daysInWeek,
+        (day) => Expanded(
+          child: _buildDayRow(day),
+        ),
+      ),
     );
   }
 
-  int _cellKey(int day, int hour) => day * 24 + hour;
+  Widget _buildDayRow(int day) {
+    return Row(
+      children: List.generate(
+        HeatmapConstants.hoursInDay,
+        (hour) => Expanded(
+          child: _buildCell(day, hour),
+        ),
+      ),
+    );
+  }
 
-  Widget _buildLegend() {
+  Widget _buildCell(int day, int hour) {
+    final cellData = dataMap[_cellKey(day, hour)] ?? HeatmapDataPoint(hour: hour, day: day, count: 0);
+
+    return _HeatmapCell(
+      data: cellData,
+      onHover: (isHovered) => onCellHover(isHovered ? cellData : null),
+    );
+  }
+
+  int _cellKey(int day, int hour) => day * HeatmapConstants.hoursInDay + hour;
+}
+
+/// 图例
+class _HeatmapLegend extends StatelessWidget {
+  const _HeatmapLegend();
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -208,19 +335,9 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
             color: AppColors.textMuted,
           ),
         ),
-        const SizedBox(width: 12),
-        ...List.generate(5, (index) {
-          return Container(
-            width: 20,
-            height: 20,
-            margin: const EdgeInsets.only(right: 4),
-            decoration: BoxDecoration(
-              color: _getIntensityColor(index + 1),
-              borderRadius: BorderRadius.circular(4),
-            ),
-          );
-        }),
-        const SizedBox(width: 12),
+        const SizedBox(width: HeatmapConstants.legendTextSpacing),
+        ...List.generate(5, (index) => _buildLegendItem(index + 1)),
+        const SizedBox(width: HeatmapConstants.legendTextSpacing),
         const Text(
           '较多',
           style: TextStyle(
@@ -232,20 +349,38 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
     );
   }
 
-  Widget _buildTooltip() {
-    const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-
+  Widget _buildLegendItem(int intensity) {
     return Container(
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(12),
+      width: HeatmapConstants.legendItemSize,
+      height: HeatmapConstants.legendItemSize,
+      margin: const EdgeInsets.only(right: HeatmapConstants.legendItemSpacing),
+      decoration: BoxDecoration(
+        color: IntensityColorHelper.getColor(intensity),
+        borderRadius: BorderRadius.circular(HeatmapConstants.cellBorderRadius),
+      ),
+    );
+  }
+}
+
+/// 悬停提示框
+class _HeatmapTooltip extends StatelessWidget {
+  final HeatmapDataPoint data;
+
+  const _HeatmapTooltip({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: HeatmapConstants.tooltipMarginTop),
+      padding: const EdgeInsets.all(HeatmapConstants.tooltipPadding),
       decoration: BoxDecoration(
         color: AppColors.bgTertiary,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(HeatmapConstants.tooltipBorderRadius),
         border: Border.all(color: AppColors.accentCyan),
         boxShadow: const [
           BoxShadow(
             color: AppColors.glowCyan,
-            blurRadius: 24,
+            blurRadius: HeatmapConstants.tooltipGlowBlur,
           ),
         ],
       ),
@@ -253,7 +388,7 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            '${days[_hoveredCell!.day]} ${_hoveredCell!.hour}:00',
+            _formatTimeLabel(),
             style: const TextStyle(
               fontFamily: 'JetBrainsMono',
               fontSize: 12,
@@ -261,47 +396,45 @@ class _HeatmapWidgetState extends State<HeatmapWidget> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.accentCyan, AppColors.accentPurple],
-              ),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              '${_hoveredCell!.count} 次',
-              style: const TextStyle(
-                fontFamily: 'JetBrainsMono',
-                fontSize: 11,
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
+          const SizedBox(width: HeatmapConstants.tooltipContentSpacing),
+          _buildCountBadge(),
         ],
       ),
     );
   }
 
-  Color _getIntensityColor(int intensity) {
-    switch (intensity) {
-      case 1:
-        return AppColors.accentCyan.withValues(alpha: 0.2);
-      case 2:
-        return AppColors.accentCyan.withValues(alpha: 0.4);
-      case 3:
-        return AppColors.accentCyan.withValues(alpha: 0.6);
-      case 4:
-        return AppColors.accentCyan.withValues(alpha: 0.8);
-      case 5:
-        return AppColors.accentCyan;
-      default:
-        return AppColors.bgTertiary;
-    }
+  String _formatTimeLabel() {
+    return '${HeatmapConstants.dayNames[data.day]} ${data.hour}:00';
+  }
+
+  Widget _buildCountBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: HeatmapConstants.tooltipBadgePaddingH,
+        vertical: HeatmapConstants.tooltipBadgePaddingV,
+      ),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.accentCyan, AppColors.accentPurple],
+        ),
+        borderRadius: BorderRadius.circular(
+          HeatmapConstants.tooltipBadgeBorderRadius,
+        ),
+      ),
+      child: Text(
+        '${data.count} 次',
+        style: const TextStyle(
+          fontFamily: 'JetBrainsMono',
+          fontSize: 11,
+          color: Colors.white,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 }
+
+// ==================== 单元格组件 ====================
 
 /// 单个热力图单元格
 class _HeatmapCell extends StatefulWidget {
@@ -317,46 +450,32 @@ class _HeatmapCell extends StatefulWidget {
   State<_HeatmapCell> createState() => _HeatmapCellState();
 }
 
-class _HeatmapCellState extends State<_HeatmapCell>
-    {
+class _HeatmapCellState extends State<_HeatmapCell> {
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final intensity = _calculateIntensity(widget.data.count);
+    final intensity = IntensityCalculator.calculate(widget.data.count);
+    final color = IntensityColorHelper.getColor(intensity);
 
     return MouseRegion(
-      onEnter: (_) {
-        if (_isHovered) return;
-        setState(() => _isHovered = true);
-        widget.onHover(true);
-      },
-      onExit: (_) {
-        if (!_isHovered) return;
-        setState(() => _isHovered = false);
-        widget.onHover(false);
-      },
+      onEnter: (_) => _setHovered(true),
+      onExit: (_) => _setHovered(false),
       child: Padding(
-        padding: const EdgeInsets.all(1.5),
+        padding: const EdgeInsets.all(HeatmapConstants.cellPadding),
         child: AnimatedScale(
-          scale: _isHovered ? 1.3 : 1.0,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
+          scale: _isHovered ? HeatmapConstants.cellHoverScale : 1.0,
+          duration: HeatmapConstants.animationDuration,
+          curve: HeatmapConstants.animationCurve,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
+            duration: HeatmapConstants.animationDuration,
+            curve: HeatmapConstants.animationCurve,
             decoration: BoxDecoration(
-              color: _getColor(intensity),
-              borderRadius: BorderRadius.circular(4),
-              boxShadow: _isHovered
-                  ? [
-                      BoxShadow(
-                        color: AppColors.accentCyan.withValues(alpha: 0.4),
-                        blurRadius: 12,
-                        spreadRadius: 2,
-                      ),
-                    ]
-                  : const [],
+              color: color,
+              borderRadius: BorderRadius.circular(
+                HeatmapConstants.cellBorderRadius,
+              ),
+              boxShadow: _isHovered ? _buildGlowEffect() : const [],
             ),
           ),
         ),
@@ -364,37 +483,71 @@ class _HeatmapCellState extends State<_HeatmapCell>
     );
   }
 
-  int _calculateIntensity(int count) {
-    if (count == 0) return 0;
-    if (count < 10) return 1;
-    if (count < 20) return 2;
-    if (count < 30) return 3;
-    if (count < 40) return 4;
-    return 5;
+  void _setHovered(bool hovered) {
+    if (_isHovered == hovered) return;
+
+    setState(() => _isHovered = hovered);
+    widget.onHover(hovered);
   }
 
-  Color _getColor(int intensity) {
-    switch (intensity) {
-      case 0:
-        return AppColors.bgTertiary;
-      case 1:
-        return AppColors.accentCyan.withValues(alpha: 0.2);
-      case 2:
-        return AppColors.accentCyan.withValues(alpha: 0.4);
-      case 3:
-        return AppColors.accentCyan.withValues(alpha: 0.6);
-      case 4:
-        return AppColors.accentCyan.withValues(alpha: 0.8);
-      case 5:
-        return AppColors.accentCyan;
-      default:
-        return AppColors.bgTertiary;
-    }
+  List<BoxShadow> _buildGlowEffect() {
+    return [
+      BoxShadow(
+        color: AppColors.accentCyan.withValues(alpha: 0.4),
+        blurRadius: HeatmapConstants.cellGlowBlur,
+        spreadRadius: HeatmapConstants.cellGlowSpread,
+      ),
+    ];
   }
 }
 
-// Colors definition (if not in main file)
+// ==================== 工具类 ====================
+
+/// 强度计算器
+class IntensityCalculator {
+  IntensityCalculator._();
+
+  static int calculate(int count) {
+    if (count == 0) return 0;
+
+    for (final entry in HeatmapConstants.intensityThresholds.entries) {
+      if (count < entry.value) {
+        return entry.key;
+      }
+    }
+
+    return 5; // Maximum intensity
+  }
+}
+
+/// 强度颜色辅助类
+class IntensityColorHelper {
+  IntensityColorHelper._();
+
+  static const Map<int, double> _alphaValues = {
+    0: 0.0,
+    1: 0.2,
+    2: 0.4,
+    3: 0.6,
+    4: 0.8,
+    5: 1.0,
+  };
+
+  static Color getColor(int intensity) {
+    if (intensity == 0) {
+      return AppColors.bgTertiary;
+    }
+
+    final alpha = _alphaValues[intensity] ?? 1.0;
+    return AppColors.accentCyan.withValues(alpha: alpha);
+  }
+}
+
+// ==================== 颜色定义 ====================
+
 class AppColors {
+  AppColors._();
+
   static const bgPrimary = Color(0xFF0A0E14);
   static const bgSecondary = Color(0xFF121820);
   static const bgTertiary = Color(0xFF1A1F2E);
