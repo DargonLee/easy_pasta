@@ -75,29 +75,18 @@ class _DuplicateListWidgetState extends State<DuplicateListWidget>
         }
 
         if (snapshot.hasError) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              '加载重复内容失败',
-              style: TextStyle(
-                fontSize: 12,
-                color: AnalyticsColors.textMuted,
-              ),
-            ),
+          return const _DuplicateStateHint(
+            icon: Icons.error_outline_rounded,
+            message: '加载重复内容失败',
+            iconColor: AnalyticsColors.accentOrange,
           );
         }
 
         final duplicates = snapshot.data ?? [];
         if (duplicates.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Text(
-              '暂无重复内容',
-              style: TextStyle(
-                fontSize: 12,
-                color: AnalyticsColors.textMuted,
-              ),
-            ),
+          return const _DuplicateStateHint(
+            icon: Icons.inbox_rounded,
+            message: '暂无重复内容',
           );
         }
 
@@ -105,7 +94,7 @@ class _DuplicateListWidgetState extends State<DuplicateListWidget>
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: duplicates.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          separatorBuilder: (context, index) => const SizedBox(height: 14),
           itemBuilder: (context, index) {
             final delay = (index * 100).clamp(0, 700).toInt();
             return _DuplicateCard(
@@ -116,6 +105,39 @@ class _DuplicateListWidgetState extends State<DuplicateListWidget>
           },
         );
       },
+    );
+  }
+}
+
+class _DuplicateStateHint extends StatelessWidget {
+  final IconData icon;
+  final String message;
+  final Color iconColor;
+
+  const _DuplicateStateHint({
+    required this.icon,
+    required this.message,
+    this.iconColor = AnalyticsColors.textMuted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: iconColor),
+          const SizedBox(width: 8),
+          Text(
+            message,
+            style: const TextStyle(
+              fontFamily: 'JetBrainsMono',
+              fontSize: 12,
+              color: AnalyticsColors.textMuted,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -135,152 +157,202 @@ class _DuplicateCard extends StatefulWidget {
   State<_DuplicateCard> createState() => _DuplicateCardState();
 }
 
-class _DuplicateCardState extends State<_DuplicateCard>
-    with SingleTickerProviderStateMixin {
+class _DuplicateCardState extends State<_DuplicateCard> {
   bool _isHovered = false;
-  late AnimationController _hoverController;
-
-  @override
-  void initState() {
-    super.initState();
-    _hoverController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
-  }
-
-  @override
-  void dispose() {
-    _hoverController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
+    final start = widget.delay / 1000;
+    final end = ((widget.delay + 320) / 1000).clamp(0.0, 1.0);
+    final appearCurve = CurvedAnimation(
+      parent: widget.animation,
+      curve: Interval(start, end, curve: Curves.easeOutCubic),
+    );
+
     return FadeTransition(
-      opacity: Tween<double>(begin: 0, end: 1).animate(
-        CurvedAnimation(
-          parent: widget.animation,
-          curve: Interval(
-            widget.delay / 1000,
-            (widget.delay + 300) / 1000,
-            curve: Curves.easeOut,
+      opacity: appearCurve,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.12),
+          end: Offset.zero,
+        ).animate(appearCurve),
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AnalyticsColors.bgTertiary,
+                  AnalyticsColors.bgTertiary.withValues(alpha: 0.88),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _isHovered
+                    ? AnalyticsColors.accentCyan.withValues(alpha: 0.8)
+                    : AnalyticsColors.borderColor,
+              ),
+              boxShadow: [
+                if (_isHovered)
+                  BoxShadow(
+                    color: AnalyticsColors.accentCyan.withValues(alpha: 0.16),
+                    blurRadius: 24,
+                    spreadRadius: -6,
+                  )
+                else
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    offset: const Offset(0, 6),
+                    blurRadius: 18,
+                    spreadRadius: -8,
+                  ),
+              ],
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final compact = constraints.maxWidth < 580;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: AnalyticsColors.accentPurple.withValues(
+                              alpha: 0.16,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.content_paste_search_rounded,
+                            size: 18,
+                            color: AnalyticsColors.accentPurple,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                '重复内容',
+                                style: TextStyle(
+                                  fontFamily: 'JetBrainsMono',
+                                  fontSize: 11,
+                                  letterSpacing: 0.3,
+                                  color: AnalyticsColors.textMuted,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                widget.item.content,
+                                style: const TextStyle(
+                                  fontFamily: 'JetBrainsMono',
+                                  fontSize: 14,
+                                  height: 1.35,
+                                  color: AnalyticsColors.textPrimary,
+                                ),
+                                maxLines: compact ? 3 : 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!compact) ...[
+                          const SizedBox(width: 10),
+                          _DuplicateCountBadge(count: widget.item.count),
+                        ],
+                      ],
+                    ),
+                    if (compact) ...[
+                      const SizedBox(height: 10),
+                      _DuplicateCountBadge(count: widget.item.count),
+                    ],
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            AnalyticsColors.accentGreen.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: AnalyticsColors.accentGreen.withValues(
+                            alpha: 0.22,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 1),
+                            child: Icon(
+                              Icons.auto_awesome_rounded,
+                              size: 14,
+                              color: AnalyticsColors.accentGreen,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              widget.item.suggestion,
+                              style: const TextStyle(
+                                fontFamily: 'JetBrainsMono',
+                                fontSize: 11,
+                                height: 1.4,
+                                color: AnalyticsColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, 0.2),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(
-            parent: widget.animation,
-            curve: Interval(
-              widget.delay / 1000,
-              (widget.delay + 300) / 1000,
-              curve: Curves.easeOut,
-            ),
-          ),
+    );
+  }
+}
+
+class _DuplicateCountBadge extends StatelessWidget {
+  final int count;
+
+  const _DuplicateCountBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AnalyticsColors.accentCyan, AnalyticsColors.accentPurple],
         ),
-        child: MouseRegion(
-          onEnter: (_) {
-            setState(() => _isHovered = true);
-            _hoverController.forward();
-          },
-          onExit: (_) {
-            setState(() => _isHovered = false);
-            _hoverController.reverse();
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AnalyticsColors.bgTertiary,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: _isHovered
-                    ? AnalyticsColors.accentCyan
-                    : Colors.transparent,
-                width: 1,
-              ),
-              boxShadow: _isHovered
-                  ? [
-                      BoxShadow(
-                        color:
-                            AnalyticsColors.accentCyan.withValues(alpha: 0.2),
-                        blurRadius: 20,
-                        spreadRadius: 0,
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Row(
-              children: [
-                // Content
-                Expanded(
-                  child: Text(
-                    widget.item.content,
-                    style: const TextStyle(
-                      fontFamily: 'JetBrainsMono',
-                      fontSize: 14,
-                      color: AnalyticsColors.textPrimary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-
-                const SizedBox(width: 20),
-
-                // Count badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        AnalyticsColors.accentCyan,
-                        AnalyticsColors.accentPurple
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${widget.item.count}次',
-                    style: const TextStyle(
-                      fontFamily: 'JetBrainsMono',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 20),
-
-                // Suggestion
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AnalyticsColors.accentGreen.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    widget.item.suggestion,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AnalyticsColors.accentGreen,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        '重复 $count 次',
+        style: const TextStyle(
+          fontFamily: 'JetBrainsMono',
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
         ),
       ),
     );
